@@ -6448,5 +6448,163 @@ if(VOICE_PAUSED){PREF.voice=false;PREF.voiceRolls=false;
   if(typeof kkLoad==='function')kkLoad=function(){};
   (function(){const st=document.createElement('style');st.textContent='[data-say],#voBtn,.vo-btn,#kkLoadBtn,#kkOnBtn,.kk-wait{display:none!important}';document.head.appendChild(st)})()}
 
+// ================= your own campaigns: write them like an adventure book, run them as the DM =================
+// New game asks what kind of game: a ready-made adventure, an AI-run one (only inside Claude), or your own campaign.
+// Your own campaigns are written in the campaign editor (chapters > scenes, each with read-aloud text, DM notes, a map,
+// enemies and NPCs), kept on this device (and exportable as a file), and run by you from the DM screen.
+const CB={edit:null,id:null,dirty:false};
+function cbLib(){try{return JSON.parse(localStorage.getItem('glt-mycamps')||'{}')||{}}catch(e){return{}}}
+function cbSaveLib(lib){try{localStorage.setItem('glt-mycamps',JSON.stringify(lib));return true}catch(e){toast('Could not save on this device (storage full?).');return false}}
+function manualOn(){return!!(ST.state&&ST.state.manual)}
+function cbScene(map){return{title:'',map:map||'village',read:'',notes:'',foes:[],npcs:''}}
+function cbBlank(){return{kind:'manual',rules:'dndf',name:'',arc:'',blurb:'',levels:[1,5],chapters:[{title:'Chapter 1',summary:'',scenes:[cbScene()]}]}}
+function cbMaps(){return Object.keys(SCENES).filter(k=>SCENES[k]&&SCENES[k].name)}
+function cbFoeList(){return Object.entries(FOES).filter(([k,f])=>f&&f.name).sort((a,b)=>a[1].name.localeCompare(b[1].name))}
+// what the players' devices are allowed to know about the campaign (no read-aloud text before it is read, no DM notes)
+function cbPublic(c){const scenes={};for(const ch of c.chapters||[])for(const s of ch.scenes||[])if(s.map&&!scenes[s.map])scenes[s.map]=s.title||(SCENES[s.map]||{}).name||s.map;
+  const foes=[...new Set((c.chapters||[]).flatMap(ch=>(ch.scenes||[]).flatMap(s=>(s.foes||[]).map(f=>f.key))))].filter(k=>FOES[k]);
+  const npcs=[...new Set((c.chapters||[]).flatMap(ch=>(ch.scenes||[]).flatMap(s=>String(s.npcs||'').split(',').map(x=>x.trim()).filter(Boolean))))];
+  const first=((c.chapters||[])[0]||{scenes:[]}).scenes[0]||{};const n=(c.chapters||[]).length;
+  return{name:c.name||'Untitled campaign',arc:c.arc||'',blurb:c.blurb||'',length:`${n} chapter${n===1?'':'s'}`,sessions:'run by the DM',levels:c.levels||[1,5],start:first.map||'village',startText:'',scenes,
+    route:(c.chapters||[]).map(ch=>[ch.title||'',ch.summary||'',((ch.scenes||[])[0]||{}).map||'village']),foes:foes.length?foes:['thug','marine'],npcs,finale:'',levelPlan:'the DM decides',custom:true,manual:true}}
+// ---------- starting one: the DM's copy stays on the DM's side, players get the public card ----------
+{const _sc=startCampaign;startCampaign=async function(id,fresh,newGame){const c=cbLib()[id];
+  if(c&&ST.owner){const pub=cbPublic(c);ST.customcamps={...(ST.customcamps||{}),[id]:pub};await put('customcamps/'+id,pub);await put('dm/mcamp_'+id,{type:'mcamp',...c})}
+  await _sc.apply(this,arguments);
+  if(c&&ST.owner){await put('table/state',{...ST.state,ai:false,off:null,manual:{id,ch:0,sc:0,done:{}}})}
+  else if(ST.owner&&ST.state.manual)await put('table/state',{...ST.state,manual:null})}}
+function cbCurrent(){const m=ST.state.manual;if(!m)return null;return ST.dm['mcamp_'+m.id]||cbLib()[m.id]||null}
+// ---------- New game: three kinds of game ----------
+titleNewHTML=function(){if(!TS.mode0){TS.mode0=1;if(TS.mode==='ai'&&!AI)TS.mode='off'}const mode=TS.mode;const has=titleHasGame();
+  const kinds=[['off','📖 Ready-made adventure','A written story with choices, dice and fights. It runs itself: no DM needed.'],
+    ...(AI?[['ai','🤖 AI Dungeon Master','Claude runs the story: say or do anything.']]:[]),
+    ['custom','🛠 Your own campaign','Write chapters and scenes in the campaign editor, then run the game as the DM.']];
+  let list='';
+  if(mode==='custom'){const lib=Object.entries(cbLib()).sort((a,b)=>(b[1].t||0)-(a[1].t||0));
+    list=`<div class="ts-list">${lib.map(([k,c])=>{const pub=cbPublic(c);const on=TS.pick===k;const sc=(c.chapters||[]).reduce((n,ch)=>n+(ch.scenes||[]).length,0);
+      return`<div class="ts-item ${on?'on':''}"><button type="button" class="ts-ib" data-tspick="${esc(k)}"><b>${esc(pub.name)}</b><small>${esc([pub.length,`${sc} scene${sc===1?'':'s'}`,`levels ${pub.levels[0]}–${pub.levels[1]}`,pub.arc].filter(Boolean).join(' · '))}</small>${on&&pub.blurb?`<span class="ts-blurb">${esc(pub.blurb)}</span>`:''}</button>
+      ${on?`<div class="cb-row"><button type="button" class="ts-go sm" data-tsnew="${esc(k)}">▶ Run this campaign</button><button type="button" class="ts-mid sm" data-cbedit="${esc(k)}">✏ Edit</button><button type="button" class="ts-mid sm" data-cbexp="${esc(k)}">⤓ Export</button><button type="button" class="ts-mid sm cb-del" data-cbdel="${esc(k)}">${TS.cbDel===k?'Really delete?':'🗑 Delete'}</button></div>`:''}</div>`}).join('')}
+      ${lib.length?'':'<p class="ts-help">You have no campaigns yet. Create your first one: a title, a few chapters, and the scenes inside them.</p>'}</div>
+      <div class="cb-row" style="margin-top:10px"><button type="button" class="ts-go sm" data-cbnew="1">＋ Create a new campaign</button><label class="ts-mid sm cb-imp">⤒ Import a campaign file<input type="file" accept=".json,application/json" data-cbimp="1" hidden></label></div>`}
+  else{const ids=[...CAMP_ORDER,...Object.keys(ST.customcamps||{})].filter((k,i,a)=>a.indexOf(k)===i).filter(k=>{let c=null;try{c=k==='endless'?null:CAMP(k)}catch(e){}if(c&&c.manual)return false;return mode==='off'?!!(c&&c.offline):!(c&&c.offline)});
+    list=`<div class="ts-list">${ids.map(k=>{let cp;try{cp=k==='endless'?EV_DEFAULT:CAMP(k)}catch(e){return''}if(!cp||!cp.name)return'';const on=TS.pick===k;
+      return`<div class="ts-item ${on?'on':''}"><button type="button" class="ts-ib" data-tspick="${esc(k)}"><b>${esc(cp.name)}</b><small>${esc([cp.length,cp.levels?`levels ${cp.levels[0]}–${cp.levels[1]}`:'',cp.arc].filter(Boolean).join(' · '))}</small>${on&&cp.blurb?`<span class="ts-blurb">${esc(cp.blurb)}</span>`:''}</button>${on?`<button type="button" class="ts-go sm" data-tsnew="${esc(k)}">Start this voyage</button>`:''}</div>`}).join('')}</div>`}
+  return`<div class="ts-panel"><div class="ts-ph"><button type="button" class="ts-back" data-tsv="home">← Back</button><h2>New game</h2></div>
+  <p class="ts-help">A new game starts with a fresh crew: everyone makes a new pirate.${has?' <b>Your current game is saved first</b>, so you can load it again later.':''}</p>
+  <div class="ts-eb" style="margin-top:4px">What kind of game?</div><div class="ts-diff ts-mode cb-kinds" role="radiogroup" aria-label="Kind of game">${kinds.map(([k,t,s])=>`<button type="button" role="radio" aria-checked="${mode===k}" class="${mode===k?'on':''}" data-tsmode="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
+  ${mode==='custom'?'':`<div class="ts-eb" style="margin-top:14px">Difficulty</div><div class="ts-diff" role="radiogroup" aria-label="Difficulty">${Object.entries(DIFFS).map(([k,v])=>`<button type="button" role="radio" aria-checked="${TS.diff===k}" class="${TS.diff===k?'on':''}" data-tsdiff="${k}"><b>${esc(v.label)}</b><small>${esc(v.hint)}</small></button>`).join('')}</div>`}
+  <div class="ts-eb" style="margin:14px 0 6px">${mode==='custom'?'Your campaigns':'Campaign'}</div>${list}</div>`};
+function cbRefreshTitle(){TITLE_LAST='';try{renderTitle()}catch(e){}}
+// ---------- the campaign editor ----------
+function cbOpen(id){const lib=cbLib();CB.id=id||null;CB.edit=id&&lib[id]?JSON.parse(JSON.stringify(lib[id])):cbBlank();CB.dirty=false;CB.open=true;cbRender()}
+function cbClose(){CB.open=false;CB.edit=null;const el=document.getElementById('cbEd');if(el)el.remove();cbRefreshTitle()}
+function cbOpt(list,val){return list.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(val)?'selected':''}>${esc(t)}</option>`).join('')}
+function cbRender(){if(!CB.open)return;let el=document.getElementById('cbEd');if(!el){el=document.createElement('div');el.id='cbEd';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-label','Campaign editor');document.body.appendChild(el);cbBind(el)}
+  const c=CB.edit;const maps=cbMaps().map(k=>[k,SCENES[k].name]);const foes=cbFoeList().map(([k,f])=>[k,f.name]);const y=el.scrollTop;
+  el.innerHTML=`<div class="cb-wrap"><div class="cb-top"><button type="button" class="btn" data-cba="close">← Back</button><h2>${CB.id?'Edit campaign':'New campaign'}</h2><button type="button" class="btn pri" data-cba="save">💾 Save</button></div>
+  <section class="cb-sec"><h3>The campaign</h3>
+    <label class="f">Name<input type="text" data-p="name" maxlength="70" value="${esc(c.name)}" placeholder="e.g. The Curse of Coral Cove"></label>
+    <label class="f">Where it happens<input type="text" data-p="arc" maxlength="70" value="${esc(c.arc)}" placeholder="e.g. East Blue · the Coral Isles"></label>
+    <label class="f">The pitch (players see this when you pick it)<textarea data-p="blurb" rows="3" maxlength="600" placeholder="One or two sentences that make your crew want to play.">${esc(c.blurb)}</textarea></label>
+    <div class="cb-two"><label class="f">Starting level<input type="number" min="1" max="20" data-p="levels.0" data-num="1" value="${c.levels[0]}"></label><label class="f">Ending level<input type="number" min="1" max="20" data-p="levels.1" data-num="1" value="${c.levels[1]}"></label>
+    <label class="f">Rules<select data-p="rules"><option value="dndf" selected>D&amp;D 5e + Dungeons &amp; Devil Fruits</option><option disabled>Custom system (coming later)</option></select></label></div></section>
+  ${c.chapters.map((ch,i)=>`<section class="cb-sec cb-ch"><div class="cb-chh"><h3>Chapter ${i+1}</h3><div class="cb-tools"><button type="button" class="btn sm" data-cba="upch" data-i="${i}" ${i?'':'disabled'} aria-label="Move chapter up">↑</button><button type="button" class="btn sm" data-cba="dnch" data-i="${i}" ${i<c.chapters.length-1?'':'disabled'} aria-label="Move chapter down">↓</button><button type="button" class="btn sm red" data-cba="delch" data-i="${i}" ${c.chapters.length>1?'':'disabled'}>Delete chapter</button></div></div>
+    <label class="f">Chapter title<input type="text" data-p="chapters.${i}.title" maxlength="80" value="${esc(ch.title)}"></label>
+    <label class="f">What happens in this chapter (only you see this)<textarea data-p="chapters.${i}.summary" rows="2" maxlength="1500" placeholder="The goal, the big twist, how it ends.">${esc(ch.summary)}</textarea></label>
+    ${ch.scenes.map((s,j)=>`<div class="cb-sc"><div class="cb-chh"><h4>Scene ${i+1}.${j+1}</h4><div class="cb-tools"><button type="button" class="btn sm" data-cba="upsc" data-i="${i}" data-j="${j}" ${j?'':'disabled'} aria-label="Move scene up">↑</button><button type="button" class="btn sm" data-cba="dnsc" data-i="${i}" data-j="${j}" ${j<ch.scenes.length-1?'':'disabled'} aria-label="Move scene down">↓</button><button type="button" class="btn sm red" data-cba="delsc" data-i="${i}" data-j="${j}">Delete</button></div></div>
+      <div class="cb-two"><label class="f">Scene title<input type="text" data-p="chapters.${i}.scenes.${j}.title" maxlength="80" value="${esc(s.title)}" placeholder="e.g. The flooded lighthouse"></label>
+      <label class="f">Map<select data-p="chapters.${i}.scenes.${j}.map">${cbOpt(maps,s.map)}</select></label></div>
+      <label class="f cb-read">📜 Read aloud to the players<textarea data-p="chapters.${i}.scenes.${j}.read" rows="4" maxlength="3000" placeholder="What the crew sees, hears and smells when the scene starts.">${esc(s.read)}</textarea></label>
+      <label class="f cb-notes">🔒 DM notes (only you)<textarea data-p="chapters.${i}.scenes.${j}.notes" rows="3" maxlength="3000" placeholder="Secrets, checks and DCs, what happens if they fail.">${esc(s.notes)}</textarea></label>
+      <div class="f"><span>👹 Enemies</span><div class="cb-foes">${(s.foes||[]).map((f,k)=>`<span class="cb-chip">${esc((FOES[f.key]||{}).name||f.key)} ×${f.n}<button type="button" data-cba="delfoe" data-i="${i}" data-j="${j}" data-k="${k}" aria-label="Remove">✕</button></span>`).join('')||'<span class="hint">None</span>'}</div>
+        <div class="cb-addfoe"><select data-foesel="${i}.${j}">${cbOpt(foes,'')}</select><input type="number" min="1" max="12" value="1" data-foen="${i}.${j}" aria-label="How many"><button type="button" class="btn sm" data-cba="addfoe" data-i="${i}" data-j="${j}">Add</button></div></div>
+      <label class="f">🧑 NPCs in this scene (comma separated)<input type="text" data-p="chapters.${i}.scenes.${j}.npcs" maxlength="300" value="${esc(s.npcs)}" placeholder="e.g. Captain Rook, Old Brina"></label></div>`).join('')}
+    <button type="button" class="btn sm" data-cba="addsc" data-i="${i}">＋ Add a scene</button></section>`).join('')}
+  <div class="cb-bottom"><button type="button" class="btn" data-cba="addch">＋ Add a chapter</button><button type="button" class="btn pri" data-cba="save">💾 Save campaign</button></div></div>`;
+  el.scrollTop=y}
+function cbSet(path,v){const ks=path.split('.');let o=CB.edit;for(let i=0;i<ks.length-1;i++)o=o[ks[i]];o[ks[ks.length-1]]=v;CB.dirty=true}
+function cbBind(el){
+  el.addEventListener('input',e=>{const t=e.target;if(!t.dataset.p)return;let v=t.value;if(t.dataset.num)v=Math.max(1,Math.min(20,parseInt(v)||1));cbSet(t.dataset.p,v)});
+  el.addEventListener('change',e=>{const t=e.target;if(t.dataset.p&&t.tagName==='SELECT')cbSet(t.dataset.p,t.value)});
+  el.addEventListener('click',e=>{const b=e.target.closest('[data-cba]');if(!b||b.disabled)return;const a=b.dataset.cba,i=+b.dataset.i,j=+b.dataset.j,c=CB.edit;const sw=(arr,x,y)=>{[arr[x],arr[y]]=[arr[y],arr[x]]};
+    if(a==='close'){if(CB.dirty&&!confirm('Leave without saving your changes?'))return;cbClose();return}
+    if(a==='save'){if(!String(c.name||'').trim()){toast('Give your campaign a name first.');el.querySelector('[data-p="name"]').focus();return}
+      if(c.levels[1]<c.levels[0])c.levels[1]=c.levels[0];const lib=cbLib();const id=CB.id||('m'+Date.now().toString(36));lib[id]={...c,t:Date.now()};if(!cbSaveLib(lib))return;
+      CB.id=id;CB.dirty=false;TS.mode='custom';TS.pick=id;toast('Campaign saved on this device.');cbClose();return}
+    if(a==='addch'){c.chapters.push({title:`Chapter ${c.chapters.length+1}`,summary:'',scenes:[cbScene()]})}
+    else if(a==='delch'){if(!confirm(`Delete chapter ${i+1} and all its scenes?`))return;c.chapters.splice(i,1)}
+    else if(a==='upch')sw(c.chapters,i,i-1);else if(a==='dnch')sw(c.chapters,i,i+1);
+    else if(a==='addsc'){const sc=c.chapters[i].scenes;sc.push(cbScene((sc[sc.length-1]||{}).map))}
+    else if(a==='delsc'){c.chapters[i].scenes.splice(j,1)}
+    else if(a==='upsc')sw(c.chapters[i].scenes,j,j-1);else if(a==='dnsc')sw(c.chapters[i].scenes,j,j+1);
+    else if(a==='addfoe'){const key=el.querySelector(`[data-foesel="${i}.${j}"]`).value;const n=Math.max(1,Math.min(12,parseInt(el.querySelector(`[data-foen="${i}.${j}"]`).value)||1));const fl=c.chapters[i].scenes[j].foes;const ex=fl.find(f=>f.key===key);if(ex)ex.n=Math.min(12,ex.n+n);else fl.push({key,n})}
+    else if(a==='delfoe'){c.chapters[i].scenes[j].foes.splice(+b.dataset.k,1)}
+    else return;CB.dirty=true;cbRender()})}
+// title-screen buttons for the editor, export and import
+document.addEventListener('click',e=>{const b=e.target.closest('[data-cbnew],[data-cbedit],[data-cbdel],[data-cbexp]');if(!b)return;
+  if(b.dataset.cbnew){cbOpen(null);return}
+  if(b.dataset.cbedit){cbOpen(b.dataset.cbedit);return}
+  if(b.dataset.cbdel){const k=b.dataset.cbdel;if(TS.cbDel!==k){TS.cbDel=k;cbRefreshTitle();setTimeout(()=>{if(TS.cbDel===k){TS.cbDel=null;cbRefreshTitle()}},4000);return}const lib=cbLib();delete lib[k];cbSaveLib(lib);TS.cbDel=null;TS.pick=null;cbRefreshTitle();return}
+  if(b.dataset.cbexp){const c=cbLib()[b.dataset.cbexp];if(!c)return;const data=JSON.stringify({type:'glt-campaign',v:1,campaign:c},null,1);const fn=(String(c.name||'campaign').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'campaign')+'.json';
+    (async()=>{try{const dl=typeof ensureDL==='function'?await ensureDL():null;if(dl){await dl.save({filename:fn,data});toast('Exported.');return}}catch(x){if(x&&x.code==='declined')return}
+      try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=fn;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Exported: '+fn)}catch(x){toast('Export is not available here.')}})()}});
+document.addEventListener('change',async e=>{const t=e.target;if(!t.dataset||!t.dataset.cbimp||!t.files||!t.files[0])return;
+  try{const o=JSON.parse(await t.files[0].text());const c=o&&o.type==='glt-campaign'?o.campaign:o;if(!c||c.kind!=='manual'||!Array.isArray(c.chapters))throw new Error('This is not a Grand Line Table campaign file.');
+    const lib=cbLib();const id='m'+Date.now().toString(36);lib[id]={...c,t:Date.now()};if(cbSaveLib(lib)){TS.mode='custom';TS.pick=id;toast(`Imported "${c.name}".`);cbRefreshTitle()}}catch(x){toast(x.message||'Could not read that file.')}t.value=''});
+// ---------- the DM screen comes back for your own campaigns ----------
+setInterval(()=>{try{const b=$('dmTabBtn');if(!b)return;const show=manualOn()&&isDM();b.style.display=show?'':'none';b.hidden=!show;const tl=b.querySelector('.tl');if(tl&&tl.textContent!=='DM screen')tl.textContent='DM screen';
+  if(!show&&TAB==='dm')showTab('story')}catch(e){}},600);
+{const _st=showTab;showTab=function(t){if(t==='dm'&&manualOn()&&isDM()){TAB='dm';document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.tab==='dm'));document.querySelectorAll('section[id^="view-"]').forEach(s=>s.hidden=s.id!=='view-dm');renderDM();return}
+  _st(t);const v=$('view-dm');if(v)v.hidden=true}}
+{const b=$('dmTabBtn');if(b)b.addEventListener('click',e=>{if(manualOn()){e.stopImmediatePropagation();showTab('dm')}},true)}
+// the campaign book on top of the DM screen: chapters, scenes, read-aloud text and one-click actions
+{const _rd=renderDM;renderDM=function(){_rd.apply(this,arguments);try{if(!manualOn()||!isDM())return;const el=$('view-dm');const grid=el&&el.querySelector('.dmgrid');if(!grid)return;
+  const c=cbCurrent();if(!c){grid.insertAdjacentHTML('afterbegin','<div class="dmcard wide"><h3>📖 Campaign book</h3><p class="hint">This campaign\'s book is not on this device. Open the game on the device where you wrote the campaign, or import its file there.</p></div>');return}
+  const m=ST.state.manual;const ch=c.chapters[m.ch]||c.chapters[0];const done=m.done||{};
+  grid.insertAdjacentHTML('afterbegin',`<div class="dmcard wide runbook"><h3>📖 ${esc(c.name)}</h3>
+    <div class="rb-chs">${c.chapters.map((x,i)=>`<button type="button" class="btn sm ${i===m.ch?'pri':''}" data-rbch="${i}">${esc(x.title||'Chapter '+(i+1))}</button>`).join('')}</div>
+    ${ch.summary?`<p class="rb-sum">🔒 ${esc(ch.summary)}</p>`:''}
+    <div class="rb-scs">${ch.scenes.map((s,j)=>{const on=j===m.sc;const key=m.ch+'.'+j;const fl=(s.foes||[]).filter(f=>FOES[f.key]);
+      return`<div class="rb-sc ${on?'on':''} ${done[key]?'done':''}"><button type="button" class="rb-sch" data-rbsc="${j}"><b>${done[key]?'✓ ':''}${esc(s.title||'Scene '+(j+1))}</b><small>${esc((SCENES[s.map]||{}).name||s.map)}${fl.length?' · '+fl.map(f=>`${f.n}× ${FOES[f.key].name}`).join(', '):''}</small></button>
+      ${on?`${s.read?`<div class="rb-read">${esc(s.read).replace(/\n/g,'<br>')}</div>`:''}${s.notes?`<div class="rb-notes">🔒 ${esc(s.notes).replace(/\n/g,'<br>')}</div>`:''}${s.npcs?`<p class="hint">🧑 ${esc(s.npcs)}</p>`:''}
+        <div class="row rb-acts"><button type="button" class="btn sm pri" data-rbgo="1">🗺 Start this scene</button>${s.read?'<button type="button" class="btn sm" data-rbread="1">📜 Read aloud</button>':''}${fl.length?'<button type="button" class="btn sm" data-rbfoes="1">👹 Place enemies (hidden)</button>':''}<button type="button" class="btn sm" data-rbdone="1">${done[key]?'Mark not done':'✓ Done'}</button></div>`:''}</div>`}).join('')}</div>
+    <p class="hint">"Start this scene" moves everyone to the scene's map and shows its title. Then read the text aloud, place the enemies, and start combat when they show themselves.</p></div>`);
+  const q=s=>grid.querySelectorAll(s);const S=()=>ch.scenes[m.sc];const setM=p=>put('table/state',{...ST.state,manual:{...ST.state.manual,...p}});
+  q('[data-rbch]').forEach(b=>b.onclick=()=>setM({ch:+b.dataset.rbch,sc:0}));
+  q('[data-rbsc]').forEach(b=>b.onclick=()=>setM({sc:+b.dataset.rbsc}));
+  q('[data-rbread]').forEach(b=>b.onclick=async()=>{const s=S();if(s&&s.read){await addStory({kind:'dm',who:'DM',text:s.read.slice(0,3000)});toast('Read aloud in the story.')}});
+  q('[data-rbgo]').forEach(b=>b.onclick=async()=>{const s=S();if(!s)return;const sc=s.map;const taken=new Set();let n=0;
+    for(const [id,t] of Object.entries(ST.tokens)){if(t.kind!=='pc')continue;let pp={x:t.x,y:t.y};try{pp=spawnPoint(sc,'pc',n++,moverFor({...t,id}),taken)}catch(e){}taken.add(pp.x+','+pp.y);await put('tokens/'+id,{...t,scene:sc,x:pp.x,y:pp.y})}
+    await put('table/state',{...ST.state,scene:sc,manual:{...ST.state.manual,started:m.ch+'.'+m.sc}});await addStory({kind:'chapter',scene:sc,text:s.title||(SCENES[sc]||{}).name||sc});toast('Scene started.')});
+  q('[data-rbfoes]').forEach(b=>b.onclick=async()=>{const s=S();if(!s)return;let n=0;for(const f of s.foes||[]){if(!FOES[f.key])continue;for(let i=0;i<f.n;i++){await spawnFoe(f.key,{scene:s.map});n++}}toast(`${n} enem${n===1?'y':'ies'} placed, hidden from the players. Reveal them below, or start combat.`)});
+  q('[data-rbdone]').forEach(b=>b.onclick=()=>{const key=m.ch+'.'+m.sc;const d={...(m.done||{})};if(d[key])delete d[key];else d[key]=true;setM({done:d})})}catch(e){console.warn(e)}}}
+// the place names the players see come from the campaign
+(function(){const st=document.createElement('style');st.textContent=`
+.cb-kinds{grid-template-columns:1fr!important}.cb-kinds button{text-align:left}
+.cb-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.cb-row .sm,.cb-imp{width:auto!important;padding:8px 12px!important;font-size:14px!important}.cb-imp{display:inline-flex;align-items:center;cursor:pointer}
+.cb-del{border-color:var(--blood)!important}
+#cbEd{position:fixed;inset:0;z-index:10050;overflow-y:auto;background:var(--deep,#0d1117);color:var(--paper,#f3e6c8);-webkit-overflow-scrolling:touch}
+.cb-wrap{max-width:860px;margin:0 auto;padding:0 16px 80px}
+.cb-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:12px 0;background:var(--deep,#0d1117);border-bottom:1px solid var(--line)}
+.cb-top h2{flex:1;margin:0;font-size:20px;font-family:var(--display,inherit);color:var(--brass)}
+.cb-sec{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--sea,rgba(255,255,255,.03))}
+.cb-sec h3{margin:0 0 10px;font-size:17px;color:var(--brass)}.cb-sc h4{margin:0;font-size:15px}
+.cb-sec .f{display:flex;flex-direction:column;gap:4px;margin:0 0 10px;font-size:13px}.cb-sec .f>span{font-size:13px}
+.cb-sec input,.cb-sec textarea,.cb-sec select{width:100%;box-sizing:border-box;font-size:15px}
+.cb-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 12px}
+.cb-chh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}.cb-tools{display:flex;gap:4px}
+.cb-sc{margin:12px 0;padding:12px;border-radius:12px;border:1px dashed var(--line);background:color-mix(in srgb,var(--deep,#000) 40%,transparent)}
+.cb-read textarea{border-left:4px solid var(--brass)!important}.cb-notes textarea{border-left:4px solid var(--violet,#8a6bd1)!important}
+.cb-foes{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}.cb-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:999px;border:1px solid var(--line);font-size:13px}
+.cb-chip button{background:none;border:0;color:inherit;cursor:pointer;font-size:12px;padding:2px 4px}
+.cb-addfoe{display:flex;gap:6px}.cb-addfoe select{flex:1;min-width:0}.cb-addfoe input{width:64px!important;flex:none}
+.cb-bottom{display:flex;justify-content:space-between;gap:10px;margin-top:16px;flex-wrap:wrap}
+.runbook .rb-chs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.rb-sum{font-size:14px;opacity:.9;margin:4px 0 10px;padding:8px 10px;border-left:3px solid var(--violet,#8a6bd1);background:color-mix(in srgb,var(--violet,#8a6bd1) 10%,transparent);border-radius:6px}
+.rb-sc{border:1px solid var(--line);border-radius:10px;margin:6px 0;overflow:hidden}.rb-sc.on{border-color:var(--brass)}.rb-sc.done:not(.on){opacity:.6}
+.rb-sch{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;background:none;border:0;color:inherit;padding:10px 12px;cursor:pointer;font:inherit}.rb-sch small{opacity:.75;font-size:12px;margin-top:2px}
+.rb-read{margin:0 12px 8px;padding:10px 12px;border-left:4px solid var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent);border-radius:6px;font-family:var(--story,Georgia,serif);font-size:15px;line-height:1.5}
+.rb-notes{margin:0 12px 8px;padding:8px 12px;border-left:4px solid var(--violet,#8a6bd1);font-size:14px;line-height:1.45;opacity:.95}
+.rb-sc .hint{margin:0 12px 8px}.rb-acts{padding:0 12px 12px;gap:6px;flex-wrap:wrap}`;document.head.appendChild(st)})();
+
 </script>
 </body></html>
