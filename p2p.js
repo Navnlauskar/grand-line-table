@@ -39,8 +39,8 @@ function startHost(code){N.role='host';N.code=code;LSS('glt-last-host',code);
   return new Promise((res,rej)=>{const p=new Peer(PREFIX+code,window.GLT_PEER_OPTS||{});N.peer=p;
     p.on('open',()=>res());p.on('error',e=>{if(e.type==='unavailable-id')rej(new Error('That room is already open somewhere else (maybe in another tab).'));else if(!N.readyDone)rej(e);else console.warn(e)});
     p.on('disconnected',()=>{setTimeout(()=>{try{p.reconnect()}catch(e){}},2000)});
-    p.on('connection',cn=>{cn.on('open',()=>{N.conns.set(cn.peer,cn);cn.send({t:'full',data:publicData()});sendPeers();netBadge()});
-      cn.on('data',m=>{if(!m||typeof m!=='object')return;
+    p.on('connection',cn=>{cn.on('open',()=>{cn._seen=Date.now();N.conns.set(cn.peer,cn);cn.send({t:'full',data:publicData()});sendPeers();netBadge()});
+      cn.on('data',m=>{cn._seen=Date.now();if(!m||typeof m!=='object'||m.t==='ping')return;
         if(m.t==='w')hostWrite(m.op,m.c,m.id,m.v);
         else if(m.t==='hello'){N.peers[cn.peer]={id:m.uid,presence:m.pres||{}};sendPeers();netBadge()}
         else if(m.t==='pres'){const p0=N.peers[cn.peer]||{id:m.uid};N.peers[cn.peer]={...p0,presence:m.v||{}};sendPeers()}});
@@ -53,13 +53,18 @@ function startJoin(code){N.role='guest';N.code=code;LSS('glt-last-join',code);
     p.on('open',()=>connect(()=>{opened=true;clearTimeout(fail);res()}))})}
 function connect(onFull){const cn=N.peer.connect(PREFIX+N.code,{reliable:true,serialization:'json'});N.hostConn=cn;
   cn.on('open',()=>{cn.send({t:'hello',uid,pres:N.myPres})});
-  cn.on('data',m=>{if(!m||typeof m!=='object')return;
+  cn.on('data',m=>{N.seen=Date.now();if(!m||typeof m!=='object'||m.t==='ping')return;
     if(m.t==='full'){const old=N.data;N.data=m.data||{};const cs=new Set([...Object.keys(old),...Object.keys(N.data)]);for(const c of cs){for(const s of N.subs)if(s.c===c)fire(c,s.id)}if(N.lost){N.lost=false;netBadge();try{setConn('on')}catch(e){};toast&&toast('Reconnected to the host.')}if(onFull){const f=onFull;onFull=null;f()}}
     else if(m.t==='chg')applyLocal(m.c,m.id,m.v);
     else if(m.t==='peers'){N.peers={};for(const p of m.list)if(p.id!==uid)N.peers[p.id]=p;firePeers()}});
-  cn.on('close',()=>lost());cn.on('error',()=>{})}
-function lost(){if(N.lost)return;N.lost=true;netBadge();try{setConn('off')}catch(e){};try{toast('Lost the connection to the host. Trying again…')}catch(e){}
-  const again=()=>{if(!N.lost)return;try{if(N.peer.disconnected)N.peer.reconnect();connect(null)}catch(e){}setTimeout(again,4000)};setTimeout(again,1500)}
+  cn.on('close',()=>{if(N.hostConn===cn)lost()});cn.on('error',()=>{})}
+function retry(){try{if(N.hostConn)N.hostConn.close()}catch(e){}try{if(N.peer.disconnected)N.peer.reconnect();connect(null)}catch(e){}}
+function lost(){if(N.lost)return;N.lost=true;N.lostT=Date.now();netBadge();try{setConn('off')}catch(e){};try{toast('Lost the connection to the host. Trying again…')}catch(e){}
+  const again=()=>{if(!N.lost)return;retry();netBadge();setTimeout(again,4000)};setTimeout(again,1500)}
+setInterval(()=>{const now=Date.now();
+  if(N.role==='host'){for(const [pid,cn] of N.conns){if(cn.open)try{cn.send({t:'ping'})}catch(e){}if(now-(cn._seen||now)>15000){try{cn.close()}catch(e){}N.conns.delete(pid);delete N.peers[pid];sendPeers();netBadge()}}}
+  else if(N.role==='guest'&&N.hostConn){if(N.hostConn.open)try{N.hostConn.send({t:'ping'})}catch(e){}if(!N.lost&&N.seen&&now-N.seen>10000)lost();if(N.lost)netBadge()}},3000);
+window.GLT_REJOIN=()=>{if(N.role!=='guest')return;N.lostT=Date.now();retry();netBadge()};
 function guestWrite(op,c,id,v){if(op==='add')id=id||rid();if(c!=='actions')applyLocal(c,id,op==='del'?null:clone(v));
   if(N.hostConn&&N.hostConn.open)N.hostConn.send({t:'w',op,c,id,v:op==='del'?null:v});else{const e=new Error('offline');e.code='unavailable';throw e}return id}
 function write(op,c,id,v){return N.role==='host'?hostWrite(op,c,id,v):guestWrite(op,c,id,v)}
@@ -86,8 +91,8 @@ function codeGen(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=
 function norm(c){c=String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===6?c.slice(0,3)+'-'+c.slice(3):c}
 function inviteLink(){return location.origin+location.pathname+'?room='+encodeURIComponent(N.code)}
 function netBadge(){const b=document.getElementById('netBadge');if(!b)return;const n=N.conns.size;
-  b.innerHTML=N.role==='host'?`🏴‍☠️ <b>${N.code}</b> · ${n} 👥 <button type="button" id="netCopy">Copy invite link</button>`:N.lost?`⚠ Reconnecting to room <b>${N.code}</b>…`:`⚓ In room <b>${N.code}</b>`;
-  const c=document.getElementById('netCopy');if(c)c.onclick=async()=>{try{await navigator.clipboard.writeText(inviteLink());c.textContent='Copied!'}catch(e){prompt('Send this link to your friends:',inviteLink())}setTimeout(()=>{c.textContent='Copy invite link'},1600)}}
+  b.innerHTML=N.role==='host'?`🏴‍☠️ <b>${N.code}</b> · ${n} 👥 <button type="button" id="netCopy">Copy invite link</button>`:N.lost?`⚠ ${Date.now()-(N.lostT||0)>30000?'The host\'s game seems closed':'Reconnecting to'} <b>${N.code}</b> <button type="button" id="netRejoin">↻ Rejoin</button>`:`⚓ In room <b>${N.code}</b>`;
+  const rj=document.getElementById('netRejoin');if(rj)rj.onclick=()=>{rj.textContent='Trying…';window.GLT_REJOIN()};const c=document.getElementById('netCopy');if(c)c.onclick=async()=>{try{await navigator.clipboard.writeText(inviteLink());c.textContent='Copied!'}catch(e){prompt('Send this link to your friends:',inviteLink())}setTimeout(()=>{c.textContent='Copy invite link'},1600)}}
 function lobby(){const st=document.createElement('style');st.textContent=`
 #netLobby{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(ellipse at top,#1d3a52,#0b1520 70%);color:#f3e6c8;font-family:Georgia,serif}
 #netLobby .box{width:100%;max-width:440px;background:rgba(20,16,12,.92);border:1px solid rgba(224,164,88,.45);border-radius:16px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -103,12 +108,12 @@ function lobby(){const st=document.createElement('style');st.textContent=`
 #netBadge button{background:#e0a458;color:#1a120a;border:0;border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit}
 @media (max-width:700px){#netBadge{bottom:calc(env(safe-area-inset-bottom,0px) + 84px);font-size:11px;padding:4px 4px 4px 10px;gap:6px;flex-wrap:nowrap;white-space:nowrap}#netBadge button{padding:4px 10px}}
 #netBadge.mini .nb-x{display:none}`;document.head.appendChild(st);
-  const q=new URLSearchParams(location.search);const invited=norm(q.get('room')||'');const lastHost=LS('glt-last-host');
+  const q=new URLSearchParams(location.search);const invited=norm(q.get('room')||'');const lastHost=LS('glt-last-host');const lastJoin=norm(LS('glt-last-join')||'');const pre=invited||(lastJoin&&lastJoin!==lastHost?lastJoin:'');
   const el=document.createElement('div');el.id='netLobby';el.innerHTML=`<div class="box">
-    <h1>Grand Line Table</h1><p>${invited?`You have been invited to room <b>${invited}</b>.`:'Host a game for your crew, or join a friend\'s game with their room code.'}</p>
-    <div id="nlJoin"><label>Room code</label><div class="row"><input id="nlCode" placeholder="ABC-123" maxlength="7" value="${invited}" autocomplete="off"><button type="button" id="nlGo">Join</button></div></div>
+    <h1>Grand Line Table</h1><p>${invited?`You have been invited to room <b>${invited}</b>.`:pre?`Rejoin your friend's room <b>${pre}</b>, or host your own game.`:'Host a game for your crew, or join a friend\'s game with their room code.'}</p>
+    <div id="nlJoin"><label>Room code</label><div class="row"><input id="nlCode" placeholder="ABC-123" maxlength="7" value="${pre}" autocomplete="off"><button type="button" id="nlGo">${pre&&!invited?'Rejoin':'Join'}</button></div></div>
     <div class="or">or</div>
-    <button type="button" id="nlHost" class="${invited?'alt':''}">${lastHost?`Host your game again (room ${lastHost})`:'Host a new game'}</button>
+    <button type="button" id="nlHost" class="${pre?'alt':''}">${lastHost?`Host your game again (room ${lastHost})`:'Host a new game'}</button>
     ${lastHost?'<button type="button" id="nlNew" class="alt">Host a brand-new table</button>':''}
     <button type="button" id="nlSolo" class="alt">Play alone on this device</button>
     <div class="err" id="nlErr"></div>
@@ -122,7 +127,7 @@ function lobby(){const st=document.createElement('style');st.textContent=`
   $$('nlSolo').onclick=()=>done('solo');
   const join=async()=>{const code=norm($$('nlCode').value);if(code.length!==7){err('A room code looks like ABC-123.');return}
     if(code===LS('glt-last-host')){host(code);return}
-    busy(true);err('Connecting to the host…');try{await startJoin(code);if(location.search)history.replaceState(null,'',location.pathname);done('guest')}catch(e){busy(false);err(e.message||'Could not join.')}};
+    busy(true);err('Connecting to the host…');try{await startJoin(code);try{history.replaceState(null,'',location.pathname+'?room='+encodeURIComponent(code))}catch(e){}done('guest')}catch(e){busy(false);err(e.message||'Could not join.')}};
   $$('nlGo').onclick=join;$$('nlCode').onkeydown=e=>{if(e.key==='Enter')join()};
   if(typeof Peer==='undefined'){err('The multiplayer library did not load. Check your internet connection and reload.');$$('nlHost').disabled=true;$$('nlGo').disabled=true}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',lobby);else lobby();
