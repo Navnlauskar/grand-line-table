@@ -6605,6 +6605,18 @@ setInterval(()=>{try{const b=$('dmTabBtn');if(!b)return;const show=manualOn()&&i
 .rb-read{margin:0 12px 8px;padding:10px 12px;border-left:4px solid var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent);border-radius:6px;font-family:var(--story,Georgia,serif);font-size:15px;line-height:1.5}
 .rb-notes{margin:0 12px 8px;padding:8px 12px;border-left:4px solid var(--violet,#8a6bd1);font-size:14px;line-height:1.45;opacity:.95}
 .rb-sc .hint{margin:0 12px 8px}.rb-acts{padding:0 12px 12px;gap:6px;flex-wrap:wrap}`;document.head.appendChild(st)})();
+// ---------- without the AI (the website), an AI campaign can't run: ask the host to pick a game instead ----------
+function gamePlayable(){return(typeof offOn==='function'&&offOn())||manualOn()||!!AI}
+function openNewGame(mode){try{openTitle();TS.view='new';TS.mode=mode||TS.mode;TS.pick=null;TITLE_LAST='';renderTitle()}catch(e){}}
+{const _tm=titleMenu;titleMenu=function(c,live){const host=!!ST.owner&&!ST.asPlayer;if(!host||gamePlayable())return _tm.apply(this,arguments);
+  return`<div class="ts-btns"><button type="button" class="ts-go" data-tsv="new">🆕 New game: pick what to play</button><button type="button" class="ts-mid" data-tsv="load">💾 Load game</button>
+    <div class="ts-sec">${c?`<button type="button" data-ts="char">My character</button>`:''}<button type="button" data-ts="set">Settings</button></div></div>`}}
+{const _rs=renderStory;renderStory=function(){_rs.apply(this,arguments);try{const h=$('sHost');if(!h)return;
+  if(ST.owner&&!ST.asPlayer&&!gamePlayable()){const html=`<div class="panel pickgame"><h3>Pick what to play</h3><p class="hint">This game has no story to run yet. Choose a ready-made adventure that runs itself, or your own campaign that you run as the DM.</p><div class="row"><button class="btn pri" type="button" data-pickgame="off">📖 Ready-made adventure</button><button class="btn" type="button" data-pickgame="custom">🛠 Your own campaign</button></div></div>`;if(!h.querySelector('.pickgame'))h.innerHTML=html}
+  else if(ST.owner&&!ST.asPlayer&&manualOn()){const html=`<div class="panel youdm"><h3>You are the DM</h3><p class="hint">Run your campaign from the <b>DM screen</b> tab: start scenes, read the text aloud, place enemies and ask for rolls. Players type what they do here in the story.</p><div class="row"><button class="btn pri" type="button" data-opendm="1">🎭 Open the DM screen</button></div></div>`;if(!h.querySelector('.youdm'))h.innerHTML=html}
+  else if(!ST.owner&&!gamePlayable()&&!(ST.story||[]).length){h.innerHTML='<div class="panel"><p class="hint">Waiting for the host to pick a game.</p></div>'}
+  else if(h.querySelector('.pickgame,.youdm')){SV.cache.sHost=null;h.innerHTML='';setTimeout(()=>renderStory(),0)}}catch(e){}}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pickgame],[data-opendm]');if(!b)return;if(b.dataset.opendm){showTab('dm');return}openNewGame(b.dataset.pickgame)});
 
 </script>
 </body></html>

@@ -86,7 +86,7 @@ function codeGen(){const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';for(let i=
 function norm(c){c=String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===6?c.slice(0,3)+'-'+c.slice(3):c}
 function inviteLink(){return location.origin+location.pathname+'?room='+encodeURIComponent(N.code)}
 function netBadge(){const b=document.getElementById('netBadge');if(!b)return;const n=N.conns.size;
-  b.innerHTML=N.role==='host'?`🏴‍☠️ Room <b>${N.code}</b> · ${n} friend${n===1?'':'s'} connected <button type="button" id="netCopy">Copy invite link</button>`:N.lost?`⚠ Reconnecting to room <b>${N.code}</b>…`:`⚓ In room <b>${N.code}</b>`;
+  b.innerHTML=N.role==='host'?`🏴‍☠️ <b>${N.code}</b> · ${n} 👥 <button type="button" id="netCopy">Copy invite link</button>`:N.lost?`⚠ Reconnecting to room <b>${N.code}</b>…`:`⚓ In room <b>${N.code}</b>`;
   const c=document.getElementById('netCopy');if(c)c.onclick=async()=>{try{await navigator.clipboard.writeText(inviteLink());c.textContent='Copied!'}catch(e){prompt('Send this link to your friends:',inviteLink())}setTimeout(()=>{c.textContent='Copy invite link'},1600)}}
 function lobby(){const st=document.createElement('style');st.textContent=`
 #netLobby{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(ellipse at top,#1d3a52,#0b1520 70%);color:#f3e6c8;font-family:Georgia,serif}
@@ -101,7 +101,8 @@ function lobby(){const st=document.createElement('style');st.textContent=`
 #netLobby .small{font-size:13px;opacity:.7;margin-top:14px}
 #netBadge{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:9000;background:rgba(15,12,9,.92);color:#f3e6c8;border:1px solid rgba(224,164,88,.45);border-radius:999px;padding:6px 8px 6px 14px;font:13px/1.3 ui-monospace,monospace;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 32px);flex-wrap:wrap;justify-content:center}
 #netBadge button{background:#e0a458;color:#1a120a;border:0;border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit}
-@media (max-width:600px){#netBadge{bottom:auto;top:6px;font-size:11px}}`;document.head.appendChild(st);
+@media (max-width:700px){#netBadge{bottom:calc(env(safe-area-inset-bottom,0px) + 84px);font-size:11px;padding:4px 4px 4px 10px;gap:6px;flex-wrap:nowrap;white-space:nowrap}#netBadge button{padding:4px 10px}}
+#netBadge.mini .nb-x{display:none}`;document.head.appendChild(st);
   const q=new URLSearchParams(location.search);const invited=norm(q.get('room')||'');const lastHost=LS('glt-last-host');
   const el=document.createElement('div');el.id='netLobby';el.innerHTML=`<div class="box">
     <h1>Grand Line Table</h1><p>${invited?`You have been invited to room <b>${invited}</b>.`:'Host a game for your crew, or join a friend\'s game with their room code.'}</p>
