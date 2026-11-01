@@ -6199,7 +6199,7 @@ foeBountyValue=function(f){const mx=+f.max||+f.hp||10;let v=Math.max(5e4,Math.ro
 // "after 0 days at sea"
 {const _as=addStory;addStory=function(e){if(e&&typeof e.text==='string')e.text=e.text.replace('After 0 days at sea','After a short voyage').replace('After 1 days at sea','After a day at sea');return _as(e)}}
 // Pip only reacts to what he sees: in Chapter 2 he has to be aboard
-{const _pk=offPick;offPick=async function(i,who){try{const o=ST.state.off||{};OFF_BELL.companions.Pip=o.chapter==='ch2_start'?'pip_aboard':''}catch(e){}return _pk(i,who)}}
+{const _pk=offPick;offPick=async function(i,who){try{const o=ST.state.off||{};OFF_BELL.companions.Pip=/^ch[2-9]/.test(o.chapter||'')?'pip_aboard':''}catch(e){}return _pk(i,who)}}
 // coming back to the piers again and again: the town does something different each time
 {const _go=offGo;offGo=async function(id,depth){try{const o=ST.state.off;if(o&&(id==='hub'||id==='ch2_hub')){const vc={...(o.vc||{})};vc[id]=(vc[id]||0)+1;const fl={...(o.flags||{})};for(const k of [0,1,2])delete fl['rot'+k];fl['rot'+(vc[id]%3)]=true;ST.state={...ST.state,off:{...o,vc,flags:fl}}}}catch(e){}return _go(id,depth)}}
 (function(){const N=OFF_BELL.nodes;if(N.ch2_hub)N.ch2_hub.bAgain=[
@@ -6247,6 +6247,337 @@ setInterval(()=>{try{const h=document.querySelector('#sScene .scenehead');if(!h)
 #sScene .scenehead.sh-night.sh-mist::after{background:linear-gradient(180deg,rgba(60,70,90,.8),rgba(20,25,40,.7))}
 #sScene .scenehead.sh-storm::after{background:linear-gradient(180deg,rgba(30,35,45,.6),rgba(20,25,35,.5))}
 body.sailing #sScene .scenehead::after{display:none}`;document.head.appendChild(st)})();
+
+// ================= The Tide Bell Saga · Chapter 3: The Brass Monastery of Kiyo (level 3 → 4) =================
+// A snowy mountain island. Captain Vesna Hale, Kessler's "Bellbreaker", gives the monks until noon tomorrow to hand
+// over the second Tide Bell. Find a way up the mountain, into the monastery, through the Trial of Echoes, and hold
+// the gate. The prize: the Lotus Clapper, the bell's voice. The Abbot points the way to the third bell.
+// ================= Chapter 4: The Drowned Market (level 4 → 5) =================
+// A floating black market built on lashed-together wrecks over the sunken city of Marrowmere. Mother Coral rules it,
+// Salvo Grimm of the Red Gaff wants the bell for Kessler's bounty, and Old Gulp the moray guards the drowned belfry.
+Object.assign(FOES,{
+  snow_wolf:{name:'Snow Wolf',icon:'skull',hp:13,ac:13,atk:4,a:[1,2,4,2],wpn:'bite',dt:'piercing',reach:1,speed:8,dex:2,desc:'starving white mountain wolf'},
+  brass_monk:{name:'Brass Monk',icon:'flag',hp:22,ac:15,atk:5,a:[2,1,6,3],wpn:'open palm',dt:'bludgeoning',reach:1,speed:8,dex:3,desc:'calm monk in a brass mask, fights without hate'},
+  hale:{name:'Capt. Vesna Hale',initials:'VH',hue:0,hp:58,ac:16,atk:6,a:[2,1,10,3],wpn:'bell-breaker sledgehammer',dt:'bludgeoning',reach:1,speed:6,dex:1,sp:['Bellbreaker Slam',3,6,2,14,'DEX',3,2],spdt:'thunder',desc:'Kessler\'s "Bellbreaker": tall Marine captain with a huge sledgehammer'},
+  gaff_pirate:{name:'Red Gaff Pirate',icon:'skull',hp:16,ac:13,atk:4,a:[1,1,8,2],wpn:'boat hook',dt:'piercing',reach:2,speed:6,dex:1,desc:'salvage pirate of the Red Gaff, long boat hook'},
+  salvo:{name:'Salvo Grimm',initials:'SG',hue:15,hp:66,ac:15,atk:6,a:[2,1,10,3],wpn:'iron gaff hand',dt:'piercing',reach:1,speed:6,dex:1,sp:['Harpoon Cannon',2,10,2,14,'DEX',3,2],spdt:'piercing',desc:'captain of the Red Gaff: huge salvage pirate with an iron hook for a hand'},
+  moray:{name:'Old Gulp',initials:'OG',hue:120,hp:52,ac:13,atk:6,a:[1,2,8,3],wpn:'jaws',dt:'piercing',reach:2,speed:8,dex:2,desc:'a giant moray eel as long as a ship, coiled around the drowned belfry'},
+  tide_guard:{name:'Tide Court Guard',icon:'flag',hp:15,ac:14,atk:4,a:[1,1,8,2],wpn:'coral trident',dt:'piercing',reach:2,speed:6,dex:1,desc:'fish-man guard of the Tide Court with a coral trident'}});
+ALLIES[npcSlug('Yuki')]={name:'Yuki',hp:28,ac:14,atk:5,a:[2,1,6,3],wpn:'iron-shod staff',speed:8,dex:3,electro:[1,8],desc:'goat mink mountain guide: quick staff strikes and one Electro burst per fight'};
+Object.assign(OFF_BELL.looks,{'Brother Tamsin':'cheerful old bald monk man in a faded orange robe with a little brass bell','Yuki':'young goat mink woman with curled horns and a thick white fur coat','Capt. Vesna Hale':'tall stern woman navy captain with cropped white hair and a huge sledgehammer','Abbot Seren':'tiny ancient woman monk abbot with a brass mask pushed up on her head','Brass Monk':'calm monk in a brass mask and grey robes','Old Haru':'old shopkeeper man with a long white beard and a fur hat',
+  'Tollkeeper Gurr':'grumpy pufferfish fish-man dock official with a ledger','Mother Coral':'enormous old octopus fish-woman on a barnacled brass throne','Salvo Grimm':'huge salvage pirate captain with an iron hook hand and a red coat','Old Fenwick':'crusty old diver man with a brass diving helmet under his arm','Red Gaff Pirate':'salvage pirate with a red scarf and a boat hook'});
+Object.assign(OFF_BELL.profiles,{
+  'Brother Tamsin':{role:'A monk thrown out of the Brass Monastery',look:'A cheerful old bald man in a faded orange robe, a little brass bell tied around his wrist.',persona:'Merry, rambling and fond of tea. Wiser than he lets on.'},
+  'Yuki':{role:'Mountain guide of Kiyo',look:'A young goat mink with curled horns, a thick white coat of fur and an iron-shod staff.',persona:'Blunt, fearless and stubborn as her mountain. Loyal to anyone who earns it.'},
+  'Capt. Vesna Hale':{role:'Marine captain, Commodore Kessler\'s "Bellbreaker"',look:'A tall woman with cropped white hair, a short white Marine coat and a sledgehammer as long as a man.',persona:'Cheerful in a cruel way. Enjoys breaking things a little too much.'},
+  'Abbot Seren':{role:'Abbot of the Brass Monastery',look:'A tiny, ancient woman in grey robes, a brass mask pushed up on top of her head.',persona:'Calm, dry and very hard to impress. Hears more than people say.'},
+  'Old Haru':{role:'Shopkeeper in Rengo',look:'An old man with a long white beard and a fur hat.',persona:'Slow, kind and impossible to haggle with.'},
+  'Tollkeeper Gurr':{role:'Dock official of the Drowned Market',look:'A round, spiny pufferfish fish-man with a soggy ledger.',persona:'Grumpy and greedy, but respects the old sea customs.'},
+  'Mother Coral':{role:'Ruler of the Drowned Market and its Tide Court',look:'An enormous old octopus fish-woman on a throne of barnacled brass, rings on every tentacle.',persona:'Sweet-voiced and smiling, and always playing at least two sides.'},
+  'Salvo Grimm':{role:'Captain of the Red Gaff salvage pirates',look:'A huge man in a red coat with an iron gaff hook where his left hand should be.',persona:'Loud, boastful and greedy. Thinks everything under the sea belongs to him.'},
+  'Old Fenwick':{role:'Diver of the Drowned Market',look:'A crusty old man with a brass diving helmet under his arm and seaweed in his beard.',persona:'Gloomy and superstitious. Knows every street of the drowned city.'}});
+Object.assign(OFF_BELL.voices,{'Brother Tamsin':'bm_lewis','Yuki':'af_sky','Capt. Vesna Hale':'bf_emma','Abbot Seren':'bf_isabella','Old Haru':'am_michael','Tollkeeper Gurr':'am_puck','Mother Coral':'af_heart','Salvo Grimm':'am_fenrir','Old Fenwick':'bm_daniel'});
+OFF_BELL.companions=Object.assign(OFF_BELL.companions||{},{Yuki:'yuki_joined'});
+const SHOP_KIYO=['bandage','medicine','meat','smoke','tabasco','bomb','rope','rations','fineblade','marinecoat'];
+Object.assign(OFF_BELL.nodes,{
+  // ======================= CHAPTER 3 =======================
+  ch3_start:{chapter:'Chapter 3 · The Brass Monastery of Kiyo',scene:'shipday',weather:'clear',art:'sc_sea',goal:'Reach Kiyo and the second Tide Bell before Kessler does.',
+    quest:{title:'The Brass Monastery',status:'open',note:'The second Tide Bell hangs in the Brass Monastery on the snowy island of Kiyo. Kessler is on his way there too.'},b:[
+    ["n","Two days south of the sandbar, the sea turns cold and green, and the wind starts to smell of snow."],
+    ["n","Kiyo is one enormous white mountain standing in the sea, its top lost in cloud. Somewhere near the summit, the ledger says, monks in brass masks guard a bell that has not been rung for three hundred years."],
+    ["Pip","Is that SNOW? Real snow? Nobody in Saltmarrow has ever seen snow!","pip_aboard"],
+    ["Lt. Crane","Kiyo. You are wasting your time. The monks will not open their gate for pirates. They barely open it for the Marines.","crane_prisoner"]],
+    voyage:{to:'Kiyo',miles:48,scene:'harbor',next:'ch3_arrive'}},
+  ch3_arrive:{scene:'snow',weather:'snow',b:[
+    ["n","The fishing village of Rengo clings to the foot of the mountain: forty houses with steep roofs, a pier of black stone, and hundreds of little brass bells hanging from every eave. There is no wind. Not one of them is ringing."],
+    ["n","Then you see why the villagers are hiding. Anchored in the bay is a Marine frigate, gun ports open, a black bell painted on the white flag at her stern."],
+    ["n","A squad of Marines hauls a cart up from the pier. The crates on it are stencilled BLACK POWDER. LANTERN KEY TO KIYO."],
+    ["n","Four crates, by order of V. K. You counted them yourself in Lantern Key.","depot_disguise"],
+    ["n","A tall woman in a short white Marine coat walks beside the cart, a sledgehammer as long as a man resting on her shoulder. She stops when she sees you."],
+    ["Capt. Vesna Hale","Pirates. On my island. Turn your little boat around. Kiyo is under Marine protection."],
+    ["Capt. Vesna Hale","I am Captain Vesna Hale. The Commodore calls me his Bellbreaker. You can probably guess why."]],
+    choices:[{t:'Ask what the Marines want with a monastery',check:{s:'Insight',dc:12},ok:'ch3_hale_ok',fail:'ch3_hale_fail'},
+      {t:'Show her your prisoner, Lieutenant Crane',go:'ch3_crane_trade',if:'crane_prisoner'},
+      {t:'Keep your heads down and let her pass',go:'ch3_hub',set:'hale_wary'}]},
+  ch3_hale_ok:{set:'hale_deadline',b:[["Capt. Vesna Hale","The monks have something that belongs to the Commodore. They hand it over at noon tomorrow, or I open their gate the loud way."],["n","She pats the powder crates fondly, the way other people pat dogs."],["n","Noon tomorrow. That gives you one day."]],next:'ch3_hub'},
+  ch3_hale_fail:{set:'hale_wary',b:[["Capt. Vesna Hale","What the Marines want is none of your business. Keep walking, and keep your hands where I can see them."],["n","Behind her, a sergeant mutters something about noon, and the gate, and the Captain's hammer."]],next:'ch3_hub'},
+  ch3_crane_trade:{b:[["Lt. Crane","Captain."],["Capt. Vesna Hale","Lieutenant. You look terrible."],["Capt. Vesna Hale","Here is my offer, pirates. Give him back, and I will let you sail away from Kiyo with your heads still on."]],
+    choices:[{t:'Hand him over',go:'ch3_crane_given'},{t:'Refuse: he stays our prisoner',go:'ch3_crane_kept'}]},
+  ch3_crane_given:{set:'crane_freed,crane_hint',unset:'crane_prisoner',b:[["n","Crane walks across the pier without looking back. At the end of it, he stops, and speaks so quietly that only you can hear."],["Lt. Crane","Kessler will not keep her word, or his. He never does. Get up that mountain before noon."]],next:'ch3_hub'},
+  ch3_crane_kept:{set:'crane_doubt,hale_angry',b:[["Capt. Vesna Hale","Then keep him. He was never very useful anyway."],["n","Crane's jaw tightens. For the first time he looks less like a prisoner and more like a man who has just been thrown away."]],next:'ch3_hub'},
+  ch3_hub:{scene:'snow',goal:'Get up the mountain to the Brass Monastery before Hale opens its gate at noon tomorrow.',b:[["n","Rengo is very quiet. Smoke rises from a few chimneys, and faces watch you from behind paper screens until you look back."]],
+    bAgain:[["n","Back in Rengo. Snow falls softly on the silent bells. Down by the pier, the Marines are cleaning their muskets.","tod_morning"],["n","Back in Rengo. Children throw snowballs at each other until a Marine patrol walks past, and then they vanish.","tod_afternoon"],["n","Back in Rengo. Lamps glow behind paper windows. Up on the mountain, a single light burns: the monastery.","tod_evening"],["n","Back in Rengo. The village is dark, the snow is blue under the moon, and somewhere a dog is howling.","tod_night"]],
+    choices:[{t:'Warm up in the tea house',go:'ch3_tea',if:'!did_tea'},{t:'Find a guide who knows the mountain',go:'ch3_guide',if:'!did_guide'},{t:'Go back to Yuki the guide',go:'ch3_guide_talk',if:'did_guide,!yuki_joined'},
+      {t:'Spy on the Marine camp by the pier',go:'ch3_camp',if:'!did_camp'},{t:'Visit Old Haru\'s store (shop)',go:'ch3_shop'},
+      {t:'⏳ Take a short rest by a fire (1 hour)',go:'ch3_rest_short'},{t:'🛏 Sleep at the tea house until morning (long rest, ฿3,000)',go:'ch3_rest_long',cost:3000},
+      {t:'⛰ Start the climb to the monastery',go:'ch3_climb'}]},
+  ch3_rest_short:{rest:'short',b:[["n","You thaw your fingers by a brazier in the lee of a fishing shed. An hour slips away with the snow."]],next:'ch3_hub'},
+  ch3_rest_long:{rest:'long',b:[["n","The tea house keeper rolls out thick blankets by the stove. You sleep deeply, and dream of bells."]],next:'ch3_hub'},
+  ch3_tea:{scene:'tavern',set:'did_tea',b:[["n","The tea house is warm and smells of ginger. Its only customer is an old bald man in a faded orange robe, with a little brass bell tied around his wrist."],
+    ["Brother Tamsin","Pirates. Hm. You have the look of people who are looking for a bell."],
+    ["Brother Tamsin","I was a monk up there for forty years. They threw me out for laughing during the Hour of Silence. Best thing that ever happened to me. They have no tea up there worth the name."]],
+    choices:[{t:'Ask him how to get inside the monastery',go:'ch3_tea_gate'},{t:'Say the word from the ledger: Lotus',go:'ch3_tea_lotus',if:'kiyo_word'},{t:'Buy him a pot of the good tea and listen (฿500)',go:'ch3_tea_story',cost:500}]},
+  ch3_tea_gate:{set:'tamsin_hint',b:[["Brother Tamsin","You don't get in. The gate is solid brass and ten men thick. The monks open it for one thing only: the bell's true name, spoken at the gate."],
+    ["Brother Tamsin","I knew it once. Forty years of tea washed it out of my head. It was a flower, I think. Something that grows in mud and comes up clean."]],
+    choices:[{t:'Buy him a pot of the good tea and keep listening (฿500)',go:'ch3_tea_story',cost:500},{t:'Thank him and go',go:'ch3_hub'}]},
+  ch3_tea_lotus:{set:'true_name,tamsin_hint',b:[["n","The old monk spills his tea all over the table."],["Brother Tamsin","Lotus! Of course! The Lotus of the Deep. That is its name. Speak that at the gate, and it opens."],["Brother Tamsin","Where in the world did a crew of pirates learn that?"]],
+    choices:[{t:'Buy him a fresh pot and keep listening (฿500)',go:'ch3_tea_story',cost:500},{t:'Thank him and go',go:'ch3_hub'}]},
+  ch3_tea_story:{set:'trial_info',b:[["Brother Tamsin","Ahh. Now that is tea. Listen. Inside, the Abbot puts strangers through the Trial of Echoes. Stillness, strength and truth."],
+    ["Brother Tamsin","Stillness: sit, while the mountain tries to move you. Strength: the brass monks fight without hate, so don't fight them with any. Truth: she asks why you want the bell. Lie to her, and the bell will know."],
+    ["Brother Tamsin","And watch that Marine captain. Hale. She broke the bell of Tollan Island to pieces with her hammer when its keepers said no. Just to make a point."]],next:'ch3_hub'},
+  ch3_guide:{set:'did_guide',b:[["n","At the edge of the village, a young goat mink with curled horns and a thick white coat is shouting at three Marines. Her sled dogs are growling."],
+    ["Marine","The Captain says nobody goes up the mountain. Nobody."],["Yuki","It's my mountain! I was born on it. You can't close a mountain!"]],
+    choices:[{t:'Step in and back her up',check:{s:'Intimidation',dc:12},ok:'ch3_guide_scare',fail:'ch3_guide_fight'},{t:'Fight the Marines',go:'ch3_guide_fight'},{t:'Wait until they leave, then talk to her',go:'ch3_guide_talk'}]},
+  ch3_guide_scare:{set:'yuki_friend',b:[["n","The Marines look at you, at the mink, at the dogs, and decide that this is not worth their afternoon."],["Yuki","Huh. Thanks. I'm Yuki. I guide pilgrims up to the monastery. When there are pilgrims. Which is never."]],next:'ch3_guide_talk'},
+  ch3_guide_fight:{b:[["Marine","Pirates! Arrest them!"]],fight:{map:'snow',weather:'snow',foes:[{key:'marine',count:3}],win:'ch3_guide_win',lose:'ch3_guide_lose'}},
+  ch3_guide_win:{set:'yuki_friend,hale_angry',b:[["n","Yuki finishes the last Marine with a kick that sends him head first into a snowdrift."],["Yuki","You fight like a mountain storm. I like you."]],next:'ch3_guide_talk'},
+  ch3_guide_lose:{set:'yuki_friend',b:[["n","You wake up face down in the snow. Yuki is sitting on her sled beside you, eating an apple."],["Yuki","They left. You were brave. Stupid, but brave."]],next:'ch3_guide_talk'},
+  ch3_guide_talk:{b:[["Yuki","You want to go up? Now? With Marines on the pass and more snow coming?"],["Yuki","Ten thousand Berries. Or a really good reason."]],
+    choices:[{t:'Pay her (฿10,000)',go:'ch3_yuki_join',cost:10000},{t:'Tell her the Marines want to break the monks\' bell',go:'ch3_yuki_join',if:'yuki_friend'},
+      {t:'Tell her the Marines want to break the monks\' bell',check:{s:'Persuasion',dc:13},ok:'ch3_yuki_join',fail:'ch3_yuki_no',if:'!yuki_friend'},{t:'Maybe later',go:'ch3_hub'}]},
+  ch3_yuki_no:{b:[["Yuki","Nice try. Come back with money, or with something better than a sad face."]],next:'ch3_hub'},
+  ch3_yuki_join:{set:'yuki_joined',crew:{join:['Yuki']},b:[["Yuki","The monks gave my grandmother medicine when nobody else would. If the Marines want their bell, they can go through my mountain first."],["n","She whistles, and her dogs leap up, tails wagging."],
+    ["Yuki","The north path is fast, but the Marines watch it. The old pilgrim stair is slow, and nobody remembers it but me. Your choice."]],next:'ch3_hub'},
+  ch3_camp:{scene:'harbor',set:'did_camp',b:[["n","The Marines have turned the fish market by the pier into a camp. Powder crates are stacked under a tarp. Hale's frigate creaks at anchor behind them."]],
+    choices:[{t:'Sneak close and listen',check:{s:'Stealth',dc:13},ok:'ch3_camp_listen',fail:'ch3_camp_caught'},{t:'Pose as fishermen selling the catch',check:{s:'Deception',dc:12},ok:'ch3_camp_listen',fail:'ch3_camp_caught'},
+      {t:'Ruin their powder: seawater in every crate',check:{s:'Sleight of Hand',dc:14},ok:'ch3_powder_wet',fail:'ch3_camp_caught'},{t:'Ruin their powder with a little chemistry',need:{cls:'chemist'},go:'ch3_powder_wet'},{t:'Leave them be',go:'ch3_hub'}]},
+  ch3_camp_listen:{set:'hale_plan,know_clapper',b:[["Marine","Noon tomorrow. The Captain gives them until noon, then we blow the gate and take the bell down the mountain in pieces if we have to."],["Marine","In pieces? The Commodore wants it whole."],
+    ["Marine","The Commodore wants it to ring. The Captain says it's the clapper that matters, the brass tongue inside. Without that, the bell's just a very big hat."],["n","So it is the clapper they really need. That is worth knowing."]],next:'ch3_hub'},
+  ch3_camp_caught:{b:[["Marine","Spies! Grab them!"]],fight:{map:'harbor',weather:'snow',foes:[{key:'marine',count:2},{key:'sergeant',count:1}],win:'ch3_camp_win',lose:'ch3_camp_lose'}},
+  ch3_camp_win:{set:'hale_plan,know_clapper,hale_angry',loot:[{item:'Smoke bomb',qty:1}],b:[["n","You drag the groaning Marines behind a fish shed. In the sergeant's pocket is a folded order in neat handwriting."],["n","Gate at noon tomorrow. Secure the clapper above all. The bell can stay. V. H."]],next:'ch3_hub'},
+  ch3_camp_lose:{set:'hale_wary',hp:[{player:'ALL',dice:'1d4',reason:'a dip in the freezing harbor'}],b:[["n","The Marines throw you off the end of the pier. The water is so cold it feels like being punched by the sea."]],next:'ch3_hub'},
+  ch3_powder_wet:{set:'powder_wet',b:[["n","While the sentries argue over a dice game, you work your way along the stack. By the time you slip away, Hale's black powder is black porridge."]],next:'ch3_hub'},
+  ch3_shop:{scene:'market',shop:{name:'Old Haru\'s Store',items:SHOP_KIYO},b:[["Old Haru","Furs, food, rope. Everything for the mountain. Prices are prices. I do not haggle. I am too old to haggle."]],bAgain:[["Old Haru","Back again. Good. The mountain eats people who forget their rope."]],choices:[{t:'Leave the store',go:'ch3_hub'}]},
+  ch3_climb:{scene:'snow',weather:'snow',b:[["n","Above Rengo, the path climbs into the snow and the clouds. The air gets thin and sharp, and the village shrinks to a scatter of grey roofs far below."]],
+    choices:[{t:'Let Yuki lead you up the old pilgrim stair',go:'ch3_stair',if:'yuki_joined'},{t:'Take the fast north path',go:'ch3_north'},{t:'Find your own way up',check:{s:'Survival',dc:14},ok:'ch3_stair',fail:'ch3_lost',if:'!yuki_joined'}]},
+  ch3_stair:{b:[["n","The pilgrim stair is two thousand steps cut into the rock, worn smooth by centuries of feet. Faded prayer flags snap in the wind above you."],["Yuki","My grandmother says the monks carved one step for every bell in the world. I think they just liked carving.","yuki_joined"]],next:'ch3_wolves'},
+  ch3_north:{b:[["n","The north path is wide and fast. It is also guarded: a Marine checkpoint squats in a notch between two cliffs, a fire burning in a barrel."]],
+    choices:[{t:'Charge the checkpoint',go:'ch3_checkpoint'},{t:'Slip past in the blowing snow',check:{s:'Stealth',dc:13},ok:'ch3_wolves',fail:'ch3_checkpoint'}]},
+  ch3_checkpoint:{b:[["Marine","Halt! Nobody passes!"]],fight:{map:'snow',weather:'snow',foes:[{key:'marine',count:2},{key:'sergeant',count:1}],win:'ch3_wolves',lose:'ch3_climb_lose'}},
+  ch3_climb_lose:{set:'lost_time',hp:[{player:'ALL',dice:'1d4',reason:'cold and bruises'}],b:[["n","The Marines leave you tied up in the snow. It takes hours to work the knots loose with numb fingers, and the long way round."]],next:'ch3_wolves'},
+  ch3_lost:{set:'lost_time',hp:[{player:'ALL',dice:'1d6',reason:'the cold'}],b:[["n","Snow, wind, a ridge that looked right and wasn't. By the time you find the path again, your fingers have stopped hurting, which is a bad sign, and the day is wearing on."]],next:'ch3_wolves'},
+  ch3_wolves:{b:[["n","Near the treeline, a howl rolls across the snowfield. Then another. Grey shapes slide out from between the rocks: snow wolves, ribs showing through their fur."]],
+    choices:[{t:'Fight them off',go:'ch3_wolf_fight'},{t:'Throw them your food and back away slowly',check:{s:'Animal Handling',dc:12},ok:'ch3_wolf_fed',fail:'ch3_wolf_fight'},
+      {t:'Growl back at them, mink to beast',need:{species:'mink'},go:'ch3_wolf_fed'},{t:'Let Yuki\'s dogs face them down',go:'ch3_wolf_fed',if:'yuki_joined'}]},
+  ch3_wolf_fight:{fight:{map:'snow',weather:'snow',foes:[{key:'snow_wolf',count:3}],win:'ch3_gate',lose:'ch3_wolf_lose'},b:[["n","The pack attacks."]]},
+  ch3_wolf_lose:{hp:[{player:'ALL',dice:'1d4',reason:'wolf bites'}],b:[["n","You come to in the snow. The wolves are gone, and so is half your food. They only wanted to eat, and you were not quite it."]],next:'ch3_gate'},
+  ch3_wolf_fed:{b:[["n","The wolves circle once, twice, then snatch what they can and melt back into the white. Hungry things are not always cruel things."]],next:'ch3_gate'},
+  ch3_gate:{scene:'ruins',weather:'snow',art:'sc_tower',set:'at_gate',goIf:[{if:'late_ch3',go:'ch3_gate_late'}],b:[["n","Near the summit the clouds tear open, and there it is: the Brass Monastery, a cluster of copper-green roofs built right into the cliff, and a gate of solid brass taller than a ship."],
+    ["n","A figure in grey robes and a brass mask stands on top of the wall, perfectly still, snow settling on his shoulders."],["Brass Monk","Speak the name of the bell. Or go back down the mountain."]],
+    choices:[{t:'Speak its true name: the Lotus of the Deep',go:'ch3_gate_open',if:'true_name'},{t:'Say the word from the ledger: Lotus',go:'ch3_gate_open',if:'kiyo_word,!true_name'},
+      {t:'Solve Tamsin\'s riddle: a flower that grows in mud and comes up clean',check:{s:'Religion',dc:12},ok:'ch3_gate_open',fail:'ch3_gate_shut',if:'tamsin_hint,!true_name,!kiyo_word'},
+      {t:'Tell them the Marines are coming to break their bell',check:{s:'Persuasion',dc:15},ok:'ch3_gate_open',fail:'ch3_gate_shut'},{t:'Climb the wall',check:{s:'Athletics',dc:15},ok:'ch3_wall',fail:'ch3_gate_shut'}]},
+  ch3_gate_shut:{b:[["Brass Monk","That is not its name."],["n","The monk does not move. Far below, carried up on the wind, a Marine drum starts to beat."]],
+    choices:[{t:'Try to climb the wall',check:{s:'Athletics',dc:15},ok:'ch3_wall',fail:'ch3_gate_wait'},{t:'Sit down in the snow and wait',go:'ch3_gate_wait'}]},
+  ch3_gate_wait:{set:'gate_waited',b:[["n","You sit down in the snow in front of the gate. An hour passes. The monk on the wall does not move. Neither do you."],["n","Then, with a groan like a gong, the brass gate swings open a crack. A tiny old woman peers out at you."],["Abbot Seren","The mountain tells me you are stubborn. Stubborn I can work with. Come in, before you freeze to my doorstep."]],next:'ch3_abbot'},
+  ch3_wall:{set:'wall_climbed',b:[["n","You haul yourselves over the top of the wall and drop into a courtyard full of snow and silence. Two brass monks are already waiting for you, bowing."]],fight:{map:'ruins',weather:'snow',foes:[{key:'brass_monk',count:2}],win:'ch3_wall_win',lose:'ch3_wall_lose'}},
+  ch3_wall_win:{b:[["n","The second monk lands in a snowbank, sits up, and bows to you from where he sits."],["Abbot Seren","Well. Nobody has come over that wall in eighty years. Come inside. We should talk before the Marines arrive."]],next:'ch3_abbot'},
+  ch3_wall_lose:{b:[["n","You end up flat on your back in the snow, with a brass mask looking down at you and a polite hand held out to help you up."],["Abbot Seren","You fell well. That is rarer than people think. Come inside."]],next:'ch3_abbot'},
+  ch3_gate_open:{b:[["n","For a moment nothing happens. Then, deep inside the mountain, something hums, and the great brass gate swings open with a sound like a gong the size of a house."]],next:'ch3_abbot'},
+  ch3_abbot:{scene:'ruins',art:'sc_tower',b:[["n","Inside, the monastery is warm and dim and smells of incense. Bells hang everywhere, thousands of them, from the beams, the eaves, the trees in the courtyard. And in the middle of the great hall hangs the second Tide Bell, green with age, as tall as two men."],
+    ["Abbot Seren","Three hundred years we have guarded it. Three hundred years we have kept it silent. And now two crews of strangers come up my mountain in the same week, both wanting it."],
+    ["Abbot Seren","The Marine gave us until noon. You, I have not made up my mind about."],
+    ["Abbot Seren","The bell never leaves this mountain. But its voice might. Pass the Trial of Echoes, and I will decide who is worthy to carry it."]],
+    choices:[{t:'Accept the Trial of Echoes',go:'ch3_trial1'},{t:'Warn her about the black powder first',go:'ch3_abbot_warn',if:'hale_plan'}]},
+  ch3_abbot_warn:{set:'abbot_warned',b:[["Abbot Seren","Black powder. Of course. Marines never could wait for anything."],["n","She says three quiet words to a monk, and he runs. Somewhere, a bell begins to chime: monks hurrying to the walls."]],next:'ch3_trial1'},
+  ch3_trial1:{scene:'ruins',b:[["Abbot Seren","The first trial is stillness."],["n","You sit cross-legged in the snow of the courtyard. The cold creeps in through your boots, your knees, your bones. The wind pulls at you. The mountain, it seems, would like you to move."]],
+    choices:[{t:'Breathe slowly and let the cold pass through you',check:{s:'Wisdom',dc:13},ok:'ch3_trial1_ok',fail:'ch3_trial1_fail'},{t:'Breathe like the mountain, the way your training taught you',need:{cls:'monk'},go:'ch3_trial1_ok'}]},
+  ch3_trial1_ok:{set:'trial_still',b:[["n","The cold comes, and goes, and you are still sitting there when it is gone."],["Abbot Seren","Good. The mountain did not move you."]],next:'ch3_trial2'},
+  ch3_trial1_fail:{hp:[{player:'ALL',dice:'1d4',reason:'the bitter cold'}],b:[["n","You shiver, then shake, then jump up stamping your feet and swearing."],["Abbot Seren","You moved. But you came back. That also counts for something."]],next:'ch3_trial2'},
+  ch3_trial2:{scene:'arena',b:[["Abbot Seren","The second trial is strength."],["n","Two brass monks step into the Hall of Echoes and bow, their masks gleaming in the lamplight."],["Abbot Seren","Fight them. But do not hate them. The bell can hear hate."]],
+    choices:[{t:'Bow, then fight',go:'ch3_trial2_fight'},{t:'Refuse to strike: only defend yourself until they stop',check:{s:'Wisdom',dc:14},ok:'ch3_trial2_peace',fail:'ch3_trial2_fight'}]},
+  ch3_trial2_fight:{b:[["n","The monks move like water."]],fight:{map:'arena',foes:[{key:'brass_monk',count:2}],win:'ch3_trial2_win',lose:'ch3_trial2_lose'}},
+  ch3_trial2_peace:{set:'trial_strong,trial_peace',b:[["n","You block, and dodge, and never strike back. After a long time, the monks stop, lower their hands and bow lower than before."],["Abbot Seren","Strength that does not need to win. Interesting."]],next:'ch3_trial3'},
+  ch3_trial2_win:{set:'trial_strong',b:[["n","The last monk taps the floor twice: enough. He bows to you, and you could swear he is smiling under the mask."],["Abbot Seren","You hit hard, and without hatred. Good."]],next:'ch3_trial3'},
+  ch3_trial2_lose:{b:[["n","You wake on the floor of the hall. A brass monk is kneeling beside you, offering a cup of water."],["Abbot Seren","Strength is also knowing how to fall, and how to get up. Drink."]],next:'ch3_trial3'},
+  ch3_trial3:{scene:'arena',b:[["Abbot Seren","The last trial is truth. One question."],["n","She walks you under the great Tide Bell. Up close it is covered in tiny engraved waves, and it hums very faintly, like a held breath."],["Abbot Seren","Why do you want the bells?"]],
+    choices:[{t:'Because one of them saved our lives. We owe them.',go:'ch3_truth_ok',if:'motive_debt'},{t:'Because we have to know what is really going on.',go:'ch3_truth_ok',if:'motive_mystery'},
+      {t:'For the treasure of Neptune\'s Debt, if I am honest.',go:'ch3_truth_ok',if:'motive_legend',set:'truth_greed'},{t:'To stop Kessler before he raises that ship.',go:'ch3_truth_ok'},
+      {t:'Lie: say you were sent by the monks of another monastery',go:'ch3_truth_lie'}]},
+  ch3_truth_ok:{set:'trial_truth',b:[["n","The bell's hum rises for a moment, warm and low, then settles."],["Abbot Seren","Treasure. Well, at least you are honest about it. Honest greed I can live with.","truth_greed"],["Abbot Seren","The bell heard you. It did not mind."]],next:'ch3_noon'},
+  ch3_truth_lie:{set:'trial_lie',b:[["n","Every bell in the monastery buzzes at once, like a hive of angry wasps, and then goes silent."],["Abbot Seren","The bell heard that too."]],next:'ch3_noon'},
+  ch3_noon:{scene:'ruins',weather:'snow',art:'sc_tower',set:'noon_came',b:[["n","Before she can say more, a cannon booms far below, and the echo rolls around the mountain. A monk runs in: the Marines are at the gate."],
+    ["n","Hale's sappers are piling powder kegs against the brass. Then a sergeant swears loudly: the powder is wet paste, and it will not light.","powder_wet"],
+    ["Abbot Seren","Then here is my decision, while there is still time to make one.","trial_truth"],
+    ["n","She reaches up into the great bell and lifts out its clapper: a brass tongue as long as your arm, shaped like a closed lotus flower. It hums in your hands.","trial_truth"],
+    ["Abbot Seren","The Lotus Clapper. The voice of our bell. Without it, the bell cannot be rung, not by us and not by Kessler. Keep it away from him.","trial_truth"],
+    ["Abbot Seren","As for you, liar, we will see what you are worth when the Marines come in. Then I will decide.","trial_lie"],
+    ["Capt. Vesna Hale","Old woman! Last chance! The clapper, or I open your gate the hard way!"]],
+    choices:[{t:'Hold the gate beside the monks',go:'ch3_siege'},{t:'Ring the great bell with the clapper and bring down the snow on the Marines',check:{s:'Athletics',dc:14},ok:'ch3_avalanche',fail:'ch3_siege',if:'trial_truth'},
+      {t:'Lure the Marines out onto the old ice bridge',check:{s:'Deception',dc:13},ok:'ch3_bridge',fail:'ch3_siege'}]},
+  ch3_siege:{b:[["n","The gate shudders under Hale's hammer, once, twice, and on the third blow it cracks open. Marines pour through the gap into the snowy courtyard."]],
+    fight:{map:'ruins',weather:'snow',foes:[{key:'hale',count:1},{key:'marine',count:2},{key:'marine',count:1,if:'!abbot_warned'},{key:'sergeant',count:1,if:'!powder_wet'}],win:'ch3_win',lose:'ch3_lose'}},
+  ch3_avalanche:{set:'avalanche',b:[["n","You fit the clapper, grab the beam and swing. The second Tide Bell speaks for the first time in three hundred years: one note, so deep that you feel it in your teeth."],
+    ["n","On the slope above the gate, the snow answers. A white wave breaks loose and pours down onto the Marines, and when it settles, only one figure is climbing out of it, dragging a sledgehammer."],["Capt. Vesna Hale","Clever. Very clever. Now I am annoyed."]],next:'ch3_duel'},
+  ch3_bridge:{set:'bridge_trick',b:[["n","You run out through the side gate and across the old ice bridge, shouting for the Marines to follow. They do. The ice groans, cracks and drops half the squad into a deep soft drift twenty feet below."],["Capt. Vesna Hale","Idiots. Fine. I will do it myself."]],next:'ch3_duel'},
+  ch3_duel:{fight:{map:'ruins',weather:'snow',foes:[{key:'hale',count:1},{key:'marine',count:1}],win:'ch3_win',lose:'ch3_lose'},b:[["n","Hale swings her hammer in a slow, happy circle and walks toward you."]]},
+  ch3_gate_late:{set:'came_late',b:[["n","You reach the summit too late. Black smoke drifts from the monastery. The great brass gate hangs twisted off its hinges, and in the courtyard brass monks are fighting a ring of Marines."],["Capt. Vesna Hale","Oh, look. Late, and still stubborn. I almost admire it."]],
+    fight:{map:'ruins',weather:'snow',foes:[{key:'hale',count:1},{key:'marine',count:2},{key:'sergeant',count:1,if:'!powder_wet'}],win:'ch3_win',lose:'ch3_lose'}},
+  ch3_win:{set:'hale_beaten,has_clapper',b:[["n","Hale's hammer thuds into the snow. She sits down hard beside it, bleeding from the lip, and laughs."],["Capt. Vesna Hale","The Commodore is going to be so disappointed in me. That is almost worth it."],
+    ["n","Her Marines drag her away down the mountain. Nobody tries to stop them. Nobody wants to touch that hammer."],
+    ["Abbot Seren","You defended a bell that is not yours, on a mountain that is not yours. That is answer enough, liar.","trial_lie"],
+    ["n","The Abbot presses the Lotus Clapper into your hands. It is warm, and it hums very softly.","!trial_truth"],
+    ["Abbot Seren","Our gate is broken, but our bell is safe. And now I owe you something more than a clapper.","came_late"]],loot:[{item:'Lotus Clapper',qty:1}],next:'ch3_reveal'},
+  ch3_lose:{set:'clapper_lost',b:[["n","The hammer catches you, and the world goes white. When you open your eyes, the courtyard is quiet. The Marines are gone. So is the Lotus Clapper."],
+    ["Abbot Seren","She took the voice of our bell. But a voice without a mouth is useless, and the bell stays here. Kessler will have to come back for it. The mountain will be waiting."]],next:'ch3_reveal'},
+  ch3_reveal:{b:[["Abbot Seren","Listen now. You will need this. The third bell went down with the city of Marrowmere a hundred years ago, in the great flood."],
+    ["Abbot Seren","Above it now floats a town of wrecks lashed together: the Drowned Market. Thieves and salvagers. They dive into the dead city for treasure. Some of them never come back up."],
+    ["Abbot Seren","Kessler's letters have already reached it. Go quickly."]],next:'ch3_endpick'},
+  ch3_endpick:{goIf:[{if:'clapper_lost',go:'ch3_end_lost'}],next:'ch3_end'},
+  ch3_end:{levelOnce:'ch3',bounty:8000000,bountyWhy:'beat Captain Vesna Hale "the Bellbreaker" on Kiyo',goal:'Find the third Tide Bell under the Drowned Market before Kessler\'s buyers do.',
+    quest:[{title:'The Brass Monastery',status:'done',note:'The monks of Kiyo gave you the Lotus Clapper, the voice of the second bell.'},{title:'The Drowned Market',status:'open',note:'The third Tide Bell lies in the sunken city of Marrowmere, under a floating market of wrecks.'}],b:[
+    ["n","The monks walk you out through the gate. Every bell in the monastery rings softly as you pass, one after another, all the way down the mountain."],
+    ["Yuki","Somebody has to stop you lot from freezing on the next island. I'm coming.","yuki_joined"],["n","Yuki throws her pack onto your deck and whistles goodbye to her dogs, who look deeply offended.","yuki_joined"],
+    ["Pip","Can I hold the clapper? Just for a second? I won't drop it. Probably.","pip_aboard"],
+    ["n","End of Chapter Three."]],choices:[{t:'🏕 Make camp before the voyage',go:'camp_ch3'}]},
+  ch3_end_lost:{levelOnce:'ch3',goal:'Find the third Tide Bell under the Drowned Market before Kessler\'s buyers do.',
+    quest:[{title:'The Brass Monastery',status:'failed',note:'Hale took the Lotus Clapper, but the bell itself stayed on Kiyo.'},{title:'The Drowned Market',status:'open',note:'The third Tide Bell lies in the sunken city of Marrowmere, under a floating market of wrecks.'}],b:[
+    ["n","The monks bandage your wounds in silence. Nobody blames you. Somehow that is worse."],["Yuki","So we lost one. So what. Mountains don't give up after one avalanche. Neither do I.","yuki_joined"],["n","End of Chapter Three."]],choices:[{t:'🏕 Make camp before the voyage',go:'camp_ch3'}]},
+  camp_ch3:{scene:'beach',weather:'night',art:'sc_camp',rest:'long',noRewind:true,b:[["n","You anchor in a sheltered cove below the mountain. Snow hisses into the campfire, and the stars are hard and bright."]],bAgain:[["n","The fire crackles. Up on the mountain, a single lamp still burns in the monastery."]],
+    choices:[{t:'Talk with Yuki',go:'camp3_yuki',if:'yuki_joined,!camp3_yuki_done'},{t:'Talk with Pip',go:'camp3_pip',if:'pip_aboard,!camp3_pip_done'},{t:'Talk to your prisoner, Crane',go:'camp3_crane',if:'crane_prisoner,!camp3_crane_done'},
+      {t:'Look after the ship: repairs and upgrades',go:'camp3_ship'},{t:'Turn in for the night and sail on',go:'ch4_start'}]},
+  camp3_yuki:{set:'camp3_yuki_done',b:[["Yuki","I've never been off the mountain. Not once. Everything down here is so... flat."],["Yuki","Is the sea always this big? Does it ever stop?"]],
+    choices:[{t:'Tell her the sea never stops, and that is the best part',go:'camp_ch3',appr:{Yuki:1}},{t:'Teach her to tie a sailor\'s knot',go:'camp3_knot'}]},
+  camp3_knot:{loot:[{item:'Yuki\'s spare horn charm',qty:1}],b:[["n","It takes her eleven tries. On the twelfth she ties a perfect bowline, whoops loud enough to wake the gulls, and gives you the little carved horn charm from her belt as a thank-you."]],next:'camp_ch3'},
+  camp3_pip:{set:'camp3_pip_done',b:[["Pip","I made a snowman on the deck. It melted. Yuki says snowmen are supposed to melt. That's sad."],["Pip","Do you think Grandpa can see snow from Saltmarrow? I'm going to tell him about it anyway."]],next:'camp_ch3'},
+  camp3_crane:{set:'camp3_crane_done,crane_turned',b:[["n","Crane has been very quiet since the pier. Tonight, without being asked, he speaks."],["Lt. Crane","Hale would have left me to rot. Kessler would have thanked her for it."],
+    ["Lt. Crane","The Drowned Market is run by an octopus called Mother Coral. She takes Kessler's money. She also takes everyone else's. Do not trust a word she says."],["n","He turns back to the fire. It might be the first honest thing he has ever told you."]],next:'camp_ch3'},
+  camp3_ship:{shipyard:true,b:[["n","You check the ship over by lantern light. The cold has been hard on the ropes. If you have the Berries, there is room for improvements."]],bAgain:[["n","The ship creaks gently at anchor."]],choices:[{t:'Back to the fire',go:'camp_ch3'}]},
+
+  // ======================= CHAPTER 4 =======================
+  ch4_start:{chapter:'Chapter 4 · The Drowned Market',scene:'shipday',weather:'clear',art:'sc_sea',goal:'Sail to the Drowned Market and find the third Tide Bell.',
+    quest:{title:'The Drowned Bell',status:'open',note:'The third Tide Bell lies in the drowned city of Marrowmere, under the Drowned Market.'},b:[
+    ["n","For three days you sail west through warm, still water. The snow melts off the rigging, and Kiyo becomes a white point on the horizon, and then nothing."],
+    ["n","One for Saltmarrow. One for the brass monks of Kiyo. One sunk in the Drowned Market. The ledger's brown ink seems to darken, page by page."],
+    ["Yuki","The water's so green here. I can see fish. Hundreds of fish! Why is nobody else excited about the fish?","yuki_joined"],
+    ["Pip","Yuki, they're just fish.","pip_aboard,yuki_joined"]],
+    voyage:{to:'the Drowned Market',miles:60,scene:'harbor',next:'ch4_arrive'}},
+  ch4_arrive:{scene:'harbor',weather:'mist',art:'sc_nightmarket',b:[["n","The Drowned Market floats on a lagoon of glassy green water: hundreds of wrecks lashed together with chains and rope, their decks turned into streets, their holds into shops. Rope bridges sway between the masts."],
+    ["n","And underneath, through the clear water, you can see it. Roofs. Spires. Whole streets of a drowned city, forty feet down, with fish swimming through its windows. Marrowmere."],
+    ["n","A spiny pufferfish fish-man with a soggy ledger waddles down the jetty and blocks your way."],["Tollkeeper Gurr","Toll. Five thousand Berries. Everybody pays the Tide Court. Everybody."]],
+    choices:[{t:'Pay the toll (฿5,000)',go:'ch4_hub',cost:5000},{t:'Greet him the old way, in the sea-tongue',need:{species:['fishman','merfolk']},go:'ch4_gurr_friend'},{t:'Refuse to pay',check:{s:'Intimidation',dc:14},ok:'ch4_gurr_scared',fail:'ch4_gurr_fight'}]},
+  ch4_gurr_friend:{set:'gurr_friend',b:[["n","Gurr's spines go flat with surprise. He answers in the same bubbling old words, and for the first time he smiles, which on a pufferfish is alarming."],["Tollkeeper Gurr","Nobody does the old greeting any more. No toll for you. And a tip: stay away from the Red Gaff. Salvo Grimm is in a mood."]],next:'ch4_hub'},
+  ch4_gurr_scared:{b:[["n","Gurr puffs up to twice his size, looks at you for a long moment, and slowly deflates."],["Tollkeeper Gurr","Fine. Fine! But I am writing your names in my ledger. In red ink."]],next:'ch4_hub'},
+  ch4_gurr_fight:{b:[["Tollkeeper Gurr","Guards! Toll dodgers!"]],fight:{map:'harbor',foes:[{key:'tide_guard',count:2}],win:'ch4_gurr_win',lose:'ch4_gurr_lose'}},
+  ch4_gurr_win:{set:'coral_angry',b:[["n","The guards splash into the lagoon. Gurr hides behind his ledger. Somewhere up on the largest wreck, someone has been watching."]],next:'ch4_hub'},
+  ch4_gurr_lose:{berries:-5000,b:[["n","The guards take the toll out of your pockets, plus a little extra for their trouble, and throw you onto the jetty."]],next:'ch4_hub'},
+  ch4_hub:{scene:'market',goal:'Find a way down to the drowned belfry of Marrowmere and bring up the third Tide Bell.',b:[["n","The market sways gently under your feet. Merchants sell treasure that is still dripping: silver plates, barnacled swords, a whole statue of somebody very important and very drowned."]],
+    bAgain:[["n","Back in the floating market. A salvager hauls up a dripping chest to cheers, opens it, and finds it full of mud."],["n","Back in the floating market. Two merchants argue over a drowned harp until it falls into the lagoon, and then they both blame you."]],
+    choices:[{t:'Visit Mother Coral\'s barge, the boss of the market',go:'ch4_coral',if:'!did_coral'},{t:'Drink at the Red Gaff, a tavern in a capsized galleon',go:'ch4_gaff',if:'!did_gaff'},
+      {t:'Find a diver who knows the drowned city',go:'ch4_fenwick',if:'!did_fenwick'},{t:'Go back to Old Fenwick the diver',go:'ch4_fenwick_again',if:'did_fenwick,!has_dive'},{t:'Shop at the floating stalls (shop)',go:'ch4_shop'},
+      {t:'⏳ Take a short rest on deck (1 hour)',go:'ch4_rest_short'},{t:'🛏 Sleep aboard until morning (long rest)',go:'ch4_rest_long'},
+      {t:'🤿 Dive for the drowned belfry',go:'ch4_dive',if:'has_dive'}]},
+  ch4_rest_short:{rest:'short',b:[["n","You doze on deck while the market creaks and sways around you."]],next:'ch4_hub'},
+  ch4_rest_long:{rest:'long',b:[["n","You sleep to the sound of water slapping against a hundred hulls. In your dreams, bells ring underwater."]],next:'ch4_hub'},
+  ch4_shop:{scene:'market',shop:{name:'The Floating Stalls',items:SHOP_KIYO},b:[["n","The stalls sell everything a salvager needs, and a lot of things nobody needs, all of it slightly damp."]],choices:[{t:'Leave the stalls',go:'ch4_hub'}]},
+  ch4_coral:{scene:'mansion',set:'did_coral',b:[["n","Mother Coral's barge is the biggest wreck in the market, an old warship painted pink and gold. On a throne of barnacled brass sits an enormous old octopus fish-woman with a ring on every tentacle."],
+    ["Mother Coral","Little pirates. Come in, come in. Everyone wants my bell these days. A Marine commodore writes me such lovely letters. Salvo Grimm swears he will drag it up for me. And now you."],
+    ["Mother Coral","The Drowned Market has one law, darlings. Whatever comes up from Marrowmere, half its worth belongs to me. And a bell, sadly, has no half."],
+    ["Mother Coral","So. Salvo stole my black pearl, the big one, and wears it round his fat neck to mock me. Bring it back, and the bell is yours to take."]],
+    choices:[{t:'Agree to get her pearl back',go:'ch4_hub',set:'coral_deal'},{t:'Ask her about Kessler\'s letters',check:{s:'Insight',dc:13},ok:'ch4_coral_double',fail:'ch4_coral_smile'},{t:'Tell her you know she takes Kessler\'s money too',go:'ch4_coral_double',if:'crane_turned'}]},
+  ch4_coral_double:{set:'coral_deal,coral_double',b:[["n","Her smile does not move. But one tentacle, very slowly, slides a letter under the cushion of her throne."],["Mother Coral","A lady must have friends on every tide, darling. Bring me my pearl, and perhaps I will forget to answer the Commodore's next letter."]],next:'ch4_hub'},
+  ch4_coral_smile:{set:'coral_deal',b:[["Mother Coral","Letters? What letters? Bring me my pearl, sweetling, and we will be the very best of friends."]],next:'ch4_hub'},
+  ch4_gaff:{scene:'tavern',set:'did_gaff',b:[["n","The Red Gaff is a galleon that capsized fifty years ago and was never turned back over. You drink on the ceiling. Barrels hang from what used to be the floor."],
+    ["n","At the biggest table sits a huge man in a red coat, with an iron hook where his left hand should be. Around his neck, on a chain, hangs a black pearl the size of an egg."],
+    ["Salvo Grimm","Well, well. The bell pirates! Kessler is paying ten million Berries for the Drowned Bell, and I have the only diving bell in the market. You are too late, friends. Sit down and drink to my health."]],
+    choices:[{t:'Challenge him to a drinking contest for the pearl',check:{s:'Constitution',dc:14},ok:'ch4_pearl_drink',fail:'ch4_gaff_drunk'},{t:'Steal the pearl while he boasts',check:{s:'Sleight of Hand',dc:15},ok:'ch4_pearl_stolen',fail:'ch4_gaff_brawl'},
+      {t:'Start a brawl',go:'ch4_gaff_brawl'},{t:'Drink to his health and leave',go:'ch4_hub'}]},
+  ch4_pearl_drink:{set:'has_pearl,salvo_shamed',loot:[{item:'Mother Coral\'s black pearl',qty:1}],b:[["n","Eleven mugs later, Salvo Grimm slides slowly off his chair and onto the ceiling, which is now the floor, and begins to snore."],["n","His crew are laughing too hard to stop you lifting the pearl off his neck. A bet is a bet."]],next:'ch4_hub'},
+  ch4_gaff_drunk:{hp:[{player:'ALL',dice:'1d4',reason:'Red Gaff rum'}],b:[["n","After the sixth mug the tavern starts spinning, which in an upside-down ship is very confusing. You wake up on the jetty with a headache and no pearl."],["Salvo Grimm","Come back when you can hold your rum!"]],next:'ch4_hub'},
+  ch4_pearl_stolen:{set:'has_pearl,salvo_angry',loot:[{item:'Mother Coral\'s black pearl',qty:1}],b:[["n","While Salvo tells the story of how he wrestled a Sea King, the chain parts under your fingers, and the pearl slips into your pocket."],["n","You are three wrecks away before you hear the roar."]],next:'ch4_hub'},
+  ch4_gaff_brawl:{b:[["Salvo Grimm","Red Gaff! Throw them in the lagoon!"],["n","Salvo grabs his pearl and backs away, laughing, while his crew comes over the tables at you."]],fight:{map:'tavern',foes:[{key:'gaff_pirate',count:3}],win:'ch4_gaff_win',lose:'ch4_gaff_lose'}},
+  ch4_gaff_win:{set:'salvo_angry',berries:8000,b:[["n","The last Red Gaff pirate crashes through a window into the lagoon. Salvo is long gone, and so is the pearl. But his crew left their purses behind."]],next:'ch4_hub'},
+  ch4_gaff_lose:{b:[["n","You fly through the tavern window and land in the lagoon with a splash. Salvo's laugh follows you down."]],next:'ch4_hub'},
+  ch4_fenwick:{scene:'harbor',set:'did_fenwick',b:[["n","At the end of a crooked jetty, an old man with seaweed in his beard sits polishing a brass diving helmet."],["Old Fenwick","Diving? Into Marrowmere? Hm. People go down. Not so many come up."],
+    ["Old Fenwick","The belfry is at the bottom of the old cathedral, in the middle of the city. And around it lives Old Gulp. A moray eel as long as your ship. Eats divers like biscuits."]],next:'ch4_fenwick_again'},
+  ch4_fenwick_again:{set:'know_moray',b:[["Old Fenwick","Helmets are eight thousand Berries to rent. Bring them back in one piece. Bring yourselves back in one piece too, if you can."]],
+    choices:[{t:'Rent the helmets (฿8,000)',go:'ch4_dive_ready',cost:8000},{t:'You can breathe water: you only need a lantern',need:{species:['fishman','merfolk']},go:'ch4_dive_ready'},
+      {t:'Offer to clear the weeds off his boat in exchange',check:{s:'Athletics',dc:12},ok:'ch4_dive_ready',fail:'ch4_fenwick_no'},{t:'Not yet',go:'ch4_hub'}]},
+  ch4_fenwick_no:{b:[["n","An hour of scraping later, you have cleared one plank and swallowed a lot of lagoon."],["Old Fenwick","Hm. Come back with Berries."]],next:'ch4_hub'},
+  ch4_dive_ready:{set:'has_dive',b:[["Old Fenwick","One more thing. Old Gulp sleeps when the tide is lowest. And he cannot resist fresh fish. Do with that what you will."]],next:'ch4_hub'},
+  ch4_dive:{scene:'cave',weather:'fog',art:'sc_tunnel',b:[["n","You drop over the side, and the market's noise vanishes. Green silence. Sunlight falls in long wavering ropes onto the streets of Marrowmere."],
+    ["n","You swim down a drowned avenue. Through windows you see tables still laid for dinner, a hundred years cold. A school of silver fish flows around you like a living river."],
+    ["n","Ahead rises the cathedral, its spire broken. At the bottom of the tower, in a chamber of coral, hangs the third Tide Bell, crusted white and green."]],
+    choices:[{t:'Swim down hard and fast',check:{s:'Athletics',dc:12},ok:'ch4_belfry',fail:'ch4_dive_hurt'},{t:'Glide down like you were born to it',need:{species:['fishman','merfolk']},go:'ch4_belfry'}]},
+  ch4_dive_hurt:{hp:[{player:'ALL',dice:'1d6',reason:'the deep water'}],b:[["n","The water presses on your ears until they ring, and you have to stop twice to steady yourself on a drowned chimney. But you make it."]],next:'ch4_belfry'},
+  ch4_belfry:{b:[["n","Wrapped around the belfry, coil after coil, is a moray eel as thick as a mast. One yellow eye, the size of a dinner plate, slowly opens."],["n","Old Gulp."]],
+    choices:[{t:'Fight the eel',go:'ch4_moray_fight'},{t:'Lure it away with a sack of fresh fish',check:{s:'Animal Handling',dc:12},ok:'ch4_bell_free',fail:'ch4_moray_fight',if:'know_moray'},
+      {t:'Wait for the low tide and creep past while it sleeps',check:{s:'Stealth',dc:14},ok:'ch4_bell_free',fail:'ch4_moray_fight'}]},
+  ch4_moray_fight:{b:[["n","The eel uncoils, and keeps uncoiling, and keeps uncoiling."]],fight:{map:'cave',weather:'fog',foes:[{key:'moray',count:1}],win:'ch4_bell_free',lose:'ch4_dive_lose'}},
+  ch4_dive_lose:{set:'dive_failed',hp:[{player:'ALL',dice:'1d4',reason:'Old Gulp'}],b:[["n","Old Gulp's tail sweeps you out of the belfry like crumbs off a table. You claw your way up toward the light, lungs burning."],
+    ["n","As you break the surface, you hear cheering. Salvo Grimm's diving bell is going down past you, straight toward the cathedral."]],next:'ch4_surface'},
+  ch4_bell_free:{set:'bell3_raised',b:[["n","Up close the bell is crusted in a hundred years of coral, and it is far too heavy to lift."],
+    ["n","You touch the Lotus Clapper to its rim. The bell hums. The coral cracks, flakes and falls away like old paint, and the third Tide Bell rises slowly off its beam, light as a bubble, and floats up toward the sun.","has_clapper"],
+    ["n","You tie Fenwick's floats to the bell's crown and pull the cords. The floats swell, the coral creaks, and the third Tide Bell rises slowly off its beam and drifts up toward the sun.","!has_clapper"]],next:'ch4_surface'},
+  ch4_surface:{scene:'harbor',weather:'clear',art:'sc_nightmarket',b:[["n","You break the surface beside the bell, gasping, and find the whole Drowned Market crowded onto the jetties, staring."],
+    ["n","And standing on the biggest jetty, with his crew behind him and a harpoon cannon on his shoulder, is Salvo Grimm.","bell3_raised"],["Salvo Grimm","Thank you, friends! You did all the heavy lifting. Now hand it over.","bell3_raised"],
+    ["n","Salvo's diving bell comes up with the Tide Bell chained beneath it. He stands on top of it, laughing, while his crew winch it toward the Red Gaff's ship.","dive_failed"],["Salvo Grimm","Ten million Berries, floating home to papa! Wave goodbye, bell pirates!","dive_failed"]],
+    choices:[{t:'Give Mother Coral her pearl, and call on the Tide Court',go:'ch4_court',if:'has_pearl,coral_deal'},{t:'Expose Coral\'s letters from Kessler to the whole market',go:'ch4_expose',if:'coral_double,!has_pearl'},{t:'Fight Salvo for the bell',go:'ch4_final'}]},
+  ch4_court:{set:'court_help',unset:'has_pearl',loot:[{item:'Mother Coral\'s black pearl',qty:-1}],b:[["n","You hold the black pearl high. On her barge, Mother Coral rises from her throne, and her voice carries over the whole lagoon."],
+    ["Mother Coral","A deal is a deal, darlings. Tide Court! Salvo Grimm stole from me. Take him!"],["n","Fish-man guards with coral tridents pour across the jetties. Half of Salvo's crew dive into the lagoon rather than face them."]],next:'ch4_final_small'},
+  ch4_expose:{set:'coral_exposed',b:[["n","You shout across the market that Mother Coral has been selling the Drowned Market's secrets to a Marine commodore. The crowd goes very quiet, then very loud."],
+    ["n","In the uproar, half of Salvo's crew go running to protect their own boats from looters. Coral's barge quietly casts off and drifts away."]],next:'ch4_final_small'},
+  ch4_final:{b:[["Salvo Grimm","Red Gaff! Nobody takes salvage off Salvo Grimm!"]],fight:{map:'harbor',foes:[{key:'salvo',count:1},{key:'gaff_pirate',count:2},{key:'gaff_pirate',count:1,if:'salvo_angry'}],win:'ch4_win',lose:'ch4_lose'}},
+  ch4_final_small:{b:[["Salvo Grimm","Fine! I don't need a crew to sink you!"]],fight:{map:'harbor',foes:[{key:'salvo',count:1},{key:'gaff_pirate',count:1}],win:'ch4_win',lose:'ch4_lose'}},
+  ch4_win:{set:'salvo_beaten,has_bell3',b:[["n","Salvo Grimm staggers back along the jetty, trips over his own harpoon cannon, and goes into the lagoon with a splash that soaks half the market."],
+    ["n","The crowd cheers. Old Fenwick tips his helmet to you. Even Tollkeeper Gurr claps, a little."],["Mother Coral","Take your bell, little pirates. I am a lady of my word, when it suits me.","court_help"]],next:'ch4_end'},
+  ch4_lose:{set:'bell3_lost',b:[["n","Salvo's hook catches you, and you go into the lagoon. By the time you drag yourself out, the Red Gaff is under full sail with the third Tide Bell in her hold, heading east. Toward Kessler."]],next:'ch4_end_lost'},
+  ch4_end:{levelOnce:'ch4',bounty:12000000,bountyWhy:'took the Drowned Bell from Salvo Grimm',goal:'Get to Ironwall and save Brina and the Storm Bell.',
+    quest:[{title:'The Drowned Bell',status:'done',note:'You raised the third Tide Bell from Marrowmere and kept it out of Kessler\'s hands.'},{title:'Ironwall',status:'open',note:'Kessler has taken the Storm Bell and Old Brina from Saltmarrow to the Marine prison of Ironwall.'}],b:[
+    ["n","That night, the third Tide Bell sits lashed in your hold, still dripping. Then, on the cabin table, the transponder snail begins to ring."],
+    ["Commodore Kessler","Congratulations, pirates. Three bells. Hale is furious, and Salvo Grimm is wet. I have not been this entertained in years."],
+    ["Commodore Kessler","While you were busy diving, I paid a visit to a little fishing town called Saltmarrow. Lovely place. Their bell is mine now. So is a stubborn old woman with a pipe, who bit one of my officers."],
+    ["Commodore Kessler","Ironwall, pirates. Bring me the bells, and Brina goes home. Or come and get her. Nobody escapes Ironwall. But you are welcome to try."],
+    ["n","Click."],["Pip","He took Brina? He took BRINA? We have to go. We have to go right now!","pip_aboard"],
+    ["n","End of Chapter Four."]],choices:[{t:'⚓ Set a course for Ironwall',go:'ch4_wait'}]},
+  ch4_end_lost:{levelOnce:'ch4',goal:'Get to Ironwall and save Brina, and the bells.',
+    quest:[{title:'The Drowned Bell',status:'failed',note:'Salvo Grimm carried the third Tide Bell off to Kessler.'},{title:'Ironwall',status:'open',note:'Kessler has taken the Storm Bell and Old Brina from Saltmarrow to the Marine prison of Ironwall.'}],b:[
+    ["n","That night, on the cabin table, the transponder snail begins to ring."],
+    ["Commodore Kessler","Salvo delivered. Such a reliable man, greed. And while you were swimming, I paid a visit to Saltmarrow. Their bell is mine. So is a stubborn old woman with a pipe."],
+    ["Commodore Kessler","Ironwall, pirates. Nobody escapes Ironwall. But you are welcome to try."],["n","Click."],["n","End of Chapter Four."]],choices:[{t:'⚓ Set a course for Ironwall',go:'ch4_wait'}]},
+  ch4_wait:{pause:true,recap:'Chapter 4: the crew dived into the drowned city of Marrowmere for the third Tide Bell, and learned that Kessler has taken Brina and the Storm Bell to Ironwall.',
+    b:[["n","Somewhere to the north stands Ironwall, a Marine fortress on a rock in the sea, where Old Brina waits in a cell, and the Storm Bell hangs in the warden's tower."],["n","Next time: Chapter 5, Ironwall."],["n","To be continued."]]}
+});
+// Chapter 2 now sails on into Chapter 3
+(function(){const N=OFF_BELL.nodes;const c=(N.camp_ch2.choices||[]).find(x=>x.go==='ch2_wait');if(c){c.go='ch3_start';c.t='Turn in for the night: Chapter 3, Kiyo'}
+  N.ch2_wait={b:[["n","The voyage goes on."]],next:'ch3_start'};
+  OFF_BELL.blurb='A stolen storm bell, a corrupt Marine commodore, and five Tide Bells that can raise a sunken pirate flagship. An offline campaign from level 1 to 10: talk, sneak or fight your way through, and every choice follows you. Chapters 1 to 4 are ready.';
+  OFF_BELL.nodes.camp_ch3.restOnce=true;
+  // time
+  const CL=OFF_BELL.clock;Object.assign(CL.set,{ch3_arrive:'dusk',ch4_arrive:'dusk'});
+  Object.assign(CL.cost,{ch3_tea:45,ch3_tea_story:30,ch3_guide:30,ch3_camp:45,ch3_stair:180,ch3_north:120,ch3_lost:300,ch3_climb_lose:240,ch3_gate_wait:60,ch3_trial1:45,ch3_trial2:30,ch3_trial3:20,ch3_rest_short:60,ch3_rest_long:0,
+    ch4_coral:45,ch4_gaff:60,ch4_fenwick:30,ch4_fenwick_no:60,ch4_dive:60,ch4_rest_short:60,ch4_rest_long:0,camp_ch3:30});
+  // the places the crew is really in
+  OFF_BELL.places.ch3_start={shipday:'Aboard ship, bound for Kiyo',snow:'Kiyo · Rengo village',harbor:'Kiyo · the black stone pier',tavern:'Rengo · the tea house',market:'Rengo · Old Haru\'s store',ruins:'Kiyo · the Brass Monastery',arena:'Kiyo · the Hall of Echoes',beach:'A snowy cove below Kiyo'};
+  OFF_BELL.places.ch4_start={shipday:'Aboard ship, sailing west',harbor:'The Drowned Market · the jetties',market:'The Drowned Market · the floating stalls',mansion:'The Drowned Market · Mother Coral\'s barge',tavern:'The Drowned Market · the Red Gaff',cave:'Marrowmere · the drowned city',beach:'A reef camp'};
+  Object.assign(OFF_BELL.nodePlace,{ch3_climb:'Kiyo · the mountain path',ch3_stair:'Kiyo · the old pilgrim stair',ch3_north:'Kiyo · the north pass',ch3_checkpoint:'Kiyo · the north pass',ch3_lost:'Kiyo · somewhere on the mountain',ch3_wolves:'Kiyo · the high snowfields',ch3_wolf_fight:'Kiyo · the high snowfields',ch3_gate:'Kiyo · the Brass Monastery gate',ch3_guide:'Rengo · the edge of the village',
+    ch4_fenwick:'The Drowned Market · Fenwick\'s jetty',ch4_belfry:'Marrowmere · the drowned belfry',ch4_moray_fight:'Marrowmere · the drowned belfry'});
+  // the saga overview
+  const S=OFF_BELL.saga;S.chapters[3]={n:'Chapter 3',title:'The Brass Monastery of Kiyo',start:'v:ch3_start',done:'v:ch3_end|v:ch3_end_lost',why:'The second Tide Bell hangs in a monastery on a snowy mountain, and Kessler\'s Bellbreaker got there first.'};
+  S.chapters[4]={n:'Chapter 4',title:'The Drowned Market',start:'v:ch4_start',done:'v:ch4_end|v:ch4_end_lost',why:'The third Tide Bell lies in a drowned city, under a floating market of thieves.'};
+  S.chapters[5]={n:'Chapter 5',title:'Ironwall',why:'Kessler has taken Brina and the Storm Bell to his prison fortress.'};
+  S.facts.push(['hale_met|v:ch3_arrive','Captain Vesna Hale, Kessler\'s "Bellbreaker", came to Kiyo to take the second bell.'],['know_clapper','What Kessler really needs from each bell is its clapper. Without it, a bell cannot ring.'],
+    ['has_clapper','The Abbot of Kiyo gave you the Lotus Clapper, the voice of the second Tide Bell.'],['clapper_lost','Hale took the Lotus Clapper from Kiyo.'],['v:ch3_reveal','The third bell sank with the city of Marrowmere, under the Drowned Market.'],
+    ['coral_double','Mother Coral takes money from Kessler and from everyone else.'],['has_bell3','You raised the third Tide Bell from Marrowmere.'],['bell3_lost','Salvo Grimm carried the third bell off to Kessler.'],['v:ch4_end|v:ch4_end_lost','Kessler raided Saltmarrow, took the Storm Bell and Old Brina, and holds them at Ironwall.']);
+  S.threads.push(['v:ch3_arrive','v:ch3_end|v:ch3_end_lost','Can you reach the monastery before Hale breaks its gate?'],['v:ch3_reveal','v:ch4_end|v:ch4_end_lost','Where is the third Tide Bell?'],['v:ch4_end|v:ch4_end_lost',null,'How do you break into Ironwall and get Brina out?']);
+  for(const t of S.threads)if(t[2]==='Will Kessler keep his hands off Saltmarrow?')t[1]='v:ch4_end|v:ch4_end_lost';
+  // NPC book stages
+  const P=OFF_BELL.profiles;P['Capt. Vesna Hale'].stages=[{if:'hale_beaten',persona:'Cheerful in a cruel way, and a bad loser who laughs anyway. You beat her on Kiyo.'}];
+  P['Mother Coral'].stages=[{if:'coral_double',persona:'Sweet-voiced and smiling. She takes Kessler\'s money too.'}];P['Yuki'].stages=[{if:'yuki_joined',role:'Mountain guide of Kiyo, now part of your crew'}];
+  P['Lt. Crane'].stages=[...(P['Lt. Crane'].stages||[]),{if:'crane_turned',persona:'Arrogant and precise, but Kessler threw him away, and he knows it. He has started to tell you the truth.'}];
+  // special pictures
+  Object.assign(OFF_BELL.sceneArt,{snow:OFF_BELL.sceneArt.snow||null,arena:OFF_BELL.sceneArt.arena||null});
+})();
+// Chapter 3's deadline: Hale marches at noon on the day after the crew lands on Kiyo, and her powder is at the gate by three
+{const _go=offGo;offGo=async function(id,depth){try{const o=ST.state.off;if(o){const fl={...(o.flags||{})};let ch=false;
+  if(id==='ch3_arrive'&&o.arrDay3==null){const r=await _go(id,depth);try{const p=clockParts(clockNow());await put('table/state',{...ST.state,off:{...ST.state.off,arrDay3:p.day}})}catch(e){}return r}
+  const d=(ST.state.off||{}).arrDay3;if(d!=null&&!fl.at_gate&&!fl.late_ch3&&/^ch3_/.test(id)&&clockNow()>=at(d+1,15,0)){fl.late_ch3=true;ch=true}
+  if(ch)ST.state={...ST.state,off:{...ST.state.off,flags:fl}}}}catch(e){console.warn(e)}return _go(id,depth)}}
+// saves that were waiting at "To be continued" after Chapter 2 now carry on
+setInterval(()=>{try{if(!ST.owner)return;const o=ST.state&&ST.state.off;if(!o||o.node!=='ch2_wait'||!(o.paused||o.ended))return;if(setInterval.gltCh3)return;setInterval.gltCh3=true;
+  put('table/state',{...ST.state,off:{...o,paused:false,ended:false}}).then(()=>offGo('ch3_start')).finally(()=>{setTimeout(()=>{setInterval.gltCh3=false},5000)})}catch(e){}},2500);
+// sparring with the monks of Kiyo is a trial, not a deed: no bounty for it
+{const _fb=foeBountyValue;foeBountyValue=function(f){if(/^Brass Monk/.test(String(f&&f.name||'')))return 0;return _fb(f)}}
 
 // ================= more loot: hidden stashes to search, and spoils from beaten enemies =================
 // Search spots: some places get a "🔍" choice with a skill check. Success finds a stash (once per game); failure finds nothing.
