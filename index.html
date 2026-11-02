@@ -2177,7 +2177,7 @@ const ITEMS={
   cola:{name:'Barrel of cola',price:8000,tag:'gear',desc:'Fuel for some very special ships.'}};
 function itemKeyByName(nm){const n=String(nm||'').toLowerCase().trim();for(const [k,it] of Object.entries(ITEMS))if(it.name.toLowerCase()===n)return k;for(const [k,it] of Object.entries(ITEMS))if(n&&(n.includes(it.name.toLowerCase())||it.name.toLowerCase().includes(n)))return k;return null}
 function itemBonus(c){const out={atk:0,dmg:0,ac:0,magic:false,name:''};for(const it of invOf(c)){if(it.equipped===false)continue;const k=it.key||itemKeyByName(it.name);const b=k&&ITEMS[k]&&ITEMS[k].bonus;if(!b)continue;if(b.atk>out.atk){out.atk=b.atk;out.name=ITEMS[k].name}if(b.dmg>out.dmg)out.dmg=b.dmg;if(b.ac)out.ac+=b.ac;if(b.magic)out.magic=true}return out}
-function usableItems(c){return invOf(c).map((it,i)=>({it,i,k:it.key||itemKeyByName(it.name)})).filter(x=>x.k&&ITEMS[x.k].use&&x.it.qty>0)}
+function usableItems(c){return invOf(c).map((it,i)=>({it,i,k:it.key||itemKeyByName(it.name)})).filter(x=>x.k&&ITEMS[x.k]&&ITEMS[x.k].use&&x.it.qty>0)}
 // ---- area templates ----
 function tplCells(shape,size,origin,aim){const r=Math.max(1,Math.round(size/5));const out=[];
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){let inside=false;
@@ -7030,7 +7030,7 @@ shopHTML=function(){const sh=ST.state.shop;const c=myChar();if(!sh||!sh.open||!c
   const sellable=invOf(c).map((it,i)=>{const k=it.key||itemKeyByName(it.name);const price=k&&ITEMS[k]&&ITEMS[k].price?Math.floor(ITEMS[k].price/2):null;return{it,i,k,price}}).filter(x=>x.price);
   const asked=(sh.asked||{});const haggled=sh.deal&&sh.deal[ST.me]!=null;
   return`<div class="shop"><div class="sh"><b>🛒 ${esc(sh.name||'Shop')}</b><span class="tag gold">฿${Number(bz).toLocaleString('en-US')}</span><span class="tag">🍖 ship provisions ${ship.food||0} · rations ${totalRations()}</span>${deal!==1?`<span class="tag ${deal<1?'ok':'bad'}">${deal<1?'🤝 '+Math.round((1-deal)*100)+'% off for you':'😠 +'+Math.round((deal-1)*100)+'% for you'}</span>`:''}</div>
-    <div class="shopgrid">${(sh.keys||[]).filter(k=>ITEMS[k]).map(k=>{const it=ITEMS[k];const p=priceOf(k);const n=stock[k]||0;return`<div class="si ${n?'':'soldout'}"><div><b>${esc(it.name)}</b> <span class="stockn">${n?`${n} left`:'sold out'}</span><div class="calc">${esc(it.desc)}</div></div><button class="btn sm ${bz>=p&&n?'pri':''}" type="button" data-buy="${k}" ${bz>=p&&n?'':'disabled'}>${n?'฿'+p.toLocaleString('en-US'):'—'}</button></div>`}).join('')}</div>
+    <div class="shopgrid">${(sh.keys||[]).filter(k=>ITEMS[k]&&ITEMS[k].tag!=='fruit'&&ITEMS[k].price).map(k=>{const it=ITEMS[k];const p=priceOf(k);const n=stock[k]||0;return`<div class="si ${n?'':'soldout'}"><div><b>${esc(it.name)}</b> <span class="stockn">${n?`${n} left`:'sold out'}</span><div class="calc">${esc(it.desc)}</div></div><button class="btn sm ${bz>=p&&n?'pri':''}" type="button" data-buy="${k}" ${bz>=p&&n?'':'disabled'}>${n?'฿'+p.toLocaleString('en-US'):'—'}</button></div>`}).join('')}</div>
     ${T?`<div class="shoptalk"><div class="eyebrow">💬 Talk to ${esc(T.keeper)}</div><div class="row" style="gap:6px;flex-wrap:wrap">${T.topics.map((t,i)=>`<button class="btn sm" type="button" data-stalk="${i}">${esc(t.q)}${asked[i]?' ✓':''}</button>`).join('')}${T.noHaggle?'':`<button class="btn sm" type="button" data-haggle="1" ${haggled?'disabled':''}>🤝 ${haggled?'You already haggled here':'Haggle (Persuasion)'}</button>`}</div></div>`:''}
     <p class="hint" style="margin:6px 0 0">Shops restock every few days.</p>
     ${sellable.length?`<details class="sell"><summary>Sell your things (half price)</summary>${sellable.map(x=>`<div class="si"><span>${esc(x.it.name)} ×${x.it.qty}</span><button class="btn sm" type="button" data-sell="${x.i}">Sell ฿${x.price.toLocaleString('en-US')}</button></div>`).join('')}</details>`:''}</div>`};
@@ -7198,6 +7198,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const el=document.g
 // or leave it for a crewmate. The first pirate to choose gets it. A fruit in the bag can be eaten later from the
 // character tab. One Devil Fruit per person: a second one would kill you.
 const FF={dismissed:{}};
+// the strange fruit is a real item kind, so every part of the game that looks items up knows it (it has no shop price)
+ITEMS.devilfruit={name:'Strange Devil Fruit',price:0,tag:'fruit',desc:'A Devil Fruit nobody can name. Eat it from the My character tab.'};
 function fruitNameOf(k){const f=(typeof FRUITS!=='undefined'&&FRUITS[k])||null;if(f&&f.name)return f.name;const c=k.charAt(0).toUpperCase()+k.slice(1);return`${c} ${c} no Mi`}
 function randomFruitKey(){const keys=[...FRUIT_ART_KEYS];const R=typeof FRUIT_RARITY!=='undefined'?FRUIT_RARITY:{};
   const roll=d(100);const want=roll<=50?'Uncommon':roll<=90?'Rare':roll<=99?'Very Rare':'Legendary';const pool=keys.filter(k=>(R[k]||'Uncommon')===want);return EV_PICK(pool.length?pool:keys)}
