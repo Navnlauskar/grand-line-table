@@ -7187,5 +7187,61 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const el=document.g
 .fb-det h3{margin:0 0 4px}.fb-det p{margin:4px 0;font-size:14px}.fb-detimg .fruitimg{width:180px;height:180px}.fb-sub{opacity:.9}
 @media (max-width:600px){.fb-det{flex-direction:column;align-items:center}.fb-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}.fb-item .fruitimg{width:72px;height:72px}}`;document.head.appendChild(st)})();
 
+// ================= finding a Devil Fruit: see it, then eat it or keep it =================
+// When the crew finds a fruit (the DM shows one from the Devil Fruit book, or the AI DM hands one out as loot),
+// everyone with a character sees the fruit's picture, never its name, with three choices: eat it, put it in your bag,
+// or leave it for a crewmate. The first pirate to choose gets it. A fruit in the bag can be eaten later from the
+// character tab. One Devil Fruit per person: a second one would kill you.
+const FF={dismissed:{}};
+function fruitNameOf(k){const f=(typeof FRUITS!=='undefined'&&FRUITS[k])||null;if(f&&f.name)return f.name;const c=k.charAt(0).toUpperCase()+k.slice(1);return`${c} ${c} no Mi`}
+function randomFruitKey(){const keys=[...FRUIT_ART_KEYS];const R=typeof FRUIT_RARITY!=='undefined'?FRUIT_RARITY:{};
+  const roll=d(100);const want=roll<=50?'Uncommon':roll<=90?'Rare':roll<=99?'Very Rare':'Legendary';const pool=keys.filter(k=>(R[k]||'Uncommon')===want);return EV_PICK(pool.length?pool:keys)}
+function hasFruit(c){return!!(c&&(c.fruit||(c.build&&c.build.fruitAte)))}
+async function startFruitFind(k,how){if(!ST.owner)return;k=FRUIT_ART_KEYS.has(k)?k:randomFruitKey();const id='ff'+nowT().toString(36);
+  await put('table/state',{...ST.state,fruitFind:{id,k,how:how||'',t:nowT(),claimedBy:null,choice:null}});
+  await addStory({kind:'dm',who:'DM',text:'A strange fruit lies in front of you. Its skin is covered in glowing veins, and it looks like nothing that has ever grown on any tree. Nobody knows what it is. Whoever eats it might gain a great power, and will never swim again.',fruitImg:k})}
+async function claimFruit(choice){const F=ST.state.fruitFind;const c=myChar();if(!F||F.claimedBy||!charOK(c))return;
+  if(choice==='eat'&&hasFruit(c)){toast('You already ate a Devil Fruit. A second one would kill you.');return}
+  await put('table/state',{...ST.state,fruitFind:{...F,claimedBy:ST.me,choice}});
+  if(choice==='eat')await eatFruit(F.k,null);
+  else{const inv=invOf(c).map(x=>({...x}));inv.push({name:'Strange Devil Fruit',qty:1,tag:'fruit',key:'devilfruit',fruitKey:F.k});await put('chars/'+ST.me,{...c,inv});
+    await addStory({kind:'system',text:`🎒 ${c.build.name} wraps the strange fruit in a cloth and puts it in their bag. Nobody knows what it does. Yet.`})}}
+async function eatFruit(k,invIndex){const c=myChar();if(!charOK(c))return;if(hasFruit(c)){toast('You already ate a Devil Fruit. A second one would kill you.');return}
+  let inv=invOf(c).map(x=>({...x}));if(invIndex!=null){const it=inv[invIndex];if(!it||it.tag!=='fruit')return;k=it.fruitKey||k;it.qty-=1;inv=inv.filter(x=>x.qty>0)}
+  const name=fruitNameOf(k);await put('chars/'+ST.me,{...c,inv,fruit:name,fruitKey:k,build:{...c.build,fruitAte:true}});
+  await addStory({kind:'system',text:`🍇 ${c.build.name} eats the strange fruit. It tastes absolutely horrible. Then something wakes up inside them...`})}
+// ---------- the pop-up everyone sees ----------
+function fruitFindHTML(){const F=ST.state&&ST.state.fruitFind;if(!F)return'';const c=myChar();const img=`<img class="fruitimg ff-img" src="art/fruit_${esc(F.k)}.webp" alt="A strange fruit" width="200" height="200">`;
+  if(F.claimedBy){const who=(ST.chars[F.claimedBy]||{build:{name:'Someone'}}).build.name;if(FF.dismissed[F.id+'c'])return'';
+    return`<div class="ff-box">${img}<h2>${F.claimedBy===ST.me?(F.choice==='eat'?'You ate it!':'It is in your bag'):esc(who)+(F.choice==='eat'?' ate the fruit!':' took the fruit')}</h2><p>${F.choice==='eat'?'Its power will show itself soon.':'It can be eaten later from the My character tab.'}</p><button type="button" class="btn pri" data-ffok="1">OK</button></div>`}
+  if(FF.dismissed[F.id])return'';if(!charOK(c)){return isDM()?`<div class="ff-box">${img}<h2>The crew found a Devil Fruit</h2><p>The players are deciding who gets it. You can see which fruit it is in the Devil Fruit book.</p><button type="button" class="btn" data-ffleave="1">OK</button></div>`:''}
+  const ate=hasFruit(c);
+  return`<div class="ff-box">${img}<h2>A strange fruit!</h2><p>Glowing veins, a twisted stem, a smell like nothing on any island. It is a Devil Fruit, but which one? Nobody knows.</p>
+    <p class="hint">Eat it and you gain its power, whatever it is, and you will never swim again. You can only ever eat one.</p>
+    <div class="ff-btns"><button type="button" class="btn pri" data-ffeat="1" ${ate?'disabled':''}>🍽 Eat it</button><button type="button" class="btn" data-ffbag="1">🎒 Put it in my bag</button><button type="button" class="btn" data-ffleave="1">Leave it for a crewmate</button></div>
+    ${ate?'<p class="hint">You already ate a Devil Fruit. A second one would kill you.</p>':''}</div>`}
+setInterval(()=>{try{const h=fruitFindHTML();let el=document.getElementById('fruitFind');if(!h){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='fruitFind';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el)}if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}}catch(e){}},500);
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-ffeat],[data-ffbag],[data-ffleave],[data-ffok],[data-fbagEat],[data-fbageat]');if(!b)return;const F=ST.state.fruitFind;
+  if(b.dataset.ffeat){b.disabled=true;await claimFruit('eat');return}if(b.dataset.ffbag){b.disabled=true;await claimFruit('bag');return}
+  if(b.dataset.ffleave&&F){FF.dismissed[F.id]=true;return}if(b.dataset.ffok&&F){FF.dismissed[F.id+'c']=true;return}
+  if(b.dataset.fbageat!==undefined){if(!confirm('Eat the strange fruit? You can never swim again, and you can only ever eat one Devil Fruit.'))return;await eatFruit(null,+b.dataset.fbageat)}});
+// ---------- a fruit in the bag, on the character tab ----------
+setInterval(()=>{try{const v=document.getElementById('view-char');if(!v||v.hidden)return;const c=myChar();if(!charOK(c))return;const items=invOf(c).map((it,i)=>({it,i})).filter(x=>x.it.tag==='fruit'&&x.it.fruitKey);
+  let box=v.querySelector('.fruitbag');if(!items.length){if(box)box.remove();return}
+  const h=`<h3>🍇 Strange fruit in your bag</h3><p class="hint">A Devil Fruit nobody can name. Eat it to gain its power (you can never swim again), or keep it for later.</p><div class="fbag-row">${items.map(x=>`<div class="fbag-item"><img class="fruitimg" src="art/fruit_${esc(x.it.fruitKey)}.webp" alt="A strange fruit" width="96" height="96"><button type="button" class="btn sm pri" data-fbageat="${x.i}" ${hasFruit(c)?'disabled title="You already ate a Devil Fruit"':''}>🍽 Eat it</button></div>`).join('')}</div>`;
+  if(!box){box=document.createElement('div');box.className='panel fruitbag';v.insertBefore(box,v.firstChild)}if(box.dataset.h!==h){box.dataset.h=h;box.innerHTML=h}}catch(e){}},700);
+// ---------- the DM's "Show this fruit" now lets the crew claim it ----------
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-fbshow]');if(!b||!isDM())return;e.stopImmediatePropagation();await startFruitFind(b.dataset.fbshow,'dm');const el=document.getElementById('fruitBook');if(el)el.hidden=true;toast('The crew sees the fruit, without its name.')},true);
+// ---------- the AI DM: a Devil Fruit in the loot becomes a fruit find ----------
+{const _ad=applyDM;applyDM=async function(o,ai){let found=null;try{if(o&&Array.isArray(o.loot)){const keep=[];for(const l of o.loot){const n=String(l&&l.item||'');if(/devil\s*fruit|\bno\s*mi\b|strange fruit/i.test(n)&&!found){const k=fruitKeyOf(n);found=FRUIT_ART_KEYS.has(k)?k:'?'}else keep.push(l)}o={...o,loot:keep}}}catch(e){}
+  const r=await _ad.call(this,o,ai);try{if(found&&ST.owner)await startFruitFind(found==='?'?null:found,'ai')}catch(e){}return r}}
+{const _bp=buildPrompt;buildPrompt=function(ai){const p=_bp.apply(this,arguments);return p+'\n- DEVIL FRUIT FINDS: when the crew finds a Devil Fruit, put exactly one item named "Devil Fruit" in "loot" (do not name which fruit). The game shows the fruit\'s picture and lets the players decide who eats it or keeps it. When someone eats it, the game tells you which fruit it was.\n'}}
+(function(){const st=document.createElement('style');st.textContent=`#fruitFind{position:fixed;inset:0;z-index:10060;background:rgba(5,8,12,.8);display:flex;align-items:center;justify-content:center;padding:16px}
+.ff-box{width:100%;max-width:440px;text-align:center;background:var(--deep,#0d1117);border:1px solid var(--violet,#8a6bd1);border-radius:18px;padding:22px 18px;box-shadow:0 0 60px rgba(138,107,209,.35);color:var(--paper,#f3e6c8)}
+.ff-box h2{margin:8px 0 6px;font-family:var(--display,inherit);color:var(--brass)}.ff-box p{margin:6px 0}.ff-img{width:200px;height:200px;margin:0 auto;animation:frfloat 3s ease-in-out infinite}
+.ff-btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}.ff-btns .btn{width:100%}
+.fruitbag .fbag-row{display:flex;flex-wrap:wrap;gap:12px}.fbag-item{display:flex;flex-direction:column;align-items:center;gap:6px}.fbag-item .fruitimg{width:96px;height:96px}`;document.head.appendChild(st)})();
+
 </script>
 </body></html>
