@@ -7247,6 +7247,28 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-fbsh
 .ff-box h2{margin:8px 0 6px;font-family:var(--display,inherit);color:var(--brass)}.ff-box p{margin:6px 0}.ff-img{width:200px;height:200px;margin:0 auto;animation:frfloat 3s ease-in-out infinite}
 .ff-btns{display:flex;flex-direction:column;gap:8px;margin-top:12px}.ff-btns .btn{width:100%}
 .fruitbag .fbag-row{display:flex;flex-wrap:wrap;gap:12px}.fbag-item{display:flex;flex-direction:column;align-items:center;gap:6px}.fbag-item .fruitimg{width:96px;height:96px}`;document.head.appendChild(st)})();
+// ---------- eating through the story: the game, not the AI, decides which fruit it was ----------
+// A player who types that they eat the fruit eats the first strange fruit in their bag. The AI DM is told what each
+// bagged fruit really is (secretly), its "fruitReveal" is corrected to the real fruit, and removing a fruit from the
+// bag or "finding" one in the AI's loot never happens behind the game's back.
+async function eatFruitFor(uid,invIndex){const c=ST.chars[uid];if(!charOK(c)||hasFruit(c))return false;let inv=invOf(c).map(x=>({...x}));const i=invIndex!=null?invIndex:inv.findIndex(x=>x.tag==='fruit'&&x.fruitKey);const it=inv[i];if(!it||it.tag!=='fruit')return false;
+  const k=it.fruitKey;it.qty-=1;inv=inv.filter(x=>x.qty>0);const name=fruitNameOf(k);await put('chars/'+uid,{...c,inv,fruit:name,fruitKey:k,build:{...c.build,fruitAte:true}});
+  await addStory({kind:'system',text:`🍇 ${c.build.name} eats the strange fruit. It tastes absolutely horrible. Then something wakes up inside them...`});return true}
+function bagFruits(c){return invOf(c).filter(x=>x.tag==='fruit'&&x.fruitKey)}
+// 1. "I eat the fruit" in the story
+{const _as=addStory;addStory=async function(e){const r=await _as.apply(this,arguments);try{if(e&&e.kind==='player'&&e.by===ST.me&&/\b(eat|eats|eating|bite|bites|swallow|swallows)\b/i.test(e.text||'')&&/\bfruit\b/i.test(e.text||'')&&!/\b(don'?t|do not|never|won'?t|not)\b/i.test(e.text||'')){const c=myChar();if(charOK(c)&&!hasFruit(c)&&bagFruits(c).length)await eatFruitFor(ST.me,null)}}catch(x){}return r}}
+// 2. the AI's loot: only a new fruit is a find; a fruit leaving the bag means it was eaten
+{const _ad=applyDM;applyDM=async function(o,ai){const eats=[];try{if(o&&Array.isArray(o.loot)){const keep=[];for(const l of o.loot){const n=String(l&&l.item||'');if(/devil\s*fruit|\bno\s*mi\b|strange fruit/i.test(n)&&(+l.qty||1)<0){eats.push(String(l.player||''));continue}keep.push(l)}o={...o,loot:keep}}}catch(x){}
+  const r=await _ad.call(this,o,ai);try{for(const p of eats){const m=Object.entries(ST.chars).find(([,c])=>charOK(c)&&c.build.name.toLowerCase()===p.toLowerCase());if(m)await eatFruitFor(m[0],null)}}catch(x){}return r}}
+// 3. the AI's fruitReveal is corrected to the fruit that was really eaten
+{const _fr=applyFruitReveal;applyFruitReveal=async function(list){const keep=[];for(const fr of (Array.isArray(list)?list:[])){const nm=String(fr.player||'').toLowerCase();const m=Object.entries(ST.chars).find(([,c])=>charOK(c)&&c.build.name.toLowerCase()===nm);if(!m){keep.push(fr);continue}const [uid,c]=m;
+    if(c.fruitKey)continue;                       // the game already knows which fruit this was
+    if(!hasFruit(c)&&bagFruits(c).length){await eatFruitFor(uid,null);continue}   // they ate the one in their bag
+    keep.push(fr)}
+  if(keep.length)return _fr(keep)}}
+// 4. the AI is told, secretly, what each strange fruit in a bag really is
+{const _bp=buildPrompt;buildPrompt=function(ai){const p=_bp.apply(this,arguments);try{const L=[];for(const c of Object.values(ST.chars))if(charOK(c)){for(const it of bagFruits(c))L.push(`${c.build.name} carries a Strange Devil Fruit that is secretly the ${fruitNameOf(it.fruitKey)}`);if(c.fruit)L.push(`${c.build.name} ate the ${c.fruit}`)}
+  if(L.length)return p+`\n- DEVIL FRUITS AT THE TABLE (secret): ${L.join('; ')}. When a player eats a fruit from their bag, the game handles it: do not put the fruit in "loot" (not even as a negative amount), and never invent a different fruit. Narrate the powers of the real fruit.\n`}catch(e){}return p}}
 
 // ================= End turn right under the battle map =================
 // The End turn button lives at the bottom of the long action list; this bar puts it directly under the map, where the
