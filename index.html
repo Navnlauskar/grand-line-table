@@ -6797,6 +6797,11 @@ if(VOICE_PAUSED){PREF.voice=false;PREF.voiceRolls=false;
 // New game asks what kind of game: a ready-made adventure, an AI-run one (only inside Claude), or your own campaign.
 // Your own campaigns are written in the campaign editor (chapters > scenes, each with read-aloud text, DM notes, a map,
 // enemies and NPCs), kept on this device (and exportable as a file), and run by you from the DM screen.
+// pop-up dialogs (confirm) are blocked inside Claude, so risky buttons ask with a second tap instead
+function tapTwice(b,ask){if(!b)return true;const now=Date.now();if(b.dataset.armed&&now-(+b.dataset.armed)<5000){delete b.dataset.armed;return true}
+  b.dataset.armed=String(now);if(!b.dataset.orig)b.dataset.orig=b.innerHTML;b.innerHTML=ask||'Tap again to confirm';b.classList.add('armed');
+  setTimeout(()=>{if(b.dataset.armed&&Date.now()-(+b.dataset.armed)>=4900){delete b.dataset.armed;b.innerHTML=b.dataset.orig;b.classList.remove('armed')}},5000);return false}
+(function(){const st=document.createElement('style');st.textContent='.armed{outline:2px solid var(--blood,#c44);outline-offset:1px}';document.head.appendChild(st)})();
 const CB={edit:null,id:null,dirty:false};
 function cbLib(){try{return JSON.parse(localStorage.getItem('glt-mycamps')||'{}')||{}}catch(e){return{}}}
 function cbSaveLib(lib){try{localStorage.setItem('glt-mycamps',JSON.stringify(lib));return true}catch(e){toast('Could not save on this device (storage full?).');return false}}
@@ -6872,12 +6877,12 @@ function cbBind(el){
   el.addEventListener('input',e=>{const t=e.target;if(!t.dataset.p)return;let v=t.value;if(t.dataset.num)v=Math.max(1,Math.min(20,parseInt(v)||1));cbSet(t.dataset.p,v)});
   el.addEventListener('change',e=>{const t=e.target;if(t.dataset.p&&t.tagName==='SELECT')cbSet(t.dataset.p,t.value)});
   el.addEventListener('click',e=>{const b=e.target.closest('[data-cba]');if(!b||b.disabled)return;const a=b.dataset.cba,i=+b.dataset.i,j=+b.dataset.j,c=CB.edit;const sw=(arr,x,y)=>{[arr[x],arr[y]]=[arr[y],arr[x]]};
-    if(a==='close'){if(CB.dirty&&!confirm('Leave without saving your changes?'))return;cbClose();return}
+    if(a==='close'){if(CB.dirty&&!tapTwice(b,'Unsaved changes: tap again to leave'))return;cbClose();return}
     if(a==='save'){if(!String(c.name||'').trim()){toast('Give your campaign a name first.');el.querySelector('[data-p="name"]').focus();return}
       if(c.levels[1]<c.levels[0])c.levels[1]=c.levels[0];const lib=cbLib();const id=CB.id||('m'+Date.now().toString(36));lib[id]={...c,t:Date.now()};if(!cbSaveLib(lib))return;
       CB.id=id;CB.dirty=false;TS.mode='custom';TS.pick=id;toast('Campaign saved on this device.');cbClose();return}
     if(a==='addch'){c.chapters.push({title:`Chapter ${c.chapters.length+1}`,summary:'',scenes:[cbScene()]})}
-    else if(a==='delch'){if(!confirm(`Delete chapter ${i+1} and all its scenes?`))return;c.chapters.splice(i,1)}
+    else if(a==='delch'){if(!tapTwice(b,'Tap again: delete chapter and its scenes'))return;c.chapters.splice(i,1)}
     else if(a==='upch')sw(c.chapters,i,i-1);else if(a==='dnch')sw(c.chapters,i,i+1);
     else if(a==='addsc'){const sc=c.chapters[i].scenes;sc.push(cbScene((sc[sc.length-1]||{}).map))}
     else if(a==='delsc'){c.chapters[i].scenes.splice(j,1)}
@@ -7225,7 +7230,7 @@ setInterval(()=>{try{const h=fruitFindHTML();let el=document.getElementById('fru
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-ffeat],[data-ffbag],[data-ffleave],[data-ffok],[data-fbagEat],[data-fbageat]');if(!b)return;const F=ST.state.fruitFind;
   if(b.dataset.ffeat){b.disabled=true;await claimFruit('eat');return}if(b.dataset.ffbag){b.disabled=true;await claimFruit('bag');return}
   if(b.dataset.ffleave&&F){FF.dismissed[F.id]=true;return}if(b.dataset.ffok&&F){FF.dismissed[F.id+'c']=true;return}
-  if(b.dataset.fbageat!==undefined){if(!confirm('Eat the strange fruit? You can never swim again, and you can only ever eat one Devil Fruit.'))return;await eatFruit(null,+b.dataset.fbageat)}});
+  if(b.dataset.fbageat!==undefined){if(!tapTwice(b,'Sure? Tap again to eat'))return;await eatFruit(null,+b.dataset.fbageat)}});
 // ---------- a fruit in the bag, on the character tab ----------
 setInterval(()=>{try{const v=document.getElementById('view-char');if(!v||v.hidden)return;const c=myChar();if(!charOK(c))return;const items=invOf(c).map((it,i)=>({it,i})).filter(x=>x.it.tag==='fruit'&&x.it.fruitKey);
   let box=v.querySelector('.fruitbag');if(!items.length){if(box)box.remove();return}
