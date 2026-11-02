@@ -7051,5 +7051,91 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-stal
 (function(){const st=document.createElement('style');st.textContent=`.si.soldout{opacity:.55}.stockn{font-size:11px;opacity:.75;margin-left:4px;font-family:var(--mono,monospace)}.shoptalk{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
 .downnote{margin:0 0 8px;padding:8px 10px;border-radius:8px;border:1px solid var(--blood);background:color-mix(in srgb,var(--blood) 15%,transparent);font-size:14px}.sail-down .sailjobs{opacity:.4;pointer-events:none}`;document.head.appendChild(st)})();
 
+// ================= AI mode: the DM prepares the island before the story starts =================
+// Before the first scene of an AI-run island (an Endless Voyage island or an AI campaign), the host's AI writes a
+// secret island plan: what is really going on and why, a villain with a plan and a clock, locations with secrets, NPCs
+// with wants, a main goal and side goals with reasons. The crew sees a short island card with the goals; the plan
+// itself stays on the DM's side (dm/plan) and is given to the AI DM on every turn, so the story has a spine.
+const PLAN={busy:false,err:null};
+function planKey(){const st=ST.state||{};return`${st.campaign||'tribute'}:${(st.endless&&st.endless.voyage)||0}:${st.planSeed||0}`}
+function planNeeded(){const st=ST.state||{};return!!(AI&&ST.owner&&st.ai&&!(typeof offOn==='function'&&offOn())&&!(typeof manualOn==='function'&&manualOn()))}
+// a new game gets a new plan, even on the same campaign
+{const _sc=startCampaign;startCampaign=async function(id,fresh,newGame){const r=await _sc.apply(this,arguments);try{if(ST.owner){const aiGame=!!AI&&!(typeof offOn==='function'&&offOn())&&!(typeof manualOn==='function'&&manualOn());await put('table/state',{...ST.state,planSeed:nowT(),...(aiGame?{ai:true}:{})})}}catch(e){}return r}}
+function planPrompt(){const st=ST.state;const C=CAMP();const e=st.endless;const isl=e&&e.island;
+  const party=Object.values(ST.chars).filter(charOK).map(c=>{const D=derive(c.build);return`${c.build.name} (${D.speciesName} ${D.clsName} ${D.lvl}${c.build.fruitAte||c.fruit?', Devil Fruit user':''}${c.build.dream?', dream: '+c.build.dream:''})`}).join('; ')||'a new crew of pirates';
+  const maps=campaignScenes().map(k=>`${k} (${sceneName(k)})`).join(', ');
+  const foes=[...new Set([...C.foes,'grunt','thug','marine'])].filter(k=>FOES[k]).map(k=>`${k}: ${FOES[k].name}, ${FOES[k].desc}`).join('; ');
+  return`You are preparing a One Piece themed D&D 5e adventure (Dungeons & Devil Fruits) BEFORE play starts, like a Dungeon Master writing their notes. Think it through: the island needs a reason to exist, a situation with a cause, people who want things, a villain with a plan already in motion, and clear goals for the crew. It should feel like a One Piece arc: a place with its own culture, an injustice or mystery, colourful characters, a twist, and a big final confrontation.
+
+THE CAMPAIGN: ${C.name}. ${C.blurb||''}
+${isl?`THE ISLAND (rolled with the Dungeons & Devil Fruits island tables, keep these facts): ${C.island}. ${C.extraPrompt||''}`:`OUTLINE TO BUILD ON (keep its places, enemies and finale):\n${(C.route||[]).map(r=>`- ${r[0]} [map ${r[2]}]: ${r[1]}`).join('\n')}\nFinale: ${C.finale||''}`}
+${isl?`Theme: ${e.island.theme}. Planned enemies: minions ${C.foes[0]}, officer ${FOES[C.foes[1]]?FOES[C.foes[1]].name:''} (${C.foes[1]}), boss ${FOES[C.foes[2]]?FOES[C.foes[2]].name:''} (${C.foes[2]}).`:''}
+${(e&&e.log&&e.log.length)?`Islands the crew already freed: ${e.log.slice(-6).join(', ')}.`:''}
+THE CREW: ${party}. Use their dreams, species and classes for at least one hook that is personal to them.
+MAPS that exist (use these keys for locations): ${maps}
+ENEMY KEYS that exist: ${foes}
+
+Write ONE JSON object only, in plain English, with this shape:
+{"name":"${isl?C.island:'<island name>'}","tagline":"<one line the crew would hear about the island>",
+ "overview":"<2-3 sentences: the situation on the island as the crew arrives, what is wrong and who suffers>",
+ "truth":"<the hidden truth behind it: what really happened, who is behind it and why. Players do not know this yet>",
+ "villain":{"name":"<name>","enemyKey":"<one of the enemy keys, the boss>","motive":"<why they do it>","plan":"<what they are trying to do>","clock":["<what happens if nobody stops them, stage 1>","<stage 2>","<stage 3: the worst outcome>"]},
+ "mainGoal":{"title":"<short quest title>","why":"<why the crew should care, one line>"},
+ "sideGoals":[{"title":"<short>","why":"<one line>","reward":"<what they get>"}, ...2 or 3],
+ "locations":[{"name":"<name>","map":"<map key>","what":"<what is here, one or two sentences>","secret":"<a clue, treasure or danger hidden here>"}, ...4 to 6],
+ "npcs":[{"name":"<name>","role":"<who they are>","look":"<appearance in a few words>","wants":"<what they want>","secret":"<what they hide>"}, ...3 to 5, at least one ally and one who lies],
+ "acts":[{"title":"Arrival","beat":"<how the story opens and the first hook>"},{"title":"<act 2>","beat":"<investigation, rising trouble, the officer fight>"},{"title":"<act 3>","beat":"<the twist and the final confrontation with the villain>"}],
+ "twist":"<one surprising revelation midway>",
+ "finale":"<how the final battle happens and what winning looks like>",
+ "rewards":"<treasure, a possible Devil Fruit rumor, reputation>"}`}
+function planClean(o){const s=(v,n)=>String(v||'').slice(0,n||300);const arr=(a,n)=>(Array.isArray(a)?a:[]).slice(0,n);
+  return{name:s(o.name,60),tagline:s(o.tagline,160),overview:s(o.overview,600),truth:s(o.truth,700),
+    villain:{name:s(o.villain&&o.villain.name,60),enemyKey:s(o.villain&&o.villain.enemyKey,40),motive:s(o.villain&&o.villain.motive,300),plan:s(o.villain&&o.villain.plan,400),clock:arr(o.villain&&o.villain.clock,4).map(x=>s(x,240))},
+    mainGoal:{title:s(o.mainGoal&&o.mainGoal.title,80)||'Free the island',why:s(o.mainGoal&&o.mainGoal.why,240)},
+    sideGoals:arr(o.sideGoals,3).map(g=>({title:s(g.title,80),why:s(g.why,240),reward:s(g.reward,160)})).filter(g=>g.title),
+    locations:arr(o.locations,6).map(l=>({name:s(l.name,60),map:s(l.map,30),what:s(l.what,300),secret:s(l.secret,240)})),
+    npcs:arr(o.npcs,5).map(n=>({name:s(n.name,50),role:s(n.role,120),look:s(n.look,120),wants:s(n.wants,200),secret:s(n.secret,200)})),
+    acts:arr(o.acts,4).map(a=>({title:s(a.title,50),beat:s(a.beat,400)})),twist:s(o.twist,400),finale:s(o.finale,400),rewards:s(o.rewards,300)}}
+async function makePlan(key){if(PLAN.busy)return;PLAN.busy=true;PLAN.err=null;
+  try{await put('table/state',{...ST.state,thinking:true});
+    await addStory({kind:'system',text:'🗺 The DM is preparing the island: its people, its secrets and what is at stake…'});
+    let o=null;for(let i=0;i<2&&!o;i++){try{o=await AI.json(planPrompt(),{modelTier:'default',cache:false})}catch(e){PLAN.err=e}}
+    if(!o||typeof o!=='object'){await put('dm/plan',{type:'plan',key,failed:true});await put('table/state',{...ST.state,thinking:false});return}
+    const P=planClean(o);await put('dm/plan',{type:'plan',key,...P,stage:0,t:nowT()});
+    // the NPCs get their looks, so their portraits match
+    for(const n of P.npcs){try{const slug=npcSlug(n.name);if(!ST.npcs[slug])await put('npcs/'+slug,{name:n.name,look:n.look,portrait:null})}catch(e){}}
+    const C=CAMP();const quests=[{title:P.mainGoal.title,status:'open',note:P.mainGoal.why},...P.sideGoals.map(g=>({title:g.title,status:'open',note:`${g.why}${g.reward?' Reward: '+g.reward+'.':''}`}))];
+    await put('table/state',{...ST.state,goal:`${P.mainGoal.title}: ${P.mainGoal.why}`.slice(0,160),quests:mergeQuests(quests),thinking:false});
+    const atSea=!!(ST.state.sail&&ST.state.sail.on);
+    await addStory({kind:'system',text:`${atSea?'🧭 What sailors say about ':'🏝 '}${P.name||C.island||C.name}${P.tagline?': '+P.tagline:''}\n${P.overview}\n🎯 Main goal: ${P.mainGoal.title}. ${P.mainGoal.why}${P.sideGoals.length?'\n📌 Also: '+P.sideGoals.map(g=>g.title).join(' · '):''}`})}
+  finally{PLAN.busy=false}}
+// the story waits until the island is prepared
+{const _rd=runDM;runDM=async function(force){try{if(planNeeded()&&!(ST.state.combat&&ST.state.battleMode!=='story')){const k=planKey();const P=ST.dm.plan;if(!P||P.key!==k){if(PLAN.busy)return;await makePlan(k)}}}catch(e){console.warn(e)}return _rd.apply(this,arguments)}}
+// every DM turn gets the plan, and rules that keep the story on its spine
+function planBrief(){const P=ST.dm.plan;if(!P||P.key!==planKey()||P.failed)return'';const V=P.villain||{};
+  return`ISLAND PLAN (your secret prep notes: follow them, adapt them to what the players do, never read them out)
+- ${P.name}: ${P.overview}
+- THE TRUTH (reveal it bit by bit through clues, NPCs and events): ${P.truth}
+- VILLAIN: ${V.name} (enemy key ${V.enemyKey}). Motive: ${V.motive}. Plan: ${V.plan}.
+- VILLAIN'S CLOCK (advance one stage when the crew wastes time, fails badly or rests long, and show it with an event they can see): ${(V.clock||[]).map((c,i)=>`${i+1}. ${c}`).join(' ')}
+- MAIN GOAL: ${P.mainGoal.title} (${P.mainGoal.why}). SIDE GOALS: ${P.sideGoals.map(g=>`${g.title} (${g.why}; reward: ${g.reward})`).join('; ')||'none'}
+- LOCATIONS: ${P.locations.map(l=>`${l.name} [map ${l.map}]: ${l.what} Secret: ${l.secret}`).join(' | ')}
+- NPCS: ${P.npcs.map(n=>`${n.name}, ${n.role}; wants ${n.wants}; hides ${n.secret}`).join(' | ')}
+- ACTS: ${P.acts.map(a=>`${a.title}: ${a.beat}`).join(' → ')}
+- TWIST: ${P.twist}. FINALE: ${P.finale}. REWARDS: ${P.rewards}
+STORYTELLING RULES FOR THIS ISLAND
+- Every scene must either move the crew toward a goal, reveal part of the truth, or raise the stakes. No aimless filler.
+- Keep the goal clear: the "goal" field always says what the crew is doing now and why. Mark quests done or failed in "quests" when they change, and add new ones when the plot opens them.
+- Give the players leads: end scenes with at least two concrete things they could do next (people to talk to, places to go), in your "options".
+- Use the NPCs' wants and secrets, the locations' secrets and the villain's clock so the island feels alive and reacts to the crew.
+
+`}
+{const _bp=buildPrompt;buildPrompt=function(ai){const p=_bp.apply(this,arguments);try{const b=planBrief();if(b){const i=p.indexOf('YOUR PRIVATE MEMORY');return i>=0?p.slice(0,i)+b+p.slice(i):p+'\n\n'+b}}catch(e){}return p}}
+// the DM screen and the journal show the plan's public side
+{const _rs=renderStory;renderStory=function(){_rs.apply(this,arguments);try{const st=ST.state;if(!st.ai||!PLAN.busy)return;const s=document.querySelector('#sStatus .thinking');if(s&&!/preparing/.test(s.textContent))s.innerHTML='<i></i><i></i><i></i> The DM is preparing the island…'}catch(e){}}}
+// the host can read the prep notes on the DM screen
+{const _rd=renderDM;renderDM=function(){_rd.apply(this,arguments);try{const P=ST.dm.plan;if(!P||P.failed||P.key!==planKey()||!isDM())return;const g=document.querySelector('#view-dm .dmgrid');if(!g||g.querySelector('.plancard'))return;const V=P.villain||{};
+  g.insertAdjacentHTML('afterbegin',`<div class="dmcard wide plancard"><h3>🗺 Island plan (secret): ${esc(P.name)}</h3><p>${esc(P.overview)}</p><p><b>The truth:</b> ${esc(P.truth)}</p><p><b>Villain:</b> ${esc(V.name)}: ${esc(V.motive)}. ${esc(V.plan)}</p><p><b>Clock:</b> ${(V.clock||[]).map((c,i)=>`${i+1}. ${esc(c)}`).join(' ')}</p><p><b>Twist:</b> ${esc(P.twist)} <b>Finale:</b> ${esc(P.finale)}</p><p class="hint">Locations: ${P.locations.map(l=>esc(l.name)).join(' · ')}. NPCs: ${P.npcs.map(n=>esc(n.name)).join(' · ')}.</p></div>`)}catch(e){}}}
+
 </script>
 </body></html>
