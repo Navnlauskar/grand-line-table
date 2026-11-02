@@ -7137,5 +7137,51 @@ STORYTELLING RULES FOR THIS ISLAND
 {const _rd=renderDM;renderDM=function(){_rd.apply(this,arguments);try{const P=ST.dm.plan;if(!P||P.failed||P.key!==planKey()||!isDM())return;const g=document.querySelector('#view-dm .dmgrid');if(!g||g.querySelector('.plancard'))return;const V=P.villain||{};
   g.insertAdjacentHTML('afterbegin',`<div class="dmcard wide plancard"><h3>🗺 Island plan (secret): ${esc(P.name)}</h3><p>${esc(P.overview)}</p><p><b>The truth:</b> ${esc(P.truth)}</p><p><b>Villain:</b> ${esc(V.name)}: ${esc(V.motive)}. ${esc(V.plan)}</p><p><b>Clock:</b> ${(V.clock||[]).map((c,i)=>`${i+1}. ${esc(c)}`).join(' ')}</p><p><b>Twist:</b> ${esc(P.twist)} <b>Finale:</b> ${esc(P.finale)}</p><p class="hint">Locations: ${P.locations.map(l=>esc(l.name)).join(' · ')}. NPCs: ${P.npcs.map(n=>esc(n.name)).join(' · ')}.</p></div>`)}catch(e){}}}
 
+// ================= Devil Fruit pictures: one original fruit for every Devil Fruit, and a Devil Fruit book =================
+// Each fruit is drawn from its power (glowing veins in the power's colour), on a transparent background: art/fruit_<key>.png
+const FRUIT_ART_KEYS=new Set(["awa", "bane", "bara", "bari", "bata", "batto", "beri", "bisu", "bomu", "buta", "choco", "doa", "doku", "doru", "gasu", "gomu", "goro", "guma", "gura", "guru", "guwa", "hana", "hebi", "hie", "hira", "hito", "hobi", "horo", "inu", "ito", "jake", "juku", "kachi", "kage", "kagi", "kame", "kani", "kilo", "kumo", "kuri", "kutsu", "kyubu", "magu", "maki", "mane", "mato", "mera", "mero", "mini", "mochi", "mogu", "moku", "mori", "mushi", "nagi", "neko", "nemu", "nezu", "nikyu", "noro", "nui", "numa", "ookami", "ope", "ori", "pika", "poke", "ropu", "ryu", "sabi", "sake", "sara", "shibo", "shika", "soru", "sube", "suke", "suna", "toge", "tori", "tsuri", "uma", "ushi", "woshu", "yagi", "yami", "yomi", "yuki", "zou"]);
+function fruitKeyOf(name){const s=String(name||'').toLowerCase().trim();const m=s.match(/^([a-z]+)\s+\1\b/);if(m)return m[1];const k=s.split(/[\s,]/)[0];return k}
+function fruitArtUrl(name){const k=fruitKeyOf(name);return FRUIT_ART_KEYS.has(k)?`art/fruit_${k}.webp`:null}
+function fruitImgHTML(name,size,cls){const u=fruitArtUrl(name);return u?`<img class="fruitimg ${cls||''}" src="${u}" alt="${esc(name)}" width="${size}" height="${size}" loading="lazy">`:''}
+// the fruit on the character sheet
+setInterval(()=>{try{document.querySelectorAll('.fruitcard .fi:not([data-art])').forEach(el=>{const card=el.closest('.fruitcard');const b=card&&card.querySelector('b');const h=b&&fruitImgHTML(b.textContent,56);el.dataset.art='1';if(h)el.innerHTML=h});
+  document.querySelectorAll('.fruitcard:not([data-book])').forEach(card=>{card.dataset.book='1';card.insertAdjacentHTML('beforeend','<button type="button" class="btn sm" data-fbook="1" style="margin-top:8px">🍇 The Devil Fruit book</button>')})}catch(e){}},700);
+// the fruit on the awakening screen
+{const _fb=fruitBodyHTML;fruitBodyHTML=function(c,step){let h=_fb.apply(this,arguments);try{const fr=fruitOf(c);const img=fr&&fruitImgHTML(fr.display||fr.name,150,'fr-hero');if(img&&step===0)h=h.replace(/<span style="display:inline-block;animation:spin 4s linear infinite reverse">🍇<\/span>/,img)}catch(e){}return h}}
+// ---------- the Devil Fruit book: every fruit, its picture, its type and what it does ----------
+function fruitBookList(){const keys=[...new Set([...Object.keys(FRUITS),...Object.keys(FRUIT_EN)])];return keys.map(k=>{const f=FRUITS[k]||{};const type=FRUIT_LOGIA.has(k)?'Logia':FRUIT_ZOANS.has(k)?'Zoan':'Paramecia';
+  const nm=f.name||`${k[0].toUpperCase()+k.slice(1)} ${k[0].toUpperCase()+k.slice(1)} no Mi`;return{k,name:nm,en:FRUIT_EN[k]||'',type,rarity:(typeof FRUIT_RARITY!=='undefined'&&FRUIT_RARITY[k])||'',f}}).sort((a,b)=>a.name.localeCompare(b.name))}
+const FB={type:'all',open:null,q:''};
+function fruitBookHTML(){const L=fruitBookList().filter(x=>(FB.type==='all'||x.type===FB.type)&&(!FB.q||(x.name+' '+x.en).toLowerCase().includes(FB.q.toLowerCase())));
+  const det=FB.open?fruitBookList().find(x=>x.k===FB.open):null;
+  return`<div class="fb-box" role="dialog" aria-modal="true" aria-label="The Devil Fruit book"><div class="fb-top"><h2>🍇 The Devil Fruit book</h2><button type="button" class="btn sm" data-fbclose="1">Close</button></div>
+  <div class="fb-filters"><input type="search" id="fbQ" placeholder="Search a fruit…" value="${esc(FB.q)}">${['all','Paramecia','Logia','Zoan'].map(t=>`<button type="button" class="btn sm ${FB.type===t?'pri':''}" data-fbt="${t}">${t==='all'?'All':t}</button>`).join('')}</div>
+  ${det?`<div class="fb-det"><div class="fb-detimg">${fruitImgHTML(det.name,180)||'🍇'}</div><div><h3>${esc(det.name)}</h3><p class="fb-sub">${esc(det.en?'The '+det.en+' fruit':'')} ${fruitTypeChip(det.type)} ${det.rarity?`<span class="tag">${esc(det.rarity)}</span>`:''}</p>
+    ${det.f.passives&&det.f.passives.length?`<div class="eyebrow">Always on</div>${det.f.passives.map(p=>`<p><b>${esc(p[0])}</b>: ${esc(p[1])}</p>`).join('')}`:''}
+    ${det.f.techs&&det.f.techs.length?`<div class="eyebrow">Techniques</div>${det.f.techs.map(t=>`<p><b>${esc(t.name)}</b> <span class="hint">(${t.cost} charge${t.cost>1?'s':''})</span>: ${esc(t.desc||'')}</p>`).join('')}`:`<p class="hint">${esc(FRUIT_TYPE_INFO[det.type]||'')} The DM decides its exact powers when it is eaten.</p>`}
+    <p class="hint">Every Devil Fruit user loses the ability to swim, and seawater or seastone drains their power.</p><button type="button" class="btn sm" data-fbopen="">← All fruits</button></div></div>`:''}
+  <div class="fb-grid">${L.map(x=>`<button type="button" class="fb-item ${FB.open===x.k?'on':''}" data-fbopen="${x.k}">${fruitImgHTML(x.name,96)||'<span class="fb-ph">🍇</span>'}<b>${esc(x.name)}</b><small>${esc(x.en)} · ${esc(x.type)}</small></button>`).join('')||'<p class="hint">No fruit matches.</p>'}</div></div>`}
+function openFruitBook(k){FB.open=k||null;let el=document.getElementById('fruitBook');if(!el){el=document.createElement('div');el.id='fruitBook';document.body.appendChild(el)}el.innerHTML=fruitBookHTML();el.hidden=false;
+  const q=el.querySelector('#fbQ');if(q){q.oninput=()=>{FB.q=q.value;const pos=q.selectionStart;el.innerHTML=fruitBookHTML();const q2=el.querySelector('#fbQ');q2.focus();q2.setSelectionRange(pos,pos);openFruitBook.bind2(el)};}openFruitBook.bind2(el);if(k){const d=el.querySelector('.fb-det');if(d)d.scrollIntoView({block:'nearest'})}}
+openFruitBook.bind2=function(el){const q=el.querySelector('#fbQ');if(q&&!q.oninput)q.oninput=()=>{FB.q=q.value;const pos=q.selectionStart;el.innerHTML=fruitBookHTML();const q2=el.querySelector('#fbQ');q2.focus();q2.setSelectionRange(pos,pos);openFruitBook.bind2(el)}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fbook],[data-fbclose],[data-fbt],[data-fbopen]');if(!b){const el=document.getElementById('fruitBook');if(el&&!el.hidden&&e.target===el)el.hidden=true;return}
+  if(b.dataset.fbook){openFruitBook(null);return}if(b.dataset.fbclose){document.getElementById('fruitBook').hidden=true;return}
+  if(b.dataset.fbt){FB.type=b.dataset.fbt;openFruitBook(FB.open);return}if(b.dataset.fbopen!==undefined){openFruitBook(b.dataset.fbopen||null);const el=document.getElementById('fruitBook');if(el)el.querySelector('.fb-box').scrollTop=0}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const el=document.getElementById('fruitBook');if(el&&!el.hidden)el.hidden=true}});
+// the book is also on the journal
+{const _jh=journalHTML;journalHTML=function(){let h=_jh();const btn='<button type="button" class="btn sm" data-fbook="1">🍇 Devil Fruit book</button>';if(!h)return`<div class="panel journal"><h3>Journal</h3>${btn}</div>`;return h.replace('<h3>Journal</h3>','<h3>Journal</h3>'+btn)}}
+(function(){const st=document.createElement('style');st.textContent=`.fruitimg{display:block;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}.fruitcard .fi .fruitimg{width:56px;height:56px}
+.fr-hero{width:150px;height:150px;margin:0 auto;animation:frfloat 3s ease-in-out infinite}@keyframes frfloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+#fruitBook{position:fixed;inset:0;z-index:10040;background:rgba(5,8,12,.78);display:flex;align-items:center;justify-content:center;padding:16px}#fruitBook[hidden]{display:none}
+.fb-box{width:100%;max-width:980px;max-height:calc(100vh - 32px);overflow:auto;background:var(--deep,#0d1117);border:1px solid var(--line);border-radius:16px;padding:16px;color:var(--paper,#f3e6c8)}
+.fb-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.fb-top h2{margin:0;font-family:var(--display,inherit);color:var(--brass)}
+.fb-filters{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.fb-filters input{flex:1 1 180px;min-width:0}
+.fb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.fb-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:transparent;color:inherit;cursor:pointer;font:inherit;text-align:center}
+.fb-item:hover,.fb-item.on{border-color:var(--brass);background:color-mix(in srgb,var(--brass) 8%,transparent)}.fb-item b{font-size:13px}.fb-item small{font-size:11px;opacity:.75}.fb-item .fruitimg{width:96px;height:96px}
+.fb-ph{font-size:56px;line-height:96px}.fb-det{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px;padding:14px;border:1px solid var(--violet,#8a6bd1);border-radius:12px;background:color-mix(in srgb,var(--violet,#8a6bd1) 8%,transparent)}
+.fb-det h3{margin:0 0 4px}.fb-det p{margin:4px 0;font-size:14px}.fb-detimg .fruitimg{width:180px;height:180px}.fb-sub{opacity:.9}
+@media (max-width:600px){.fb-det{flex-direction:column;align-items:center}.fb-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}.fb-item .fruitimg{width:72px;height:72px}}`;document.head.appendChild(st)})();
+
 </script>
 </body></html>
