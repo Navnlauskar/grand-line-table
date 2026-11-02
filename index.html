@@ -3801,7 +3801,7 @@ async function stopAuto(){const c=myChar();if(charOK(c))await put('chars/'+ST.me
 // ---- host: resolve a day ----
 let SAILBUSY=false;
 async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST.owner||!sail||!sail.on||SAILBUSY)return;if(st.combat||(st.naval&&st.naval.on)||st.thinking)return;if(sail.done>=sail.miles)return;
-  const key=sail.rid+'_'+sail.day;const crew=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&!c.dead);if(!crew.length)return;
+  const key=sail.rid+'_'+sail.day;const crewAll=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&!c.dead);const crew=crewAll.filter(([,c])=>(c.hp||0)>0);const downed=crewAll.filter(([,c])=>(c.hp||0)<=0);if(!crewAll.length)return;
   // automatic jobs are rolled by the host
   const picks=crew.map(([u,c])=>{let p=c.sailJob&&c.sailJob.key===key?c.sailJob:null;if(!p&&c.sailAuto&&SAIL_JOBS[c.sailAuto]){const ck=sailCheck(c,c.sailAuto);p={key,job:c.sailAuto,...(ck||{})}}return[u,c,p]});
   if(!force&&picks.some(p=>!p[2]))return;SAILBUSY=true;
@@ -3832,26 +3832,40 @@ async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST
       if(['beast','fishmen','hunters','seaking'].includes(t)&&!battle)battle=t;if(['marine','pirate'].includes(t)&&!battle)battle=t;
       if(t==='pace2')pace=lost?0:pace*2;if(t==='pace0')pace=0;if(t==='food')food+=d(4);
       if(t==='heal'){ship.hull=S.max;notes.push('the ship and crew are fully healed')}
-      if(t==='termites'){const dm=d(10)+d(10);ship.hull=Math.max(1,ship.hull-dm);notes.push(`termites: ${dm} hull damage`)}
-      if(t==='crash'){const sv=d(20)+(S.con||0);if(sv<10){const dm=Array.from({length:4},()=>d(10)).reduce((a,b)=>a+b,0);ship.hull=Math.max(1,ship.hull-dm);notes.push(`crash: the ship fails its CON save (${sv}) and takes ${dm} hull damage`)}else notes.push(`crash: the ship holds (CON save ${sv})`)}
+      if(t==='termites'){const dm=d(10)+d(10);ship.hull=Math.max(0,ship.hull-dm);notes.push(`termites: ${dm} hull damage`)}
+      if(t==='crash'){const sv=d(20)+(S.con||0);if(sv<10){const dm=Array.from({length:4},()=>d(10)).reduce((a,b)=>a+b,0);ship.hull=Math.max(0,ship.hull-dm);notes.push(`crash: the ship fails its CON save (${sv}) and takes ${dm} hull damage`)}else notes.push(`crash: the ship holds (CON save ${sv})`)}
       if(t==='repair'){ship.hull=S.max;notes.push('the crab men repair the ship for free')}
       if(t==='bless')sail.bless=d(4);if(t==='merchant')notes.push('trading is possible (the shop opens)');if(t==='loot'||t==='fruit')story=true}
     // 7. weather effects
     const nv=nav.length?nav.reduce((a,b)=>b[2].total>a[2].total?b:a):null;
     for(const w of weather){const forecast=nv&&nv[2].total>=w.dc;evText.push(`⛈ Weather: ${w.name} (${w.cat})${forecast?' forecast in time: the crew steers around it':''}.`);if(forecast&&!/Cyclone|Tsunami|Chaos/.test(w.name))continue;
-      if(/Cyclone/.test(w.name)){const hrs=d(4)*(forecast?.5:1);let tot=0;for(let h=0;h<Math.max(1,Math.round(hrs));h++){if(d(20)+(S.str||0)<15)tot+=d(10)+d(10)+d(10)}if(tot){ship.hull=Math.max(1,ship.hull-tot);notes.push(`the cyclone tears the sails and hull (${tot} damage)`)}pace=Math.floor(pace/2)}
-      if(/Waterspout/.test(w.name)){if(d(20)+(S.str||0)<15){const dm=Array.from({length:8},()=>d(6)).reduce((a,b)=>a+b,0)+d(6)+d(6);ship.hull=Math.max(1,ship.hull-dm);notes.push(`a waterspout catches the ship (${dm} damage)`)}}
-      if(/Hailstorm|Scorching sands/.test(w.name)){const dm=d(10)+d(10)+d(10);ship.hull=Math.max(1,ship.hull-dm);notes.push(`the sails are shredded (${dm} damage)`);pace=Math.floor(pace/2)}
+      if(/Cyclone/.test(w.name)){const hrs=d(4)*(forecast?.5:1);let tot=0;for(let h=0;h<Math.max(1,Math.round(hrs));h++){if(d(20)+(S.str||0)<15)tot+=d(10)+d(10)+d(10)}if(tot){ship.hull=Math.max(0,ship.hull-tot);notes.push(`the cyclone tears the sails and hull (${tot} damage)`)}pace=Math.floor(pace/2)}
+      if(/Waterspout/.test(w.name)){if(d(20)+(S.str||0)<15){const dm=Array.from({length:8},()=>d(6)).reduce((a,b)=>a+b,0)+d(6)+d(6);ship.hull=Math.max(0,ship.hull-dm);notes.push(`a waterspout catches the ship (${dm} damage)`)}}
+      if(/Hailstorm|Scorching sands/.test(w.name)){const dm=d(10)+d(10)+d(10);ship.hull=Math.max(0,ship.hull-dm);notes.push(`the sails are shredded (${dm} damage)`);pace=Math.floor(pace/2)}
       if(/Thunderstorm|Chaos/.test(w.name)&&d(20)<=(/Chaos/.test(w.name)?5:1)){const [u,c]=crew[d(crew.length)-1];const D=derive(c.build);const sv=d(20)+D.saves.CON.bonus;let dm=Array.from({length:8},()=>d(6)).reduce((a,b)=>a+b,0);if(sv>=15)dm=Math.floor(dm/2);await damagePC(u,dm,false);notes.push(`lightning strikes ${c.build.name} (CON save ${sv}: ${dm} lightning)`)}
       if(/Firestorm|Icewave/.test(w.name)){for(const [u,c] of crew){const D=derive(c.build);if(d(20)+D.saves.CON.bonus<15){const dm=d(10);await damagePC(u,dm,false);notes.push(`${c.build.name} takes ${dm} ${/Fire/.test(w.name)?'fire':'cold'}`)}}}
-      if(/Meteor/.test(w.name)&&d(20)===1){const dm=d(6)+d(6);ship.hull=Math.max(1,ship.hull-dm);notes.push(`a meteor hits the ship (${dm})`)}
-      if(/Tsunami/.test(w.name)){if(d(20)+(S.str||0)<15){const dm=Array.from({length:16},()=>d(10)).reduce((a,b)=>a+b,0);ship.hull=Math.max(1,ship.hull-dm);notes.push(`the tsunami crashes over the ship (${dm} hull damage)`)}else notes.push('the ship rides over the tsunami')}
+      if(/Meteor/.test(w.name)&&d(20)===1){const dm=d(6)+d(6);ship.hull=Math.max(0,ship.hull-dm);notes.push(`a meteor hits the ship (${dm})`)}
+      if(/Tsunami/.test(w.name)){if(d(20)+(S.str||0)<15){const dm=Array.from({length:16},()=>d(10)).reduce((a,b)=>a+b,0);ship.hull=Math.max(0,ship.hull-dm);notes.push(`the tsunami crashes over the ship (${dm} hull damage)`)}else notes.push('the ship rides over the tsunami')}
       if(/Stormy winds|Fast winds|High winds/.test(w.name)){const wd=/Stormy/.test(w.name)?3:/Fast/.test(w.name)?2:1;const withW=Math.random()<.5;pace=Math.max(0,pace+(withW?1:-1)*wd*24);notes.push(`the wind is ${withW?'behind':'against'} the ship`)}}
     // 8. eating: ship provisions first, then personal rations; then the night's long rest
-    const fed=[],hungry=[];for(const [u,c] of crew){if(food>0){food--;fed.push(u);continue}if(await eatRation(u))fed.push(u);else hungry.push(u)}
+    const fed=[],hungry=[];for(const [u,c] of crewAll){if(food>0){food--;fed.push(u);continue}if(await eatRation(u))fed.push(u);else hungry.push(u)}
     for(const u of fed){const c=ST.chars[u];if(!charOK(c))continue;const D=derive(c.build);await put('chars/'+u,{...c,hp:c.hp>0?D.maxhp:c.hp,res:{},starve:0,exh:Math.max(0,(c.exh||0)-1)})}
     for(const u of hungry){const c=ST.chars[u];const D=derive(c.build);const lim=Math.max(1,3+mod(D.ab.CON));const sd=(c.starve||0)+1;const ex=sd>lim?Math.min(6,(c.exh||0)+1):(c.exh||0);await put('chars/'+u,{...c,starve:sd,exh:ex});lines.push(`🍽 ${c.build.name} has no food (day ${sd} of ${lim} before exhaustion)${ex>(c.exh||0)?`: exhaustion level ${ex}!`:''}.`)}
     ship.food=food;
+    // the wounded: a crewmate tends them (Medicine DC 10). Stable crew wake with 1 HP; untended ones make a death save each day
+    if(downed.length){const medics=crew.map(([u,c])=>({c,b:(derive(c.build).skills.Medicine||{bonus:0}).bonus}));
+      for(const [u] of downed){const c=ST.chars[u];if(!charOK(c))continue;const best=medics.length?medics.reduce((a,b)=>b.b>a.b?b:a):null;const r=best?d(20)+best.b:0;
+        if(best&&r>=10){await put('chars/'+u,{...c,hp:1,death:{s:0,f:0},stable:false});lines.push(`🩹 ${best.c.build.name} tends ${c.build.name} through the night (Medicine ${r}): awake again with 1 HP, too weak for a job today.`)}
+        else{const ds=d(20);const dt={...(c.death||{s:0,f:0})};if(ds===20){await put('chars/'+u,{...c,hp:1,death:{s:0,f:0}});lines.push(`💀 ${c.build.name} fights back from the edge (death save 20): 1 HP.`);continue}
+          dt.f+=ds===1?2:ds<10?1:0;dt.s+=ds>=10?1:0;if(dt.f>=3){await put('chars/'+u,{...c,dead:true,death:dt});lines.push(`☠ ${c.build.name} does not survive the night at sea${best?` (Medicine ${r} was not enough)`:''}.`)}
+          else if(dt.s>=3){await put('chars/'+u,{...c,hp:1,death:{s:0,f:0}});lines.push(`💓 ${c.build.name} pulls through alone: 1 HP.`)}
+          else{await put('chars/'+u,{...c,death:dt});lines.push(`💀 ${c.build.name} lies unconscious${best?` (Medicine ${r}, not enough)`:' and nobody can tend them'}: death save ${ds} (${dt.s} saved, ${dt.f} failed).`)}}}}
+    // a hull at 0 is a sinking ship: the crew bails all night, the cargo goes overboard, and the voyage stops for the day
+    if(ship.hull<=0){const half=Math.ceil(food/2);food=Math.max(0,food-half);ship.food=food;pace=0;ship.hull=Math.max(1,Math.round(S.max*0.15));const hurt=[];
+      for(const [u] of crew){const c=ST.chars[u];if(!charOK(c))continue;const dm=d(6);hurt.push(`${c.build.name} ${dm}`);await damagePC(u,dm,false)}
+      for(const [u,c0] of crewAll){const c=ST.chars[u];if(!charOK(c))continue;const lost=Math.floor((c.berries||0)*0.2);if(lost)await put('chars/'+u,{...c,berries:(c.berries||0)-lost})}
+      notes.push(`🚨 THE SHIP IS SINKING! The crew bails and patches all night and keeps her afloat at ${ship.hull}/${S.max} hull, but no progress today, half the provisions and a fifth of everyone's Berries go overboard, and everyone is hurt (${hurt.join(', ')})`)}
+    else if(ship.hull<S.max*0.25){pace=Math.floor(pace/2);notes.push(`the ship is badly damaged (${ship.hull}/${S.max}) and leaks: half speed until someone repairs her`)}
     // 9. progress
     if(lost||evs.some(e=>e[1]==='pace0'))pace=0;
     const done=Math.min(sail.miles,sail.done+Math.max(0,pace));const arrived=done>=sail.miles;
@@ -6948,6 +6962,94 @@ function openNewGame(mode){try{openTitle();TS.view='new';TS.mode=mode||TS.mode;T
   else if(!ST.owner&&!gamePlayable()&&!(ST.story||[]).length){h.innerHTML='<div class="panel"><p class="hint">Waiting for the host to pick a game.</p></div>'}
   else if(h.querySelector('.pickgame,.youdm')){SV.cache.sHost=null;h.innerHTML='';setTimeout(()=>renderStory(),0)}}catch(e){}}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-pickgame],[data-opendm]');if(!b)return;if(b.dataset.opendm){showTab('dm');return}openNewGame(b.dataset.pickgame)});
+
+// ================= survival: rests, food, shops with limited stock, shopkeepers to talk to, fixed levels =================
+// ---------- a character's level comes from the campaign, not from a drop-down ----------
+function campStartLevel(){try{const c=CAMP();return(c&&c.levels&&c.levels[0])||1}catch(e){return 1}}
+setInterval(()=>{try{const s=document.getElementById('bLvl');if(!s)return;const c=myChar();const lv=charOK(c)?c.build.level:campStartLevel();
+  if(+s.value!==lv){s.disabled=false;s.value=String(lv);s.dispatchEvent(new Event('change',{bubbles:true}));return}
+  s.disabled=true;s.title='Your level comes from the campaign. You level up by playing.';const lab=s.closest('label');if(lab&&!lab.querySelector('.lvlnote'))lab.insertAdjacentHTML('beforeend','<small class="lvlnote hint" style="margin:2px 0 0;font-size:11px">set by the campaign</small>')}catch(e){}},400);
+// ---------- long rests: one per day, and you have to eat ----------
+// D&D: a character can benefit from only one long rest in 24 hours. Sleeping rough also costs a day of food per person
+// (ship provisions first, then rations). Inns include a meal. Without food, the night only counts as a short rest.
+OFF_BELL.inns={hub_rest_long:1,ch3_rest_long:1};
+OFF_BELL.thieves={ch2_rest_long:'Lantern Key',ch4_rest_long:'the Drowned Market'};
+async function eatFor(uids){let st=ST.state;const ship={...ensureShip(st)};let food=ship.food||0;const fed=[];for(const u of uids){if(food>0){food--;fed.push(u);continue}if(await eatRation(u))fed.push(u)}
+  if(food!==(ship.food||0))await put('table/state',{...ST.state,ship:{...ensureShip(ST.state),food}});return fed}
+function foodAvailable(){return(ensureShip(ST.state).food||0)+totalRations()}
+{const _go=offGo;offGo=async function(id,depth){const camp=offCamp();const n=camp&&camp.nodes[id];if(!(n&&n.rest==='long'&&ST.owner))return _go(id,depth);
+  const off=ST.state.off||{};if(n.restOnce&&(off.visited||{})[id])return _go(id,depth);if(n.chapter)return _go(id,depth);
+  const now=clockNow();const last=ST.state.lastLongRest;const crew=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u])=>u);let swap=null,msg=null;
+  if(last!=null&&now-last<16*60&&now>=last){swap='short';msg='😴 You lie down, but nobody can sleep: you rested only a few hours ago. (Only one long rest per day: this counts as a short rest.)'}
+  else if(!OFF_BELL.inns[id]){if(foodAvailable()<crew.length){swap='short';msg=`🍽 There is not enough food for everyone (${foodAvailable()} day${foodAvailable()===1?'':'s'} of food for ${crew.length}). You sleep hungry and badly: this only counts as a short rest. Buy rations or ship provisions at a shop.`}
+    else{await eatFor(crew);msg=`🍖 Supper before bed: ${crew.length} day${crew.length===1?'':'s'} of food eaten (${foodAvailable()} left).`}}
+  if(swap)n.rest=swap;let r;try{r=await _go(id,depth)}finally{if(swap)n.rest='long'}
+  try{if(!swap)await put('table/state',{...ST.state,lastLongRest:clockNow()});if(msg)await addStory({kind:'system',text:msg});
+    const town=OFF_BELL.thieves[id];if(!swap&&town&&d(4)===1){const rich=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&(c.berries||0)>0).sort((a,b)=>(b[1].berries||0)-(a[1].berries||0))[0];
+      if(rich){const [u,c]=rich;const lost=Math.max(1000,Math.round((c.berries||0)*0.1/1000)*1000);await put('chars/'+u,{...c,berries:Math.max(0,(c.berries||0)-lost)});await addStory({kind:'system',text:`🌙 In the night, a thief from ${town} slips aboard while everyone sleeps. In the morning ${c.build.name} is ฿${lost.toLocaleString('en-US')} lighter. (Sleeping in a harbor full of thieves has its price.)`})}}}catch(e){console.warn(e)}
+  return r}}
+// ---------- ship provisions: food for the voyage, bought at any port shop ----------
+ITEMS.provisions={name:'Ship provisions (5 days)',price:20000,tag:'ship',desc:'Five days of food for one person, stowed in the ship\'s hold. At sea and in camp the crew eats these first. Cheaper than rations.'};
+for(const L of [SHOP_DEFAULT,typeof SHOP_SALT!=='undefined'?SHOP_SALT:null,typeof SHOP_LANTERN!=='undefined'?SHOP_LANTERN:null,typeof SHOP_KIYO!=='undefined'?SHOP_KIYO:null])if(L&&!L.includes('provisions'))L.splice(L.indexOf('rations')+1,0,'provisions');
+// ---------- shops have stock, and the stock comes back after a few days ----------
+function stockBase(k){const it=ITEMS[k]||{};if(k==='rations')return 8;if(k==='provisions')return 4;if(['bandage','meat'].includes(k))return 5;if(['medicine','smoke','tabasco','rope'].includes(k))return 3;if(k==='bomb')return 2;return(it.price||0)>=20000?1:2}
+function shopStockKey(){const sh=ST.state.shop;return sh?String(sh.name||'Shop'):''}
+function shopStock(){const sh=ST.state.shop;if(!sh)return{};const S=(ST.state.stock||{})[shopStockKey()];const q={};for(const k of sh.keys||[])q[k]=S&&S.q&&S.q[k]!=null?S.q[k]:Math.max(1,Math.round(stockBase(k)*(sh.name==='Merchant at sea'?.5:1)));return q}
+setInterval(()=>{try{if(!ST.owner)return;const sh=ST.state&&ST.state.shop;if(!sh||!sh.open)return;const key=shopStockKey();const S=(ST.state.stock||{})[key];const now=clockNow();
+  const stale=!S||(now-(S.t||0)>=3*1440&&!(sh.name==='Merchant at sea'));const opened=sh.openT!==S?.openT;
+  if(stale){const q={};for(const k of sh.keys||[])q[k]=Math.max(1,Math.round(stockBase(k)*(sh.name==='Merchant at sea'?.5:1)));put('table/state',{...ST.state,stock:{...(ST.state.stock||{}),[key]:{t:now,q}}})}}catch(e){}},1500);
+function shopDeal(){const sh=ST.state.shop;return((sh&&sh.deal)||{})[ST.me]||1}
+function priceOf(k){return Math.round(ITEMS[k].price*shopDeal()/100)*100}
+// ---------- shopkeepers you can talk to ----------
+OFF_BELL.shopTalk={
+  'Marla\'s Chandlery':{keeper:'Marla',topics:[
+    {q:'Ask about the stolen bell',a:[['Marla','The bell? Terrible business. Funny thing, though. The mayor came in last week and bought two hundred feet of my strongest rope. Paid in silver. Brand-new silver.']],set:'marla_rope'},
+    {q:'Ask about Gullrock',a:[['Marla','Nobody goes near Gullrock. My late husband used to say there was a back way into that cave, round the far side, where the sea comes in.']]},
+    {q:'Ask about her cat',a:[['Marla','That is Admiral Whiskers. He is retired. He spends his pension on sleeping.']]}]},
+  'Wen\'s Everything Stall':{keeper:'Wen',topics:[
+    {q:'Ask about the Night Market',a:[['Wen','Madame Sable runs it. If a thing is stolen, smuggled or cursed, it passes under her black lanterns sooner or later.']]},
+    {q:'Ask about the Marines in town',a:[['Wen','Depot 77, end of the east pier. The sentries change at midnight, and they always argue about whose turn it is. You could drive a cart past them.']]},
+    {q:'Ask about the slightly cursed teapot',a:[['Wen','It only pours tea for people it likes. It has never liked anyone. That is why it is cheap. Well. Cheaper.']]}]},
+  'Old Haru\'s Store':{keeper:'Old Haru',noHaggle:true,topics:[
+    {q:'Ask about the mountain',a:[['Old Haru','Two ways up. The north path, which the Marines watch. And the old pilgrim stair, which nobody remembers except the goat girl, Yuki.']]},
+    {q:'Ask about the monks',a:[['Old Haru','They buy my ginger and they never haggle. Good customers. Quiet, but good.']]},
+    {q:'Ask about the Marines',a:[['Old Haru','Their captain bought every drop of lamp oil I had. Every drop. Who needs that much fire on a snowy mountain?']]}]},
+  'The Floating Stalls':{keeper:'Stallkeeper Nim',topics:[
+    {q:'Ask about Old Gulp',a:[['Stallkeeper Nim','Old Gulp? He loves fish more than he hates divers. Wave a sack of fresh mackerel at him, and he forgets you exist.']],set:'know_moray'},
+    {q:'Ask about Mother Coral',a:[['Stallkeeper Nim','She smiles at everybody. That is how you know to count your fingers after you shake her tentacle.']]},
+    {q:'Ask about Salvo Grimm',a:[['Stallkeeper Nim','They say he can drink a whale under the table. They also say he waters his own mug when nobody is looking.']]}]},
+  'Merchant at sea':{keeper:'Travelling merchant',topics:[{q:'Ask where they are headed',a:[['Travelling merchant','Wherever the wind and the prices are kind, friend. Mostly the prices.']]},{q:'Ask about the seas ahead',a:[['Travelling merchant','Storms to the north, Marines to the south, and a Sea King somewhere in between. Buy food while you can.']]}]}};
+Object.assign(OFF_BELL.looks,{'Stallkeeper Nim':'small cheerful crab fish-man stallkeeper with an apron','Travelling merchant':'sunburnt travelling merchant with a big hat'});
+function shopTalkOf(){const sh=ST.state.shop;if(!sh)return null;return OFF_BELL.shopTalk[sh.name]||{keeper:'The shopkeeper',topics:[{q:'Ask what sells well around here',a:[['Shopkeeper','Food, rope and bandages. Pirates always run out of the same three things.']]},{q:'Ask for any rumors',a:[['Shopkeeper','Rumors are free. Good ones cost extra. Buy something and maybe I will remember one.']]}]}}
+shopHTML=function(){const sh=ST.state.shop;const c=myChar();if(!sh||!sh.open||!charOK(c))return'';const bz=c.berries??0;const stock=shopStock();const deal=shopDeal();const T=shopTalkOf();const ship=ensureShip(ST.state);
+  const sellable=invOf(c).map((it,i)=>{const k=it.key||itemKeyByName(it.name);const price=k&&ITEMS[k]&&ITEMS[k].price?Math.floor(ITEMS[k].price/2):null;return{it,i,k,price}}).filter(x=>x.price);
+  const asked=(sh.asked||{});const haggled=sh.deal&&sh.deal[ST.me]!=null;
+  return`<div class="shop"><div class="sh"><b>🛒 ${esc(sh.name||'Shop')}</b><span class="tag gold">฿${Number(bz).toLocaleString('en-US')}</span><span class="tag">🍖 ship provisions ${ship.food||0} · rations ${totalRations()}</span>${deal!==1?`<span class="tag ${deal<1?'ok':'bad'}">${deal<1?'🤝 '+Math.round((1-deal)*100)+'% off for you':'😠 +'+Math.round((deal-1)*100)+'% for you'}</span>`:''}</div>
+    <div class="shopgrid">${(sh.keys||[]).filter(k=>ITEMS[k]).map(k=>{const it=ITEMS[k];const p=priceOf(k);const n=stock[k]||0;return`<div class="si ${n?'':'soldout'}"><div><b>${esc(it.name)}</b> <span class="stockn">${n?`${n} left`:'sold out'}</span><div class="calc">${esc(it.desc)}</div></div><button class="btn sm ${bz>=p&&n?'pri':''}" type="button" data-buy="${k}" ${bz>=p&&n?'':'disabled'}>${n?'฿'+p.toLocaleString('en-US'):'—'}</button></div>`}).join('')}</div>
+    ${T?`<div class="shoptalk"><div class="eyebrow">💬 Talk to ${esc(T.keeper)}</div><div class="row" style="gap:6px;flex-wrap:wrap">${T.topics.map((t,i)=>`<button class="btn sm" type="button" data-stalk="${i}">${esc(t.q)}${asked[i]?' ✓':''}</button>`).join('')}${T.noHaggle?'':`<button class="btn sm" type="button" data-haggle="1" ${haggled?'disabled':''}>🤝 ${haggled?'You already haggled here':'Haggle (Persuasion)'}</button>`}</div></div>`:''}
+    <p class="hint" style="margin:6px 0 0">Shops restock every few days.</p>
+    ${sellable.length?`<details class="sell"><summary>Sell your things (half price)</summary>${sellable.map(x=>`<div class="si"><span>${esc(x.it.name)} ×${x.it.qty}</span><button class="btn sm" type="button" data-sell="${x.i}">Sell ฿${x.price.toLocaleString('en-US')}</button></div>`).join('')}</details>`:''}</div>`};
+buyItem=async function(k){const c=myChar();const it=ITEMS[k];if(!it||!charOK(c))return;const p=priceOf(k);const stock=shopStock();if(!(stock[k]>0)){toast('Sold out. Come back in a few days.');return}if((c.berries??0)<p){toast('Not enough Berries.');return}
+  const key=shopStockKey();const S=(ST.state.stock||{})[key]||{t:clockNow(),q:stock};const q={...stock,...(S.q||{})};q[k]=Math.max(0,(q[k]??stock[k])-1);
+  if(k==='provisions'){const ship=ensureShip(ST.state);await put('chars/'+ST.me,{...c,berries:(c.berries??0)-p});await put('table/state',{...ST.state,ship:{...ship,food:(ship.food||0)+5},stock:{...(ST.state.stock||{}),[key]:{...S,q}}})}
+  else{const inv=invOf(c).map(x=>({...x}));const ex=inv.find(x=>(x.key||itemKeyByName(x.name))===k);if(ex)ex.qty+=1;else inv.push({name:it.name,qty:1,tag:it.tag,key:k});
+    await put('chars/'+ST.me,{...c,berries:(c.berries??0)-p,inv});await put('table/state',{...ST.state,stock:{...(ST.state.stock||{}),[key]:{...S,q}}})}
+  addLog({by:ST.me,who:c.build.name,label:'Shop',detail:`Bought ${it.name}`,total:'-฿'+p.toLocaleString('en-US')});toast(`Bought ${it.name}.`);try{SFX('coin')}catch(e){}};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-stalk],[data-haggle]');if(!b)return;const sh=ST.state.shop;const c=myChar();const T=shopTalkOf();if(!sh||!charOK(c)||!T)return;
+  if(b.dataset.stalk!==undefined){const t=T.topics[+b.dataset.stalk];if(!t)return;b.disabled=true;
+    await addStory({kind:'player',who:c.build.name,by:ST.me,text:t.q});for(const [who,line] of t.a)await addStory({kind:'npc',npc:who==='Shopkeeper'?T.keeper:who,text:line});
+    const patch={...ST.state.shop,asked:{...(ST.state.shop.asked||{}),[b.dataset.stalk]:true}};const st={...ST.state,shop:patch};
+    if(t.set&&st.off){const fl={...(st.off.flags||{})};for(const f of t.set.split(','))fl[f]=true;st.off={...st.off,flags:fl}}await put('table/state',st);return}
+  if(b.dataset.haggle){if(sh.deal&&sh.deal[ST.me]!=null)return;const D=derive(c.build);const bonus=(D.skills.Persuasion||{bonus:0}).bonus;const nat=d(20);const tot=nat+bonus;const ok=tot>=13||nat===20;const mult=nat===20?0.7:ok?0.8:1.1;
+    await put('table/state',{...ST.state,shop:{...ST.state.shop,deal:{...(ST.state.shop.deal||{}),[ST.me]:mult}}});
+    await addStory({kind:'system',text:`🤝 ${c.build.name} haggles with ${T.keeper}: Persuasion ${tot} vs DC 13. ${nat===20?'A masterpiece of haggling: 30% off everything for you!':ok?'A deal: 20% off for you.':'The shopkeeper is offended: prices go up 10% for you.'}`})}});
+// a new visit to a shop starts with fresh talk and no deal
+{const _go=offGo;offGo=async function(id,depth){const before=ST.state.shop&&ST.state.shop.open?ST.state.shop.name:null;const r=await _go(id,depth);try{const sh=ST.state.shop;if(sh&&sh.open&&ST.owner&&(sh.name!==before)&&(sh.deal||sh.asked))await put('table/state',{...ST.state,shop:{...sh,deal:{},asked:{}}})}catch(e){}return r}}
+// ---------- at sea: the unconscious cannot work ----------
+{const _sh=sailHTML;sailHTML=function(){let h=_sh.apply(this,arguments);try{const c=myChar();const s=ST.state.sail;if(h&&s&&s.on&&charOK(c)&&(c.hp||0)<=0&&!c.dead){h=h.replace('<div class="sail','<div class="sail sail-down"').replace(/(<div class="sail[^>]*>)/,`$1<div class="downnote">💤 <b>You are unconscious.</b> You cannot take a job today. Tonight a crewmate tends you (Medicine DC 10). If nobody can, you make a death save. Three failed saves and you die at sea.</div>`)}
+  if(h)h=h.replace("A fed crew gets a long rest each night; without food, exhaustion sets in after 3 + CON days.","A fed crew gets a long rest each night; without food, exhaustion sets in after 3 + CON days. Anyone at 0 HP is unconscious: a crewmate must tend them, or they make death saves. A hull at 0 means the ship is sinking: no progress, cargo and food lost. Below a quarter hull she leaks and sails at half speed.")}catch(e){}return h}}
+(function(){const st=document.createElement('style');st.textContent=`.si.soldout{opacity:.55}.stockn{font-size:11px;opacity:.75;margin-left:4px;font-family:var(--mono,monospace)}.shoptalk{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.downnote{margin:0 0 8px;padding:8px 10px;border-radius:8px;border:1px solid var(--blood);background:color-mix(in srgb,var(--blood) 15%,transparent);font-size:14px}.sail-down .sailjobs{opacity:.4;pointer-events:none}`;document.head.appendChild(st)})();
 
 </script>
 </body></html>

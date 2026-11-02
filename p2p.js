@@ -83,7 +83,14 @@ const DB={collection:c=>query(c),doc:p=>docRef(p)};
 const USER={isOwner:async()=>N.role==='host',id:async()=>uid,can:async()=>true};
 const ROOM={peers:()=>peerList(),onPeers:cb=>{N.peerCbs.push(cb);return()=>{N.peerCbs=N.peerCbs.filter(x=>x!==cb)}},
   presence:async v=>{N.myPres=v||{};if(N.role==='host')sendPeers();else if(N.hostConn&&N.hostConn.open)N.hostConn.send({t:'pres',uid,v:N.myPres})}};
-window.claude={use:async what=>{const mode=await N.ready;if(mode==='solo')throw new Error('not here');
+// the AI Dungeon Master on the website: the host's own Anthropic API key, kept only in the host's browser
+const AIKEY=()=>LS('glt-ai-key')||'';
+const AI_SHIM={json:async(prompt,opts)=>{const key=AIKEY();if(!key)throw new Error('No API key');const model=(opts&&opts.modelTier==='fast')?'claude-haiku-5-5':'claude-sonnet-5-5';
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model,max_tokens:4096,system:'You are the game master engine for a tabletop RPG web app. Reply with one JSON object only: no prose, no code fences.',messages:[{role:'user',content:String(prompt)}]})});
+  if(!r.ok){let m='';try{m=(await r.json()).error.message}catch(e){}const e=new Error('AI request failed ('+r.status+') '+m);e.code=r.status===401?'bad_key':'ai_error';throw e}
+  const j=await r.json();const t=(j.content||[]).map(c=>c.text||'').join('');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('The AI did not answer with JSON.');return JSON.parse(t.slice(a,b+1))}};
+window.claude={use:async what=>{const mode=await N.ready;if(what==='sample'){if(N.role!=='guest'&&AIKEY())return AI_SHIM;throw new Error('no AI')}if(mode==='solo')throw new Error('not here');
   if(what==='db')return DB;if(what==='user')return USER;if(what==='room')return ROOM;throw new Error('not available on the website')}};
 window.GLT_NET=N;
 // ---------------- the start screen: host, join or play alone ----------------
@@ -104,6 +111,7 @@ function lobby(){const st=document.createElement('style');st.textContent=`
 #netLobby .row{display:flex;gap:8px}#netLobby .row input{flex:1}#netLobby .row button{width:auto;margin-top:0;padding:0 20px;min-height:46px}
 #netLobby .or{text-align:center;opacity:.6;margin:16px 0 4px;font-size:13px}#netLobby .err{color:#ff9b8a;min-height:20px;margin-top:10px;font-size:14px}
 #netLobby .small{font-size:13px;opacity:.7;margin-top:14px}
+#netLobby .nl-ai{margin-top:14px;font-size:14px}#netLobby .nl-ai summary{cursor:pointer;opacity:.85}#netLobby .nl-ai p{font-size:13px;margin:8px 0}
 #netBadge{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:9000;background:rgba(15,12,9,.92);color:#f3e6c8;border:1px solid rgba(224,164,88,.45);border-radius:999px;padding:6px 8px 6px 14px;font:13px/1.3 ui-monospace,monospace;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 32px);flex-wrap:wrap;justify-content:center}
 #netBadge button{background:#e0a458;color:#1a120a;border:0;border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit}
 @media (max-width:700px){#netBadge{bottom:calc(env(safe-area-inset-bottom,0px) + 84px);font-size:11px;padding:4px 4px 4px 10px;gap:6px;flex-wrap:nowrap;white-space:nowrap}#netBadge button{padding:4px 10px}}
@@ -116,6 +124,8 @@ function lobby(){const st=document.createElement('style');st.textContent=`
     <button type="button" id="nlHost" class="${pre?'alt':''}">${lastHost?`Host your game again (room ${lastHost})`:'Host a new game'}</button>
     ${lastHost?'<button type="button" id="nlNew" class="alt">Host a brand-new table</button>':''}
     <button type="button" id="nlSolo" class="alt">Play alone on this device</button>
+    <details class="nl-ai"><summary>🤖 AI Dungeon Master (optional, for the host)</summary><p>Paste an Anthropic API key from console.anthropic.com to let an AI run the story. It is billed to your own API account, and the key is kept only in this browser.</p>
+      <div class="row"><input id="nlKey" type="password" placeholder="${AIKEY()?'Key saved: paste a new one to replace it':'sk-ant-…'}" autocomplete="off"><button type="button" id="nlKeySave">Save</button></div>${AIKEY()?'<button type="button" id="nlKeyDel" class="alt" style="margin-top:6px">Remove the saved key</button>':''}</details>
     <div class="err" id="nlErr"></div>
     <div class="small">The host's browser runs the game and keeps the save. Keep it open while your friends play.</div></div>`;
   document.body.appendChild(el);const $$=id=>document.getElementById(id);const err=t=>{$$('nlErr').textContent=t};
@@ -125,6 +135,8 @@ function lobby(){const st=document.createElement('style');st.textContent=`
   const host=async code=>{busy(true);err('Opening the room…');try{await startHost(code);done('host')}catch(e){busy(false);err(e.message||'Could not open the room.')}};
   $$('nlHost').onclick=()=>host(lastHost||codeGen());if($$('nlNew'))$$('nlNew').onclick=()=>{if(confirm('Start a brand-new table? Your old one stays saved, and you can open it again later with its room code.'))host(codeGen())};
   $$('nlSolo').onclick=()=>done('solo');
+  $$('nlKeySave').onclick=()=>{const v=$$('nlKey').value.trim();if(!/^sk-ant-/.test(v)){err('That does not look like an Anthropic API key (it starts with sk-ant-).');return}LSS('glt-ai-key',v);$$('nlKey').value='';$$('nlKey').placeholder='Key saved: paste a new one to replace it';err('');const e2=$$('nlErr');e2.style.color='#9be59b';e2.textContent='AI key saved. Pick "AI Dungeon Master" under New game.';};
+  if($$('nlKeyDel'))$$('nlKeyDel').onclick=()=>{try{localStorage.removeItem('glt-ai-key')}catch(e){}$$('nlKeyDel').remove();$$('nlKey').placeholder='sk-ant-…';const e2=$$('nlErr');e2.style.color='#9be59b';e2.textContent='Key removed.'};
   const join=async()=>{const code=norm($$('nlCode').value);if(code.length!==7){err('A room code looks like ABC-123.');return}
     if(code===LS('glt-last-host')){host(code);return}
     busy(true);err('Connecting to the host…');try{await startJoin(code);try{history.replaceState(null,'',location.pathname+'?room='+encodeURIComponent(code))}catch(e){}done('guest')}catch(e){busy(false);err(e.message||'Could not join.')}};
