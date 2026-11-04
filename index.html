@@ -6600,6 +6600,286 @@ setInterval(()=>{try{if(!ST.owner)return;const o=ST.state&&ST.state.off;if(!o||o
 // sparring with the monks of Kiyo is a trial, not a deed: no bounty for it
 {const _fb=foeBountyValue;foeBountyValue=function(f){if(/^Brass Monk/.test(String(f&&f.name||'')))return 0;return _fb(f)}}
 
+// ================= The Tide Bell Saga · Chapter 5: Ironwall, Marine Base 77 (level 5 → 6) =================
+// Kessler's prison fortress on a black rock in the cold north. Old Brina is in a cell, the Storm Bell hangs in the
+// warden's tower, and the warden's office holds Kessler's plan. Get in (disguised, over the cliff, arrested on purpose
+// or through the front gate), find all three, and break out past Warden Otto Brandt.
+// ================= Chapter 6: The Long Crossing (level 6 → 7) =================
+// The race to the Isle of Echoes. A storm that rings like a bell, a Sea King, a ghost ship where the crew's Haki
+// wakes up, and a naval battle against the Verdict, the frigate carrying Kessler's stolen bells.
+Object.assign(FOES,{
+  jailer:{name:'Ironwall Jailer',icon:'flag',hp:24,ac:14,atk:5,a:[1,1,8,3],wpn:'iron cudgel',dt:'bludgeoning',reach:1,speed:6,dex:1,desc:'broad Marine jailer with a ring of keys and an iron cudgel'},
+  warden:{name:'Warden Otto Brandt',initials:'OB',hue:210,hp:84,ac:17,atk:7,a:[2,1,10,4],wpn:'iron key-flail',dt:'bludgeoning',reach:2,speed:6,dex:1,sp:['Lockdown Slam',3,8,2,15,'STR',4,2],spdt:'bludgeoning',desc:'the warden of Ironwall: a giant of a man with a flail made of the prison\'s keys'},
+  sea_king_young:{name:'Young Sea King',icon:'anchor',swim:true,hp:76,ac:15,atk:7,a:[2,2,8,4],wpn:'bite and coils',dt:'piercing',reach:2,speed:8,dex:1,sp:['Tidal Lash',3,8,0,15,'DEX',4,2],spdt:'bludgeoning',desc:'a young Sea King, only as long as three ships'},
+  venn:{name:'Commander Oskar Venn',initials:'OV',hue:30,hp:78,ac:16,atk:7,a:[2,1,8,4],wpn:'twin sabres',dt:'slashing',reach:1,speed:7,dex:3,sp:['Broadside Order',2,10,2,15,'DEX',3,2],spdt:'fire',desc:'Kessler\'s second-in-command: precise, polite, two sabres'}});
+ALLIES[npcSlug('Old Brina')]={name:'Old Brina',hp:30,ac:13,atk:5,a:[1,1,10,3],wpn:'harpoon gun',range:[6,18],speed:5,dex:1,desc:'old harbor master: one heavy harpoon shot a turn'};
+Object.assign(OFF_BELL.looks,{'Warden Otto Brandt':'giant bald navy warden with a grey moustache and a flail made of iron keys','Old Tolly':'wiry old smuggler woman with a patched coat and a clay pipe','Corporal Nell':'tired young woman navy corporal with freckles and a crooked cap',
+  'Commander Oskar Venn':'tall elegant navy officer with a thin moustache and two sabres','Jailer':'broad navy jailer with a ring of keys'});
+Object.assign(OFF_BELL.profiles,{
+  'Warden Otto Brandt':{role:'Warden of Ironwall, Marine Base 77',look:'A giant of a man with a shaved head, a grey moustache like a broom, and a flail made of every key in his prison.',persona:'Proud that nobody has ever escaped. Counts everything twice.'},
+  'Old Tolly':{role:'Smuggler of Cinder Cove',look:'A wiry old woman in a coat made of more patches than coat, with a clay pipe that never goes out.',persona:'Cheerful, crooked and very loyal to money.'},
+  'Corporal Nell':{role:'Marine guard at Ironwall',look:'A tired young woman with freckles, a crooked cap and ink on her fingers.',persona:'Hates her job, loves card games, and is braver than she thinks.'},
+  'Commander Oskar Venn':{role:'Captain of the frigate Verdict, Kessler\'s second-in-command',look:'A tall, elegant officer with a thin moustache, white gloves and two sabres.',persona:'Polite, precise and utterly loyal. Apologises before he cuts you.'}});
+Object.assign(OFF_BELL.voices,{'Warden Otto Brandt':'am_onyx','Old Tolly':'bf_lily','Corporal Nell':'af_nova','Commander Oskar Venn':'bm_fable'});
+const SHOP_CINDER=['bandage','medicine','meat','smoke','tabasco','bomb','rope','rations','provisions','fineblade','marinecoat'];
+Object.assign(OFF_BELL.nodes,{
+  // ======================= CHAPTER 5 =======================
+  ch5_start:{chapter:'Chapter 5 · Ironwall, Marine Base 77',scene:'shipday',weather:'clear',art:'sc_sea',goal:'Sail north to Ironwall and get Old Brina and the Storm Bell back.',
+    quest:{title:'Ironwall',status:'open',note:'Kessler holds Old Brina and the Storm Bell in his prison fortress, Marine Base 77.'},b:[
+    ["n","The sea turns grey, then black. The wind comes down from the north with ice in it, and for four days nobody on deck says much."],
+    ["n","Nobody escapes Ironwall. Every sailor in the East Blue knows the saying. Nobody you have ever met has tried."],
+    ["Pip","Brina taught me to tie knots. And to spit. And to never, ever give up a fight. So we're not giving up.","pip_aboard"],
+    ["Yuki","A prison on a rock in the sea. Fine. I have climbed worse rocks.","yuki_joined"],
+    ["Lt. Crane","I served six weeks at Ironwall as a cadet. I remember the codes on the gate, if they have not changed them. They never change anything at Ironwall.","crane_turned"]],
+    voyage:{to:'Cinder Cove',miles:72,scene:'harbor',next:'ch5_arrive'}},
+  ch5_arrive:{scene:'harbor',weather:'mist',art:'sc_harbor',b:[["n","Cinder Cove is a smugglers' village of black stone and blacker sand, on the island facing Ironwall across a mile of cold, fast water."],
+    ["n","And there it is. A rock in the sea with a fortress grown over it like a shell: grey walls, gun towers, a lighthouse on the cliff, and a tall tower in the middle where something big and bronze glints in the window."],
+    ["n","The Storm Bell. They have hung it in the warden's tower like a trophy."],
+    ["n","A supply barge chugs across the strait as you watch, loaded with crates and laundry sacks. Marines wave it through the sea gate without even looking."]],next:'ch5_hub'},
+  ch5_hub:{scene:'harbor',goal:'Find a way into Ironwall: free Old Brina, take back the Storm Bell, and learn Kessler\'s plan.',b:[["n","Cinder Cove lives off the prison: it sells the guards their drink, washes their laundry, and smuggles in whatever the prisoners can pay for."]],
+    bAgain:[["n","Back in Cinder Cove. Across the strait the lighthouse beam sweeps over the water, once a minute, every minute.","tod_night"],["n","Back in Cinder Cove. Gulls fight over fish guts on the black sand. Across the strait, a bugle sounds the change of guard."],["n","Back in Cinder Cove. A laundry line flaps with white Marine uniforms, drying in the cold wind."]],
+    choices:[{t:'Drink at the Last Meal, where the off-duty guards go',go:'ch5_tavern',if:'!did_tavern5'},{t:'Find the smuggler everyone talks about',go:'ch5_tolly',if:'!did_tolly'},{t:'Go back to Old Tolly',go:'ch5_tolly_deal',if:'did_tolly,!cliff_route'},
+      {t:'Look around the laundry yard',go:'ch5_laundry',if:'!has_uniforms,!did_laundry'},{t:'Ask Crane for the gate codes',go:'ch5_crane',if:'crane_turned,!has_codes'},{t:'Ask your prisoner Crane for the gate codes',go:'ch5_crane_ask',if:'crane_prisoner,!crane_turned,!has_codes,!did_crane5'},
+      {t:'Visit the chandlery (shop)',go:'ch5_shop'},{t:'⏳ Take a short rest (1 hour)',go:'ch5_rest_short'},{t:'🛏 Sleep at the Last Meal until morning (long rest, ฿4,000)',go:'ch5_rest_long',cost:4000},
+      {t:'⚓ Go to Ironwall',go:'ch5_approach'}]},
+  ch5_rest_short:{rest:'short',b:[["n","You rest behind a fishing shed, out of the wind, and watch the lighthouse turn."]],next:'ch5_hub'},
+  ch5_rest_long:{rest:'long',b:[["n","The beds at the Last Meal are hard and the walls are thin, and you can hear the guards snoring next door. You sleep anyway."]],next:'ch5_hub'},
+  ch5_shop:{scene:'market',shop:{name:'Cinder Cove Chandlery',items:SHOP_CINDER},b:[["n","The chandlery sells rope, lamp oil, and a surprising number of files and lockpicks. Nobody asks why."]],choices:[{t:'Leave the chandlery',go:'ch5_hub'}]},
+  ch5_tavern:{scene:'tavern',art:'sc_tavern',set:'did_tavern5',b:[["n","The Last Meal is full of off-duty Marines, warming their hands on mugs of hot rum and complaining about the warden."],
+    ["n","At a corner table a young corporal with a crooked cap is losing at cards, badly, and very loudly."],["Corporal Nell","Again! That is the third time! Brandt docks my pay if I lose my pass again, he counts EVERYTHING twice!"]],
+    choices:[{t:'Sit down and win her guard pass at cards',check:{s:'Sleight of Hand',dc:14},ok:'ch5_pass_won',fail:'ch5_cards_lost'},{t:'Buy her a drink and listen (฿1,000)',go:'ch5_nell_talk',cost:1000},
+      {t:'Pick a fight with the loudest guard',go:'ch5_tavern_brawl'},{t:'Leave quietly',go:'ch5_hub'}]},
+  ch5_pass_won:{set:'has_pass',loot:[{item:'Ironwall guard pass',qty:1}],b:[["n","Three hands later, Corporal Nell's guard pass is lying in front of you, and she is staring at it like a lost puppy."],["Corporal Nell","I am going to be in SO much trouble."]],
+    choices:[{t:'Give her back the pass in exchange for information',go:'ch5_pass_back'},{t:'Keep it',go:'ch5_hub'}]},
+  ch5_pass_back:{set:'nell_friend',unset:'has_pass',loot:[{item:'Ironwall guard pass',qty:-1}],b:[["n","You slide the pass back across the table. Corporal Nell stares at it, then at you, and something in her face changes."],["Corporal Nell","...Nobody at Ironwall has ever given me anything back. Sit down. Ask."]],next:'ch5_nell_talk'},
+  ch5_cards_lost:{berries:-3000,b:[["n","You lose three thousand Berries to a card trick you did not see coming. Corporal Nell, suddenly in a much better mood, buys the whole table a round with your money."]],next:'ch5_hub'},
+  ch5_nell_talk:{set:'guard_info',b:[["Corporal Nell","Ironwall? It's a fridge with cannons. The warden, Brandt, keeps every key on that flail of his. Every single key. He sleeps with it."],
+    ["Corporal Nell","There's an old woman in the north block who bit a sergeant on the first day. Bit him! Everyone's scared of her. Even Brandt goes round the long way.","!nell_friend"],
+    ["Corporal Nell","That old woman you're asking about, Brina? North block, cell nine. She's fine. She bit a sergeant. Don't tell anyone I told you.","nell_friend"],
+    ["Corporal Nell","The barge goes over every morning with the laundry. Nobody checks the laundry. Who checks laundry?"]],next:'ch5_hub'},
+  ch5_tavern_brawl:{b:[["Marine","Pirates! In OUR bar?"]],fight:{map:'tavern',foes:[{key:'marine',count:2},{key:'sergeant',count:1}],win:'ch5_brawl_win',lose:'ch5_brawl_lose'}},
+  ch5_brawl_win:{set:'alarm1',berries:6000,b:[["n","The last guard goes through the window. The barkeep sighs and fetches the broom. Across the strait, a bugle sounds: somebody has run to tell the fortress."]],next:'ch5_hub'},
+  ch5_brawl_lose:{set:'alarm1',hp:[{player:'ALL',dice:'1d6',reason:'a tavern brawl'}],b:[["n","You land in the cold black surf outside. The guards toast your health from the door and go back to their rum, but by morning, the whole fortress has heard about the pirates in Cinder Cove."]],next:'ch5_hub'},
+  ch5_tolly:{scene:'beach',art:'sc_beach',set:'did_tolly',b:[["n","At the end of the beach, an old woman in a coat of patches sits in a rowboat, smoking a clay pipe and mending a net that is clearly not for fish."],
+    ["Old Tolly","You've got the look. Prison-break look. I've seen it before. Usually on people who end up inside."],
+    ["Old Tolly","I row things into Ironwall at night. Tobacco, letters, files baked in bread. There's a ledge under the lighthouse cliff the Marines forgot about."]],next:'ch5_tolly_deal'},
+  ch5_tolly_deal:{b:[["Old Tolly","Fifteen thousand Berries and I row you to the ledge tonight. The climb's your problem."]],
+    choices:[{t:'Pay her (฿15,000)',go:'ch5_tolly_yes',cost:15000},{t:'Haggle her down',check:{s:'Persuasion',dc:15},ok:'ch5_tolly_cheap',fail:'ch5_tolly_no'},{t:'Not yet',go:'ch5_hub'}]},
+  ch5_tolly_yes:{set:'cliff_route',b:[["Old Tolly","Pleasure doing crimes with you. Be on the beach after dark."]],next:'ch5_hub'},
+  ch5_tolly_cheap:{set:'cliff_route',berries:-6000,b:[["Old Tolly","Six thousand. And you owe me a story when you get out. If you get out."]],next:'ch5_hub'},
+  ch5_tolly_no:{b:[["Old Tolly","Fifteen. The sea doesn't haggle, and neither do I."]],next:'ch5_hub'},
+  ch5_laundry:{scene:'market',set:'did_laundry',b:[["n","Behind the washhouse, white Marine uniforms flap on the lines, waiting for the morning barge. A washerwoman is singing inside."]],
+    choices:[{t:'Take a few uniforms while she sings',check:{s:'Stealth',dc:12},ok:'ch5_uniforms',fail:'ch5_laundry_caught'},{t:'Buy them from her (฿8,000)',go:'ch5_uniforms',cost:8000},{t:'Leave',go:'ch5_hub'}]},
+  ch5_uniforms:{set:'has_uniforms',b:[["n","Starched white coats and caps, a little damp. Put them on, stand up straight, and you are just more Marines."]],next:'ch5_hub'},
+  ch5_laundry_caught:{set:'alarm1',b:[["n","The singing stops. The washerwoman screams so loud that every dog in Cinder Cove starts barking, and you run with nothing but a single sock."]],next:'ch5_hub'},
+  ch5_crane:{set:'has_codes',b:[["Lt. Crane","Sea gate: Iron, Iron, Anchor. The inner gate is a question: What does the wall keep? The answer is: Everything."],["Lt. Crane","If they ask your names, say you are an inspection from G-5. Nobody at Ironwall knows what G-5 is. That is the point."]],next:'ch5_hub'},
+  ch5_crane_ask:{set:'did_crane5',b:[["Lt. Crane","You want me to help you break into a Marine prison. Me. A Marine."]],
+    choices:[{t:'Remind him how Kessler threw him away',check:{s:'Persuasion',dc:13},ok:'ch5_crane_yes',fail:'ch5_crane_no'},{t:'Threaten him',check:{s:'Intimidation',dc:15},ok:'ch5_crane_yes',fail:'ch5_crane_no'}]},
+  ch5_crane_yes:{set:'has_codes,crane_turned',b:[["n","He is quiet for a long time."],["Lt. Crane","...Iron, Iron, Anchor. And the answer at the inner gate is: Everything. Do not make me regret this."]],next:'ch5_hub'},
+  ch5_crane_no:{b:[["Lt. Crane","No. I am still a Marine, whatever the Commodore thinks of me."]],next:'ch5_hub'},
+  ch5_approach:{scene:'harbor',art:'sc_harbor',b:[["n","Ironwall rises out of the strait, grey and wet, its guns pointing every way at once. There are not many ways in."]],
+    choices:[{t:'Ride the morning barge, dressed as Marines',go:'ch5_barge',if:'has_uniforms'},{t:'Row to the cliff ledge with Old Tolly tonight',go:'ch5_cliff',if:'cliff_route'},
+      {t:'Walk up to the sea gate as a G-5 inspection',go:'ch5_codes',if:'has_codes'},{t:'Get yourselves arrested on purpose',go:'ch5_arrest'},{t:'Storm the sea gate',go:'ch5_storm_gate'},{t:'Not yet: back to Cinder Cove',go:'ch5_hub'}]},
+  ch5_barge:{scene:'harbor',b:[["n","You sit on laundry sacks in your stolen whites while the barge chugs across the strait. At the sea gate a sergeant with a clipboard looks you over."],["Marine","Don't know your faces. Who sent you?"]],
+    choices:[{t:'Show Corporal Nell\'s guard pass',go:'ch5_inside',if:'has_pass'},{t:'Bluff: transfers from Lantern Key',check:{s:'Deception',dc:13},ok:'ch5_inside',fail:'ch5_gate_fight'},{t:'Say nothing and hand him a fat envelope (฿10,000)',go:'ch5_inside',cost:10000}]},
+  ch5_cliff:{scene:'beach',weather:'night',art:'sc_storm',b:[["n","Old Tolly rows without a sound, between the rocks, under the sweep of the lighthouse. She drops you on a ledge as wide as a dinner table and is gone before you can thank her."],
+    ["n","Above you, two hundred feet of wet black rock."]],
+    choices:[{t:'Climb',check:{s:'Athletics',dc:14},ok:'ch5_lighthouse',fail:'ch5_cliff_fall'},{t:'Let Yuki lead the climb',go:'ch5_lighthouse',if:'yuki_joined'}]},
+  ch5_cliff_fall:{set:'alarm1',hp:[{player:'ALL',dice:'2d6',reason:'a fall on the cliff'}],b:[["n","A hold breaks. You slide, grab, slide again, and stop with your heart in your mouth and the skin gone from your hands. Somewhere above, a lantern turns toward the noise."],["n","You make it to the top. Barely. And not as quietly as you wanted."]],next:'ch5_lighthouse'},
+  ch5_lighthouse:{scene:'marinebase',weather:'night',art:'sc_tower',b:[["n","You climb in through the lighthouse window. The keeper is asleep in his chair with a book on his face. You step around him, down the spiral stair, and into Ironwall."]],next:'ch5_inside'},
+  ch5_codes:{scene:'harbor',b:[["n","You walk up to the sea gate as if you own it. A slot opens."],["Marine","Code?"],["n","Iron, Iron, Anchor. The gate opens. Inside, a second voice asks the question: What does the wall keep?"],["n","Everything. The second gate opens too. Nobody even looks at your faces. Crane was right: nobody at Ironwall knows what G-5 is."]],next:'ch5_inside'},
+  ch5_arrest:{scene:'harbor',b:[["n","You row up to the sea gate, singing, and throw a bottle at the nearest Marine. It is the easiest arrest of his life."]],
+    choices:[{t:'Hide a lockpick where they won\'t look',check:{s:'Sleight of Hand',dc:12},ok:'ch5_jailed',fail:'ch5_jailed_bare'},{t:'Hide a lockpick, the way a rogue does',need:{cls:'rogue'},go:'ch5_jailed'}]},
+  ch5_jailed:{scene:'marinebase',set:'in_cells,has_pick',b:[["n","They take your weapons, your bags and your boots, and throw you into a cell in the north block. The lockpick is still where you hid it."],
+    ["Old Brina","Took you long enough."],["n","She is in the next cell, sitting on her bunk with her arms folded and an unlit pipe in her mouth."]],next:'ch5_cells'},
+  ch5_jailed_bare:{scene:'marinebase',set:'in_cells',b:[["n","They find the lockpick. They find everything. They throw you into a cell in the north block with nothing but your clothes."],
+    ["Old Brina","Took you long enough. And you brought nothing. Typical."],["n","She is in the next cell, arms folded, an unlit pipe in her mouth. Then she spits out the pipe, and a bent nail falls out of it into her hand."],["Old Brina","Lucky for you, I've been busy."]],next:'ch5_cells'},
+  ch5_storm_gate:{b:[["n","You come out of the mist with weapons drawn. Every bell in the fortress starts ringing at once."]],fight:{map:'marinebase',weather:'mist',foes:[{key:'marine',count:3},{key:'sergeant',count:1}],win:'ch5_gate_win',lose:'ch5_gate_lose'}},
+  ch5_gate_fight:{b:[["Marine","Impostors! Seize them!"]],fight:{map:'harbor',foes:[{key:'marine',count:2},{key:'sergeant',count:1}],win:'ch5_gate_win',lose:'ch5_gate_lose'}},
+  ch5_gate_win:{set:'alarm1,alarm2',b:[["n","You are in. So is the whole garrison, now, running toward you. You duck into the nearest corridor before they find which one."]],next:'ch5_inside'},
+  ch5_gate_lose:{set:'in_cells,alarm1',b:[["n","You wake up on cold stone. Bars. A cell in the north block."],["Old Brina","Took you long enough. That was the worst rescue I have ever seen."],["n","She spits out her pipe, and a bent nail drops into her hand."],["Old Brina","Lucky for you, I've been busy."]],next:'ch5_cells'},
+  ch5_inside:{scene:'marinebase',goal:'Inside Ironwall: free Brina (north block), find Kessler\'s plan (the warden\'s office), and take the Storm Bell (the tower).',b:[["n","Ironwall is a maze of wet stone corridors, iron stairs and echoing yards. Marines march past in pairs. Somewhere, someone is singing a sad song in a cell."]],
+    bAgain:[["n","Back in the corridors of Ironwall. A patrol marches past, boots ringing on the stone."],["n","Back in the corridors. Somewhere a door slams, and the whole fortress seems to listen.","alarm1"]],
+    choices:[{t:'Go to the north block, cell nine',go:'ch5_block',if:'!brina_free'},{t:'Search the warden\'s office',go:'ch5_office',if:'!know_plan'},{t:'Climb the warden\'s tower to the Storm Bell',go:'ch5_tower'}]},
+  ch5_block:{scene:'marinebase',b:[["n","The north block is three tiers of cells around a well of cold air. A big jailer sits at a desk at the bottom with a ring of keys, eating soup."]],
+    choices:[{t:'Sneak past him',check:{s:'Stealth',dc:14},ok:'ch5_cells',fail:'ch5_block_fight'},{t:'Order him to fetch the prisoner, as an officer',check:{s:'Deception',dc:13},ok:'ch5_cells',fail:'ch5_block_fight',if:'has_uniforms'},{t:'Take him down',go:'ch5_block_fight'}]},
+  ch5_block_fight:{b:[["n","The jailer drops his soup and grabs his cudgel."]],fight:{map:'marinebase',foes:[{key:'jailer',count:1},{key:'marine',count:2}],win:'ch5_cells',lose:'ch5_block_lose'}},
+  ch5_block_lose:{set:'in_cells,alarm1',b:[["n","They throw you into the cell next to the one you came to open."],["Old Brina","Well. That's one way to visit."],["n","She spits out her pipe, and a bent nail falls into her hand."]],next:'ch5_cells'},
+  ch5_cells:{scene:'marinebase',set:'at_cells',b:[["n","Cell nine. Old Brina sits on her bunk, arms folded, pipe in her mouth, glaring at the world. Then she sees you, and for one second the glare goes away."],
+    ["Old Brina","Took you long enough."]],
+    choices:[{t:'Open her cell',go:'ch5_brina',if:'!in_cells'},{t:'Pick your own lock',go:'ch5_brina',if:'in_cells,has_pick'},{t:'Pick the lock with Brina\'s bent nail',check:{s:'Sleight of Hand',dc:13},ok:'ch5_brina',fail:'ch5_cells_slow',if:'in_cells,!has_pick'}]},
+  ch5_cells_slow:{set:'alarm1',b:[["n","The nail bends, slips, bends again. It takes an hour, and the guard on his round almost sees you. But at last, with a clunk, the lock gives."]],next:'ch5_brina'},
+  ch5_brina:{set:'brina_free',unset:'in_cells',b:[["n","The cell door swings open. Brina walks out, stretches her back until it cracks, and lights her pipe from the corridor lamp."],
+    ["Old Brina","Kessler hung my bell in his tower. MY bell. Rang it every morning to wake his Marines, like a cowbell. I want it back."],
+    ["Old Brina","And you'd better find out what that man's planning. He talked to me. Couldn't help himself. Kept saying in twelve days it won't matter what anyone wants."],
+    ["n","In the other cells, faces are pressed to the bars."],["Captain Mabry","Well, well. The little bell thieves. Kessler doesn't pay for failure, it turns out. Let me out and I'll owe you one. A Mabry always pays his debts. Eventually."],
+    ["Dorra the Eel","You put me here. Now get me out.","dorra_jailed"],
+    ["Capt. Vesna Hale","Don't look so surprised. The Commodore punishes losers. Open this door and I'll tell you everything about the Verdict.","hale_beaten"],
+    ["n","And at the end of the tier, packed into one cell, six Saltmarrow fishermen, waving their caps at you."]],
+    choices:[{t:'Free everyone: let Ironwall deal with the chaos',go:'ch5_free_all'},{t:'Free only the Saltmarrow fishermen',go:'ch5_free_fishers'},{t:'Free Hale, for what she knows',go:'ch5_free_hale',if:'hale_beaten'}]},
+  ch5_free_all:{set:'fishers_free,mabry_freed,alarm1,crew_chaos',b:[["n","Cell after cell swings open. Prisoners pour out into the corridors, whooping. Somewhere a guard screams, and a dozen bells start ringing."],
+    ["Captain Mabry","Remember: I owe you one. I always pay. Eventually."],["n","He is gone into the chaos before you can answer."],
+    ["Dorra the Eel","We're even now. Almost.","dorra_jailed"],["Capt. Vesna Hale","The Verdict carries Kessler's bells. She's slow turning to port, and her powder room is right under the captain's cabin. Hit her low and aft.","hale_beaten"]],
+    choices:[{t:'Use the chaos: head for the tower',go:'ch5_inside'}]},
+  ch5_free_fishers:{set:'fishers_free',b:[["n","Six fishermen squeeze out of the cell, hugging Brina, hugging you, hugging each other."],["Fisherman","We'll find a boat. We always find a boat. Ring the Storm Bell when you have it, and we'll come running."],["Captain Mabry","You'll regret leaving me here, bell thieves!"]],next:'ch5_inside'},
+  ch5_free_hale:{set:'hale_freed,hale_tip',b:[["Capt. Vesna Hale","Clever. Very clever. The Verdict is Kessler's frigate. She carries the bells he has, and she sails behind his flagship, slow and heavy."],["Capt. Vesna Hale","She turns badly to port, and her powder room is right under the captain's cabin. Hit her low and aft. Now, if you'll excuse me, I have a career to ruin."],
+    ["n","She strolls off down the corridor whistling, and the fishermen, wisely, follow at a great distance."]],next:'ch5_inside'},
+  ch5_office:{scene:'marinebase',art:'sc_mansion',b:[["n","The warden's office is spotless. Every pen is in a row. On the wall hangs a list: NOBODY HAS EVER ESCAPED. DAYS SINCE LAST ESCAPE ATTEMPT: 4,012."],["n","The desk is locked. So is the cabinet behind it. So is the little iron box on the shelf."]],
+    choices:[{t:'Pick the locks',check:{s:'Sleight of Hand',dc:14},ok:'ch5_plan',fail:'ch5_office_slow'},{t:'Search for where a man who counts everything twice hides his spare key',check:{s:'Investigation',dc:13},ok:'ch5_plan',fail:'ch5_office_slow'},{t:'Break it all open',go:'ch5_office_loud'}]},
+  ch5_office_slow:{set:'alarm1',b:[["n","It takes far too long. Boots come down the corridor, stop at the door, and move on. Finally, with a dull click, the desk drawer slides open."]],next:'ch5_plan'},
+  ch5_office_loud:{set:'alarm1,alarm2',b:[["n","Wood splinters. Iron screams. The whole fortress hears it."]],next:'ch5_plan'},
+  ch5_plan:{set:'know_plan,has_chart',loot:[{item:'Kessler\'s chart of the Isle of Echoes',qty:1}],berries:10000,b:[["n","Inside the desk: a stack of Berries, a sealed letter in Kessler's neat hand, and a sea chart with a course drawn on it in red ink."],
+    ["Commodore Kessler","Brandt. The Verdict sails today with the bells I hold. I go ahead on the flagship. In twelve days the spring tide will open the Tide Gate on the Isle of Echoes."],
+    ["Commodore Kessler","The fifth bell was never lost, Brandt. The fifth bell IS the island. Ring the other four at the gate, and the island rings with them, and Neptune's Debt comes up."],
+    ["Commodore Kessler","Keep the old woman alive. If the pirates come, they come for her, and you will keep them. Nobody escapes Ironwall. Burn this."],
+    ["n","He did not burn it. Of course he did not. A man who counts everything twice keeps everything."]],next:'ch5_inside'},
+  ch5_tower:{scene:'marinebase',art:'sc_tower',goIf:[{if:'!brina_free,!know_plan',go:'ch5_tower_early'}],b:[["n","The warden's tower. At the top, in a round room open to the wind, hangs the Storm Bell, green and gold, exactly as it hung over Saltmarrow harbor."],
+    ["n","In front of it stands a giant of a man with a shaved head and a grey moustache like a broom. In his fist is a flail made of keys. Hundreds of keys."],
+    ["Warden Otto Brandt","Four thousand and twelve days. Four thousand and twelve days without an escape. I am not going to let a handful of pirates spoil my numbers."]],
+    choices:[{t:'Fight the warden',go:'ch5_final'},{t:'Tell him his prisoners are already loose',check:{s:'Intimidation',dc:15},ok:'ch5_final_small',fail:'ch5_final',if:'crew_chaos'},{t:'Let Brina talk to him',go:'ch5_final_small',if:'brina_free'}]},
+  ch5_tower_early:{b:[["n","You reach the stairs of the warden's tower, but the door at the top is barred, and boots are coming up behind you. Not yet. You need Brina, or the plan, or both."]],next:'ch5_inside'},
+  ch5_final:{b:[["Warden Otto Brandt","Guards! To the tower!"]],fight:{map:'marinebase',weather:'clear',foes:[{key:'warden',count:1},{key:'jailer',count:1},{key:'marine',count:1,if:'alarm1'},{key:'bk_marine_lt',count:1,if:'alarm2'}],win:'ch5_win',lose:'ch5_lose'}},
+  ch5_final_small:{b:[["Old Brina","Otto. You've been ringing my bell to wake your soldiers. Every morning. Like a cowbell.","brina_free"],["Warden Otto Brandt","...It is a very good bell.","brina_free"],["Old Brina","It is. Get out of my way.","brina_free"],
+    ["n","Half the guards on the stairs hesitate. Some of them have heard about the biting. None of them come up."]],fight:{map:'marinebase',weather:'clear',foes:[{key:'warden',count:1},{key:'jailer',count:1,if:'alarm2'}],win:'ch5_win',lose:'ch5_lose'}},
+  ch5_win:{set:'warden_beaten,has_bell1',b:[["n","The key-flail slips out of Brandt's fingers and crashes to the floor. The giant sits down heavily beside it, staring at nothing."],["Warden Otto Brandt","Four thousand and twelve. It was such a good number."],
+    ["Old Brina","Now. Let's give these Marines something to remember."],["n","She grabs the bell rope, plants her feet, and pulls."],
+    ["n","The Storm Bell speaks. The sky over Ironwall goes black in a heartbeat, the wind howls in from the sea, and rain comes down so thick that nobody on the walls can see their own hands."],
+    ["n","You lower the bell from the tower on the warden's own chain hoist, onto the barge, out through the sea gate, and nobody sees a thing.","!cliff_route"],["n","Old Tolly is waiting under the cliff with two rowboats lashed together and a grin. Somehow, between you, you get the bell down.","cliff_route"],
+    ["n","Out in the strait, little fishing boats come out of the storm, crewed by six Saltmarrow fishermen, cheering.","fishers_free"]],next:'ch5_end'},
+  ch5_lose:{set:'bell1_lost',b:[["n","The flail catches you, and the world goes away. When it comes back, you are on a rowboat in the strait, and Brina is rowing, alone, swearing in time with every stroke."],
+    ["Old Brina","Got us out. Couldn't get the bell. The Verdict took it off the rock while you were snoring."],["Old Brina","Don't you dare apologise. We go after it."]],next:'ch5_end_lost'},
+  ch5_end:{levelOnce:'ch5',bounty:15000000,bountyWhy:'broke out of Ironwall, which nobody escapes',crew:{join:['Old Brina']},crewRole:{'Old Brina':'navigator'},goal:'Race Kessler to the Isle of Echoes.',
+    quest:[{title:'Ironwall',status:'done',note:'You broke into Ironwall, freed Old Brina and took back the Storm Bell.'},{title:'The Long Crossing',status:'open',note:'Kessler sails for the Isle of Echoes. In twelve days the spring tide opens the Tide Gate.'}],b:[
+    ["n","By morning Ironwall is a grey smudge behind you. The Storm Bell sits lashed on your deck beside the others, and Old Brina sits on it, smoking."],
+    ["Old Brina","I'm coming with you. Somebody has to steer this tub, and none of you can read a star to save your lives. I'm your navigator now. Don't argue."],
+    ["Pip","BRINA'S IN THE CREW!","pip_aboard"],["Yuki","Finally, someone who shouts louder than me.","yuki_joined"],
+    ["n","That evening, the transponder snail rings."],["Commodore Kessler","Brandt is crying. Did you know a man that size could cry? Impressive work. Truly."],
+    ["Commodore Kessler","But it changes nothing. Twelve days. The Isle of Echoes. I will ring the bells I have, and the island will ring with them, and you will watch."],["n","Click."],
+    ["n","End of Chapter Five."]],choices:[{t:'🏕 Make camp before the crossing',go:'camp_ch5'}]},
+  ch5_end_lost:{levelOnce:'ch5',crew:{join:['Old Brina']},crewRole:{'Old Brina':'navigator'},goal:'Race Kessler to the Isle of Echoes, and take the Storm Bell back from the Verdict.',
+    quest:[{title:'Ironwall',status:'failed',note:'You got Old Brina out of Ironwall, but the Verdict carried off the Storm Bell.'},{title:'The Long Crossing',status:'open',note:'Kessler sails for the Isle of Echoes. In twelve days the spring tide opens the Tide Gate.'}],b:[
+    ["Old Brina","I'm your navigator now. That's not a question. We're going after my bell, and that man's frigate is slow and heavy with stolen brass."],
+    ["n","End of Chapter Five."]],choices:[{t:'🏕 Make camp before the crossing',go:'camp_ch5'}]},
+  camp_ch5:{scene:'beach',weather:'night',art:'sc_camp',rest:'long',noRewind:true,restOnce:true,b:[["n","You anchor in the lee of a bare little island. The fire is small and the wind is cold, but for the first time in days nobody is in a cell."]],bAgain:[["n","The fire crackles. Brina is teaching the stars to anyone who will listen, and several people who won't."]],
+    choices:[{t:'Talk with Old Brina',go:'camp5_brina',if:'!camp5_brina_done'},{t:'Talk with Pip',go:'camp5_pip',if:'pip_aboard,!camp5_pip_done'},{t:'Talk with Yuki',go:'camp5_yuki',if:'yuki_joined,!camp5_yuki_done'},
+      {t:'Look after the ship: repairs and upgrades',go:'camp5_ship'},{t:'Turn in for the night and start the crossing',go:'ch6_start'}]},
+  camp5_brina:{set:'camp5_brina_done',b:[["Old Brina","Forty years I kept that harbor. Forty years I rang that bell for every boat lost in the fog. Never once did I ask where it came from."],
+    ["Old Brina","Now I know. Cast from a dead man's ship to call it back up. And I rang it to save fishermen. Funny old world."]],
+    choices:[{t:'Tell her that is exactly why it saved you',go:'camp_ch5',appr:{Brina:1}},{t:'Ask her what she thinks Kessler will do with the treasure',go:'camp5_brina2'}]},
+  camp5_brina2:{b:[["Old Brina","Treasure? He doesn't care about treasure. He wants the fruit in the vault. Logia, the old stories say. A man with that kind of power doesn't need an admiral's rank. He takes one."]],next:'camp_ch5'},
+  camp5_pip:{set:'camp5_pip_done',b:[["Pip","I wasn't scared in the prison. Not even a bit. Okay, a bit. Okay, a lot."],["Pip","But Brina's back. That's what matters, right? Everybody's back."]],next:'camp_ch5'},
+  camp5_yuki:{set:'camp5_yuki_done',b:[["Yuki","That warden. He was proud of keeping people locked up. Proud!"],["Yuki","On my mountain, a strong person carries people up the hard path. Down here, strong people lock them up. I don't like down here much."]],
+    choices:[{t:'Tell her that is why you are pirates',go:'camp_ch5',appr:{Yuki:1}},{t:'Let her think',go:'camp_ch5'}]},
+  camp5_ship:{shipyard:true,b:[["n","You check the ship by lantern light. The long crossing is ahead: storms, monsters and a frigate at the end of it. If you have the Berries, now is the time for improvements."]],bAgain:[["n","The ship rocks gently at anchor."]],choices:[{t:'Back to the fire',go:'camp_ch5'}]},
+
+  // ======================= CHAPTER 6 =======================
+  ch6_start:{chapter:'Chapter 6 · The Long Crossing',scene:'shipday',weather:'clear',art:'sc_sea',goal:'Cross the open sea to the Isle of Echoes before the spring tide, and catch the Verdict.',
+    quest:{title:'The Long Crossing',status:'open',note:'Kessler\'s frigate, the Verdict, carries his stolen bells to the Isle of Echoes. Catch her before the spring tide.'},b:[
+    ["n","Brina spreads Kessler's chart on the deck and weighs its corners with four cups of tea.","has_chart"],
+    ["Old Brina","Twelve days, he says. The Verdict is heavy with bells, and that frigate was never fast. If we cut through the Gullet and don't sink, we catch her in nine.","has_chart"],
+    ["Old Brina","No chart. Fine. The island's somewhere south-east, and islands that ring don't hide well. We'll hear it before we see it.","!has_chart"],
+    ["n","The sea ahead is wide, and empty, and very blue."]],
+    voyage:{to:'the Gullet',miles:72,scene:'shipday',next:'ch6_storm'}},
+  ch6_storm:{scene:'deck',weather:'storm',art:'sc_storm',b:[["n","On the fifth day the sky turns the colour of a bruise. The wind does not blow, it rings: a low, deep hum, like a bell struck far away, and the waves begin to stand up in walls."],
+    ["Old Brina","Bell storm. The old sailors talked about them. The island is calling the bells home, and the sea is listening."]],
+    choices:[{t:'Ride it out under bare masts',check:{s:'Survival',dc:14},ok:'ch6_storm_ok',fail:'ch6_storm_bad'},{t:'Let Brina steer through the troughs',go:'ch6_storm_ok'},
+      {t:'Ring the Storm Bell back at the storm',check:{s:'Athletics',dc:13},ok:'ch6_storm_bell',fail:'ch6_storm_bad',if:'has_bell1'}]},
+  ch6_storm_ok:{b:[["n","The ship climbs walls of black water and drops off the far side, again and again, all night. Ropes snap. Something in the galley explodes into soup. But at dawn the sea lies down, exhausted, and so do you."]],next:'ch6_seaking'},
+  ch6_storm_bad:{hp:[{player:'ALL',dice:'2d6',reason:'the bell storm'}],hullHit:-20,b:[["n","A wave comes over the bow like a falling building. When the water clears, half the railing is gone and everybody is bleeding from somewhere."],["Old Brina","Still floating! Still floating, you hear me! Bail!"]],next:'ch6_seaking'},
+  ch6_storm_bell:{set:'storm_answered',b:[["n","You haul on the rope, and the Storm Bell answers the storm."],["n","For a moment the two sounds fight, the bell and the sky. Then the wind falls into the bell's rhythm, the waves fall into the wind's, and the storm simply walks away across the sea like a dog called home."],["Old Brina","Well. Forty years and I never knew it could do that."]],next:'ch6_seaking'},
+  ch6_seaking:{scene:'shipday',weather:'clear',art:'sc_sea',b:[["n","The morning after the storm, the sea is glassy and still. Too still. Then the water beside the ship bulges, and bulges, and keeps bulging."],
+    ["n","A head the size of your ship rises out of the sea, dripping, crowned with spines. A Sea King. A young one, Brina says later, as if that helps."]],
+    choices:[{t:'Fight it',go:'ch6_seaking_fight'},{t:'Hold perfectly still and let it pass',check:{s:'Stealth',dc:15},ok:'ch6_seaking_pass',fail:'ch6_seaking_fight'},
+      {t:'Throw it the whole meat locker',go:'ch6_seaking_fed',if:'!seaking_fed'},{t:'Stare it down, mink to beast',need:{species:'mink'},go:'ch6_seaking_pass'}]},
+  ch6_seaking_fight:{b:[["n","The Sea King opens its mouth, and keeps opening it."]],fight:{map:'shipday',foes:[{key:'sea_king_young',count:1}],win:'ch6_seaking_win',lose:'ch6_seaking_lose'}},
+  ch6_seaking_win:{set:'seaking_beaten',loot:[{item:'Meat on the bone',qty:6}],b:[["n","The Sea King sinks back into the deep, very slowly, looking deeply offended. A slab of it stays behind on your deck. Dinner, for a week."]],next:'ch6_ghost'},
+  ch6_seaking_lose:{hp:[{player:'ALL',dice:'1d6',reason:'the Sea King'}],hullHit:-15,b:[["n","The Sea King coils once around the ship, squeezes until the planks scream, then loses interest and slides away into the deep. You count the survivors. Everybody. Somehow."]],next:'ch6_ghost'},
+  ch6_seaking_pass:{b:[["n","Nobody breathes. The enormous eye slides past the railing, past the mast, past you. Then the head sinks, and the long, long body slides by underneath for a full minute, and is gone."]],next:'ch6_ghost'},
+  ch6_seaking_fed:{set:'seaking_fed',food:-5,b:[["n","You roll every barrel of salt meat over the side. The Sea King swallows the lot, considers you, and decides that you are less interesting than dessert somewhere else."],["Old Brina","Five days of food. Gone. Worth it."]],next:'ch6_ghost'},
+  ch6_ghost:{scene:'deck',weather:'fog',art:'sc_dawn',b:[["n","On the seventh night, a fog comes down so thick you cannot see the bow from the stern. And out of it, without a sound, glides a ship."],
+    ["n","Her sails are rags. Her hull is grey with age. Her lanterns are lit, and burn with a cold green light, and there is nobody on her deck at all. On her stern, in flaking gold: the WEEPING GULL."],
+    ["Old Brina","The Weeping Gull. She sailed with Neptune's Debt, three hundred years ago. Every sailor's grandmother tells that story. She's still looking for her flagship."]],
+    choices:[{t:'Board her',go:'ch6_ghost_board'},{t:'Steer away, fast',check:{s:'Survival',dc:13},ok:'ch6_ghost_away',fail:'ch6_ghost_board'}]},
+  ch6_ghost_away:{set:'ghost_fled',b:[["n","You turn hard to starboard. The ghost ship turns too, perfectly, silently, keeping pace at exactly the same distance. Whatever she wants, she is not going to let you leave without it."]],next:'ch6_ghost_board'},
+  ch6_ghost_board:{scene:'deck',weather:'fog',b:[["n","Her deck is cold and dry, as if no sea has touched it in years. Every door is open. In the captain's cabin a great mirror of black glass reflects the whole crew, standing in a ring around nothing."],
+    ["n","Then the voice comes. It is not loud. It seems to come from inside your own chest."],["n","Who rings the bells? Who wakes the drowned?"]],
+    choices:[{t:'Answer honestly: we are taking them back from a man who would use them',go:'ch6_ghost_test'},{t:'Say nothing, and listen harder',go:'ch6_haki_obs'},{t:'Strike the black mirror',go:'ch6_haki_arm'}]},
+  ch6_ghost_test:{b:[["n","The green lanterns flare. The voice seems to think about this for a very long time."],["n","Then prove it. Feel what cannot be seen. Strike what cannot be touched."]],
+    choices:[{t:'Close your eyes and feel for the ship\'s dead crew',go:'ch6_haki_obs'},{t:'Put your whole will into one blow at the mirror',go:'ch6_haki_arm'}]},
+  ch6_haki_obs:{set:'haki_woke,haki_obs',haki:'observation',b:[["n","You close your eyes, and the world opens."],["n","You can feel them: the crew of the Weeping Gull, dozens of them, faint as candle smoke, standing all around you on the deck. You feel your own crew too, each heartbeat like a lantern. You feel the fish under the hull. You feel the next breath before it is taken."],
+    ["n","When you open your eyes, the ghosts are bowing."],["n","Haki. The Color of Observation has woken in you."]],next:'ch6_ghost_gift'},
+  ch6_haki_arm:{set:'haki_woke,haki_arm',haki:'armament',b:[["n","You pour everything into one blow: every fight, every loss, every stubborn step since Saltmarrow. Your fist turns black as iron before it lands."],
+    ["n","The mirror does not crack. It rings, like a bell, and the ghost crew of the Weeping Gull appear in it all at once, looking at you with something like respect."],["n","Haki. The Color of Armament has woken in you."]],next:'ch6_ghost_gift'},
+  ch6_ghost_gift:{loot:[{item:'Weeping Gull lantern',qty:1}],b:[["n","The voice speaks one last time."],["n","Our captain sank to raise a debt that should have stayed paid. The gate opens to four bells and a fifth that sings beneath. Ring them in the order the tide comes in: storm, lotus, drowned, and the last."],
+    ["n","Then the fog is gone, and so is the Weeping Gull. Only one of her green lanterns stays behind, burning on your deck, cold to the touch."],["Old Brina","...I'm writing that down. Storm, lotus, drowned. Somebody remind me why I left the harbor."]],set:'know_order',next:'ch6_leg2'},
+  ch6_leg2:{scene:'shipday',weather:'clear',art:'sc_sea',b:[["n","The sea brightens. The wind comes round behind you, warm and steady, as if something wants you to arrive."],["n","Somewhere ahead, past the edge of the world, the Verdict is wallowing south under the weight of her bells."]],
+    voyage:{to:'the Verdict\'s wake',miles:48,scene:'shipday',next:'ch6_verdict'}},
+  ch6_verdict:{scene:'shipday',weather:'clear',art:'sc_naval',b:[["n","At dawn on the ninth day, the lookout shouts. A tall white frigate on the horizon, sitting low in the water: the Verdict."],
+    ["n","She sees you at the same moment. Her gun ports open one after another, a long row of black mouths."],
+    ["Commander Oskar Venn","Pirate vessel. This is Commander Venn of the Verdict. I am very sorry, but I am going to have to sink you."]],
+    choices:[{t:'Hit her low and aft, the way Hale said',go:'ch6_naval_easy',if:'hale_tip'},{t:'Come in under her bad side, to port',check:{s:'Survival',dc:14},ok:'ch6_naval_easy',fail:'ch6_naval'},{t:'Fight her gun to gun',go:'ch6_naval'}]},
+  ch6_naval:{b:[["n","The Verdict turns, slow and heavy, and her whole broadside thunders."]],naval:{enemy:'marine_frigate',win:'ch6_board',lose:'ch6_naval_lose'}},
+  ch6_naval_easy:{set:'verdict_crippled',b:[["n","You come in low under her stern, where her guns cannot reach. One volley into her powder room and the Verdict shudders from end to end. Smoke pours out of her stern windows, and her rudder goes slack."]],next:'ch6_board'},
+  ch6_naval_lose:{hp:[{player:'ALL',dice:'1d6',reason:'cannon fire'}],b:[["n","Your ship lies wallowing, dismasted, half sunk. The Verdict comes alongside to finish you off up close, and that is her mistake."]],next:'ch6_board'},
+  ch6_board:{scene:'shipday',weather:'clear',b:[["n","Grappling hooks fly. You swing across onto the frigate's deck, into smoke and shouting, and there in front of the mainmast stands Commander Venn, drawing two sabres, bowing slightly."],
+    ["Commander Oskar Venn","I do apologise for this."]],
+    fight:{map:'shipday',foes:[{key:'venn',count:1},{key:'bk_marine_lt',count:1},{key:'bk_marine_lt',count:1,if:'!verdict_crippled'},{key:'marine',count:2}],win:'ch6_win',lose:'ch6_lose'}},
+  ch6_win:{set:'verdict_taken,venn_beaten',b:[["n","Venn's sabres clatter onto the deck. He kneels, straight-backed, and offers you the hilts."],["Commander Oskar Venn","Well fought. The Commodore will be... displeased. With both of us, I suspect."],
+    ["n","Down in the Verdict's hold, under tarpaulins, the stolen brass of Kessler's plan."],
+    ["n","The Storm Bell, Saltmarrow's bell, chained to the deck. Brina pats it like a horse that has come home.","bell1_lost"],
+    ["n","The third Tide Bell, still crusted with the coral of Marrowmere, where Salvo Grimm sold it.","bell3_lost"],
+    ["n","And in a velvet box, humming softly, the Lotus Clapper of Kiyo.","clapper_lost"],
+    ["n","And one more bell you have never seen: black and new, cast from melted fragments, with TOLLAN stamped across its rim. The bell Hale broke, recast. The fourth Tide Bell."],
+    ["Old Brina","He hasn't got them. He hasn't got any of them. All he's got is a flagship and a temper."]],next:'ch6_end'},
+  ch6_lose:{set:'verdict_lost',b:[["n","Venn's sabres flash, and you are back on your own deck without knowing how, bleeding, watching the Verdict limp away south, her hold still full of bells."],
+    ["Commander Oskar Venn","My apologies. Truly."],["Old Brina","Patch her up. Bail her out. We follow that frigate to the end of the world if we have to. It's only one island further."]],next:'ch6_end_lost'},
+  ch6_end:{levelOnce:'ch6',bounty:20000000,bountyWhy:'took the Marine frigate Verdict on the open sea',goal:'Reach the Isle of Echoes and stop Kessler at the Tide Gate.',
+    quest:[{title:'The Long Crossing',status:'done',note:'You crossed the open sea and took the Verdict, with every bell she carried.'},{title:'The Isle of Echoes',status:'open',note:'Kessler\'s flagship is already at the island. Ring the bells in order: storm, lotus, drowned, and the last.'}],b:[
+    ["n","You leave Venn and his crew with their longboats and a fair wind, and tow the crippled Verdict behind you for a day before she sinks, gently, into very deep water."],
+    ["n","That night you hear it for the first time: a sound under the sea, so low it is almost not a sound at all. One long note, rising and falling with the waves."],
+    ["Old Brina","The fifth bell. The island's singing. We're close."],
+    ["n","At dawn there is a shape on the horizon: a ring of black cliffs around a green crown of jungle, and above it, a single column of smoke. Kessler's flagship is already there."],
+    ["Pip","Is that it? Is that the Isle of Echoes?","pip_aboard"],["Yuki","It's humming. Why is an island humming?","yuki_joined"],
+    ["n","End of Chapter Six."]],choices:[{t:'⚓ Make for the Isle of Echoes',go:'ch6_wait'}]},
+  ch6_end_lost:{levelOnce:'ch6',goal:'Reach the Isle of Echoes and stop Kessler at the Tide Gate.',
+    quest:[{title:'The Long Crossing',status:'failed',note:'The Verdict escaped with the bells she carried.'},{title:'The Isle of Echoes',status:'open',note:'Kessler and the Verdict will meet at the island. Ring the bells in order: storm, lotus, drowned, and the last.'}],b:[
+    ["n","For two days you limp after the Verdict's wake. Then you hear it: a sound under the sea, one long low note, rising and falling with the waves."],["Old Brina","The island's singing. We're close. And so is he."],["n","End of Chapter Six."]],choices:[{t:'⚓ Make for the Isle of Echoes',go:'ch6_wait'}]},
+  ch6_wait:{pause:true,recap:'Chapter 6: the crew crossed the open sea through a bell storm, past a Sea King and a ghost ship where their Haki woke, and fought the frigate Verdict for Kessler\'s bells. The Isle of Echoes is in sight.',
+    b:[["n","The Isle of Echoes rises out of the sea, humming. Kessler is already ashore, and the spring tide is three days away."],["n","Next time: Chapter 7, the Isle of Echoes."],["n","To be continued."]]}
+});
+// Chapter 4 now sails on into Chapter 5
+(function(){const N=OFF_BELL.nodes;N.ch4_wait={b:[["n","Somewhere to the north stands Ironwall, a Marine fortress on a rock in the sea. The voyage goes on."]],next:'ch5_start'};
+  for(const k of ['ch4_end','ch4_end_lost'])for(const c of N[k].choices||[])if(c.go==='ch4_wait'){c.go='ch5_start';c.t='⚓ Set a course for Ironwall: Chapter 5'}
+  OFF_BELL.blurb='A stolen storm bell, a corrupt Marine commodore, and five Tide Bells that can raise a sunken pirate flagship. An offline campaign from level 1 to 10: talk, sneak or fight your way through, and every choice follows you. Chapters 1 to 6 are ready.';
+  const CL=OFF_BELL.clock;Object.assign(CL.set,{ch5_arrive:'dusk'});
+  Object.assign(CL.cost,{ch5_tavern:60,ch5_nell_talk:30,ch5_tolly:30,ch5_laundry:30,ch5_crane:15,ch5_crane_ask:20,ch5_barge:60,ch5_cliff:120,ch5_cliff_fall:30,ch5_codes:30,ch5_arrest:60,ch5_cells:20,ch5_cells_slow:60,ch5_office:30,ch5_office_slow:45,ch5_block:15,ch5_rest_short:60,ch5_rest_long:0,camp_ch5:30,
+    ch6_storm:600,ch6_seaking:60,ch6_ghost:120,ch6_ghost_board:45});
+  OFF_BELL.places.ch5_start={shipday:'Aboard ship, sailing north',harbor:'Cinder Cove · the black sand harbor',tavern:'Cinder Cove · the Last Meal',market:'Cinder Cove · the washhouse yard',beach:'Cinder Cove · the smugglers\' beach',marinebase:'Ironwall · Marine Base 77'};
+  OFF_BELL.places.ch6_start={shipday:'The open sea',deck:'The open sea, in the storm',beach:'A bare island camp'};
+  Object.assign(OFF_BELL.nodePlace,{ch5_approach:'The strait below Ironwall',ch5_cliff:'Ironwall · the lighthouse cliff',ch5_lighthouse:'Ironwall · the lighthouse',ch5_block:'Ironwall · the north block',ch5_cells:'Ironwall · the north block, cell nine',ch5_office:'Ironwall · the warden\'s office',ch5_tower:'Ironwall · the warden\'s tower',ch5_final:'Ironwall · the warden\'s tower',ch5_final_small:'Ironwall · the warden\'s tower',
+    ch5_shop:'Cinder Cove · the chandlery',ch6_ghost:'The open sea, in the fog',ch6_ghost_board:'The Weeping Gull',ch6_ghost_test:'The Weeping Gull',ch6_haki_obs:'The Weeping Gull',ch6_haki_arm:'The Weeping Gull',ch6_ghost_gift:'The Weeping Gull',ch6_verdict:'The open sea, in the Verdict\'s wake',ch6_board:'Aboard the Verdict'});
+  const S=OFF_BELL.saga;S.chapters[5]={n:'Chapter 5',title:'Ironwall, Marine Base 77',start:'v:ch5_start',done:'v:ch5_end|v:ch5_end_lost',why:'Kessler has taken Brina and the Storm Bell to his prison fortress.'};
+  S.chapters[6]={n:'Chapter 6',title:'The Long Crossing',start:'v:ch6_start',done:'v:ch6_end|v:ch6_end_lost',why:'Kessler\'s frigate Verdict carries his stolen bells to the Isle of Echoes. Twelve days until the spring tide.'};
+  S.chapters[7]={n:'Chapter 7',title:'The Isle of Echoes',why:'Kessler is already on the island, and the Tide Gate opens at the spring tide.'};
+  S.facts.push(['know_plan','Kessler\'s letter: in twelve days the spring tide opens the Tide Gate on the Isle of Echoes. The fifth bell IS the island.'],['brina_free','You broke Old Brina out of Ironwall. She is your navigator now.'],['has_bell1','You took the Storm Bell back from Ironwall.'],['bell1_lost','The Verdict carried off the Storm Bell from Ironwall.'],
+    ['hale_tip','Hale told you the Verdict\'s weak spot: low and aft, under the captain\'s cabin.'],['mabry_freed','You let Mabry out of Ironwall. He says he owes you one.'],['fishers_free','You freed the Saltmarrow fishermen from Ironwall.'],
+    ['haki_woke','On the ghost ship Weeping Gull, the crew\'s Haki woke.'],['know_order','The ghosts of the Weeping Gull told you the order: storm, lotus, drowned, and the last.'],['verdict_taken','You took the Verdict, and with her the fourth Tide Bell, recast from the broken bell of Tollan.']);
+  S.threads.push(['v:ch5_start','v:ch5_end|v:ch5_end_lost','Can you get Brina out of Ironwall, which nobody escapes?'],['v:ch5_plan','v:ch6_end|v:ch6_end_lost','Can you catch the Verdict before the spring tide?'],['v:ch6_end|v:ch6_end_lost',null,'What waits at the Tide Gate on the Isle of Echoes?']);
+  for(const t of S.threads)if(t[2]==='How do you break into Ironwall and get Brina out?')t[1]='v:ch5_end|v:ch5_end_lost';
+  const P=OFF_BELL.profiles;P['Warden Otto Brandt'].stages=[{if:'warden_beaten',persona:'Proud that nobody had ever escaped. Then you did.'}];
+  if(P['Old Brina'])P['Old Brina'].stages=[...(P['Old Brina'].stages||[]),{if:'brina_free',role:'Harbor master of Saltmarrow, now your navigator'}];
+  if(P['Capt. Vesna Hale'])P['Capt. Vesna Hale'].stages=[...(P['Capt. Vesna Hale'].stages||[]),{if:'hale_freed',persona:'Thrown in her own commodore\'s prison for losing. You let her out, and she told you how to sink his frigate.'}];
+})();
+// saves paused at the end of Chapter 4 move on into Chapter 5
+setInterval(()=>{try{if(!ST.owner)return;const o=ST.state&&ST.state.off;if(!o||o.node!=='ch4_wait'||!(o.paused||o.ended))return;if(setInterval.gltCh5)return;setInterval.gltCh5=true;
+  put('table/state',{...ST.state,off:{...o,paused:false,ended:false}}).then(()=>offGo('ch5_start')).finally(()=>{setTimeout(()=>{setInterval.gltCh5=false},5000)})}catch(e){}},2500);
+// node extras used by these chapters: haki awakening, a companion's ship job, and ship damage or lost food
+{const _go=offGo;offGo=async function(id,depth){const r=await _go(id,depth);try{const node=OFF_BELL.nodes[id];if(node&&ST.owner&&typeof offOn==='function'&&offOn()){
+  if(node.haki&&HAKI[node.haki])for(const [u,c] of Object.entries(ST.chars)){if(!charOK(c)||c.dead||c.hakiAwaken)continue;const have=(c.haki||[]).some(k=>HAKI[node.haki].opts[k]);if(have&&!hakiChoices({...c,hakiAwaken:node.haki}).length)continue;await put('chars/'+u,{...ST.chars[u],hakiAwaken:node.haki})}
+  if(node.crewRole)setTimeout(async()=>{for(const [nm,role] of Object.entries(node.crewRole)){const id2=Object.keys(ST.npcs).find(k=>ST.npcs[k]&&ST.npcs[k].name===nm)||npcSlug(nm);const n=ST.npcs[id2]||{name:nm};await put('npcs/'+id2,{...n,name:nm,crew:true,role})}},2500);
+  if(node.hullHit){const sh=ensureShip(ST.state);await put('table/state',{...ST.state,ship:{...sh,hull:Math.max(1,sh.hull+node.hullHit)}})}
+  if(node.food){const sh=ensureShip(ST.state);await put('table/state',{...ST.state,ship:{...sh,food:Math.max(0,(sh.food||0)+node.food)}})}}}catch(e){console.warn('ch56',e)}return r}}
+
 // ================= more loot: hidden stashes to search, and spoils from beaten enemies =================
 // Search spots: some places get a "🔍" choice with a skill check. Success finds a stash (once per game); failure finds nothing.
 // Spoils: offline, every won fight drops Berries, and sometimes an item; bosses always drop something good.
