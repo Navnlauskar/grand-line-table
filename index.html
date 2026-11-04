@@ -3315,7 +3315,7 @@ function shipPanelHTML(){const sh=ST.state.ship;const host=ST.owner;const c=myCh
   return`<div class="panel shippanel"><h3>⛵ ${esc(sh.name)}</h3><div class="calc">${esc(S.typeName)} · AC ${S.ac}${S.thr?` · damage threshold ${S.thr}`:''} · ${S.pace} miles a day · crew ${S.crew} + ${S.pass} passengers · ${S.guns} gun${S.guns===1?'':'s'} · upgrade slots ${S.used}/${S.slots}</div>
     <div class="hullbar ours"><i style="width:${sh.hull/S.max*100}%"></i><span>hull ${sh.hull}/${S.max}</span></div>
     <div class="calc" style="margin:4px 0">🍖 Ship provisions: ${sh.food||0} days of food</div>
-    ${charOK(c)?`<div class="row" style="gap:6px">${sh.hull<S.max?`<button class="btn sm" type="button" id="shipRepair" ${bz>=10000?'':'disabled'}>🔧 Shipwright repairs at port: ฿10,000 per point</button>`:''}<button class="btn sm" type="button" id="shipFood" ${bz>=5000?'':'disabled'}>🍖 Stock 1 day of provisions (฿5,000)</button></div>`:''}
+    ${charOK(c)?`<div class="row" style="gap:6px">${sh.hull<S.max&&!(ST.state.sail&&ST.state.sail.on)?`<button class="btn sm" type="button" id="shipRepair" ${bz>=10000?'':'disabled'}>🔧 Shipwright repairs at port: ฿10,000 per point</button>`:''}${ST.state.sail&&ST.state.sail.on?'<span class="hint">At sea: food and repairs can only be bought in port (or from a passing merchant).</span>':`<button class="btn sm" type="button" id="shipFood" ${bz>=5000?'':'disabled'}>🍖 Stock 1 day of provisions (฿5,000)</button>`}</div>`:''}
     <div class="eyebrow" style="margin-top:10px">Weapon components (DMG; anyone can pay)</div>
     <div class="ups">${Object.entries(SHIP_UPGRADES).map(([k,u])=>{const have=up.filter(x=>x===k).length;return`<div class="si"><div><b>${esc(u.name)}</b>${have?` <span class="tag gold">×${have}</span>`:''}<div class="calc">${esc(u.desc)}</div></div><button class="btn sm" type="button" data-shipup="${k}" ${charOK(c)&&bz>=u.price&&S.used<S.slots?'':'disabled'}>฿${u.price.toLocaleString('en-US')}</button></div>`}).join('')}</div>
     ${charOK(c)?`<details class="sell"><summary>Buy a different ship</summary><div class="ups">${Object.entries(SHIP_TYPES).filter(([k])=>k!==(SHIP_ALIAS[sh.type]||sh.type)).map(([k,t])=>`<div class="si"><div><b>${esc(t.name)}</b><div class="calc">${esc(t.desc)}</div></div><button class="btn sm" type="button" data-shipbuy="${k}" ${bz>=t.cost?'':'disabled'}>฿${t.cost.toLocaleString('en-US')}</button></div>`).join('')}</div></details>`:''}
@@ -3323,6 +3323,7 @@ function shipPanelHTML(){const sh=ST.state.ship;const host=ST.owner;const c=myCh
 async function shipClick(b){const c=myChar();const sh=ST.state.ship;
   if(b.dataset.shipbuy){const k=b.dataset.shipbuy;const t=SHIP_TYPES[k];if(!charOK(c)||(c.berries??0)<t.cost)return true;const nm=($('shipName')&&$('shipName').value.trim())||(sh&&sh.name)||'Going Somewhere';await put('chars/'+ST.me,{...c,berries:c.berries-t.cost});await put('table/state',{...ST.state,ship:{name:nm,type:k,hull:t.hull,upgrades:[],food:(sh&&sh.food)||0}});await addStory({kind:'system',text:`⛵ ${c.build.name} buys a ${t.name} for ฿${t.cost.toLocaleString('en-US')}: the ${nm}!`});try{SFX('coin')}catch(e){}return true}
   if(b.dataset.shipup){const k=b.dataset.shipup;const u=SHIP_UPGRADES[k];const S=shipStats(sh);if(!charOK(c)||(c.berries??0)<u.price||S.used>=S.slots)return true;await put('chars/'+ST.me,{...c,berries:c.berries-u.price});const ups=[...(sh.upgrades||[]).filter(x=>SHIP_UPGRADES[x]),k];await put('table/state',{...ST.state,ship:{...sh,upgrades:ups}});await addStory({kind:'system',text:`🔨 ${c.build.name} pays ฿${u.price.toLocaleString('en-US')}: the ship gets a ${u.name}.`});try{SFX('coin')}catch(e){}return true}
+  if((b.id==='shipRepair'||b.id==='shipFood')&&ST.state.sail&&ST.state.sail.on){toast('Not at sea: buy food and repairs in port.');return true}
   if(b.id==='shipRepair'){const S=shipStats(sh);const need=S.max-sh.hull;const can=Math.min(need,Math.floor((c.berries??0)/10000));if(can<=0)return true;await put('chars/'+ST.me,{...c,berries:c.berries-can*10000});await put('table/state',{...ST.state,ship:{...sh,hull:sh.hull+can}});toast(`Repaired ${can} hull.`);return true}
   if(b.id==='shipFood'){if(!charOK(c)||(c.berries??0)<5000)return true;await put('chars/'+ST.me,{...c,berries:c.berries-5000});await put('table/state',{...ST.state,ship:{...sh,food:(sh.food||0)+1}});return true}
   if(b.id==='sailGo'){const to=$('sailTo').value.trim()||'the next island';await setSailManual(to,+$('sailMiles').value||200,'village');showTab('story');return true}
@@ -3800,8 +3801,9 @@ async function pickSailJob(job,auto){const c=myChar();const sail=ST.state.sail;i
 async function stopAuto(){const c=myChar();if(charOK(c))await put('chars/'+ST.me,{...c,sailAuto:null})}
 // ---- host: resolve a day ----
 let SAILBUSY=false;
-async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST.owner||!sail||!sail.on||SAILBUSY)return;if(st.combat||(st.naval&&st.naval.on)||st.thinking)return;if(sail.done>=sail.miles)return;
+async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST.owner||!sail||!sail.on||SAILBUSY)return;if(st.combat||(st.naval&&st.naval.on)||st.thinking)return;if(sail.done>=sail.miles)return;if(sail.hold&&!force)return;
   const key=sail.rid+'_'+sail.day;const crewAll=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&!c.dead);const crew=crewAll.filter(([,c])=>(c.hp||0)>0);const downed=crewAll.filter(([,c])=>(c.hp||0)<=0);if(!crewAll.length)return;
+  if(!force&&downed.length&&!sail.hold){ST.state={...ST.state,sail:{...sail,hold:true}};await put('table/state',ST.state);return}
   // automatic jobs are rolled by the host
   const picks=crew.map(([u,c])=>{let p=c.sailJob&&c.sailJob.key===key?c.sailJob:null;if(!p&&c.sailAuto&&SAIL_JOBS[c.sailAuto]){const ck=sailCheck(c,c.sailAuto);p={key,job:c.sailAuto,...(ck||{})}}return[u,c,p]});
   if(!force&&picks.some(p=>!p[2]))return;SAILBUSY=true;
@@ -3829,7 +3831,7 @@ async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST
     // 6. events the game resolves itself
     let battle=null;const evText=[];
     for(const e of evs){evText.push(e[0]);const t=e[1];
-      if(['beast','fishmen','hunters','seaking'].includes(t)&&!battle)battle=t;if(['marine','pirate'].includes(t)&&!battle)battle=t;
+      if(['beast','fishmen','hunters','seaking','marine','pirate'].includes(t)&&!battle){if(sail.fightDay!=null&&sail.day-sail.fightDay<=1&&sail.day>=sail.fightDay){evText.push('(Still licking your wounds from yesterday\'s fight, you spot the danger early and slip away before it reaches you.)')}else battle=t}
       if(t==='pace2')pace=lost?0:pace*2;if(t==='pace0')pace=0;if(t==='food')food+=d(4);
       if(t==='heal'){ship.hull=S.max;notes.push('the ship and crew are fully healed')}
       if(t==='termites'){const dm=d(10)+d(10);ship.hull=Math.max(0,ship.hull-dm);notes.push(`termites: ${dm} hull damage`)}
@@ -3875,7 +3877,7 @@ async function resolveSailDay(force){const st=ST.state;const sail=st.sail;if(!ST
     const summary=`🌊 Day ${sail.day} at sea (${done}/${sail.miles} miles to ${sail.to}, ${pace} today). ${lines.join(' ')}${evText.length?' ⚠ '+evText.join(' '):''}${notes.length?' ('+notes.join('; ')+')':''}`;
     await addLog({by:'',who:'The sea',label:`Day ${sail.day} at sea`,detail:summary.slice(2,600),total:`${done}/${sail.miles} mi`});
     for(const [u] of crew){const c=ST.chars[u];if(c&&c.sailJob)await put('chars/'+u,{...c,sailJob:null})}
-    if(battle){await addStory({kind:'system',text:summary});
+    if(battle){await addStory({kind:'system',text:summary});ST.state={...ST.state,sail:{...ST.state.sail,fightDay:sail.day,hold:true}};await put('table/state',ST.state);
       if(battle==='marine'||battle==='pirate'){const k=L<=2?'marine_sloop':L<=4?(battle==='pirate'?'pirate_brig':'marine_sloop'):L<=6?'baroque_galley':'marine_frigate';await startNaval(battle==='pirate'&&k==='marine_sloop'?'pirate_brig':k);return}
       const pool=battle==='fishmen'?['grunt','bk_fishman','bk_fishman_master']:battle==='hunters'?['bk_pirate_recruit','bk_pirate_buccaneer','bk_pirate_captain','bk_bounty']:battle==='seaking'?['bk_fightfish_l','bk_seaking_w','bk_hornshark','bk_seaking_y']:['bk_flyfish','bk_dugong','bk_fightfish_l','bk_bananawani','bk_hornshark','bk_squid','bk_seaking_w'];
       const g=pickGroup(pool,budgetFor('medium'))||{key:pool[0],count:1};await startCombat('deck',[{key:g.key,count:g.count}],spotted?null:(Math.random()<.5?'foes':null),[]);return}
@@ -3913,9 +3915,9 @@ function sailHTML(){const sail=ST.state.sail;if(!sail||!sail.on)return'';const c
       charOK(c)&&c.sailAuto?`<p class="calc">Every day you do: <b>${SAIL_JOBS[c.sailAuto].icon} ${SAIL_JOBS[c.sailAuto].name}</b> <button class="btn sm" type="button" data-sailstop="1">Stop</button></p>${waiting.length?`<p class="hint">Waiting for ${esc(waiting.join(', '))}.</p>`:''}`:
       mine?`<p class="calc">Your job today: <b>${SAIL_JOBS[mine.job].icon} ${SAIL_JOBS[mine.job].name}</b>${mine.total!=null?` · rolled <b>${mine.total}</b> (${esc(mine.detail)})`:''}</p>${waiting.length?`<p class="hint">Waiting for ${esc(waiting.join(', '))}.</p>`:'<p class="hint">The day plays out…</p>'}`:
       charOK(c)?`<div class="eyebrow">Pick your job for day ${sail.day}</div><div class="sailjobs">${Object.entries(SAIL_JOBS).map(([k,j])=>`<div class="sailjob"><button type="button" data-sailjob="${k}"><span class="ji">${j.icon}</span><b>${j.name}</b><span class="jd">${esc(j.desc)}</span></button><button type="button" class="every" data-sailjob="${k}" data-auto="1">↻ every day</button></div>`).join('')}</div>`:''}
-    ${ST.owner&&!paused&&waiting.length&&waiting.length<crew.length?'<button class="btn sm" type="button" data-sailforce="1">Sail on without them</button>':''}
+    ${!paused&&sail.hold?`<div class="sailhold"><b>⚓ The ship drifts while the crew recovers from the fight.</b><p class="hint">Patch up the wounded and take a short rest in the Rest &amp; heal panel. The voyage goes on when the captain says so.${crew.some(x=>(x.hp||0)<=0)?' <b>Someone is still down!</b>':''}</p>${ST.owner?'<button class="btn sm pri" type="button" data-sailresume="1">⛵ Sail on</button>':'<p class="hint">Waiting for the host to sail on.</p>'}</div>`:''}${ST.owner&&!paused&&!sail.hold&&waiting.length&&waiting.length<crew.length?'<button class="btn sm" type="button" data-sailforce="1">Sail on without them</button>':''}
     <p class="hint">Rules from the D&amp;DF DM's Guide: events on 11+ (d20) each day, three weather rolls, everyone eats 1 day of food (ship provisions first, then rations). A fed crew gets a long rest each night; without food, exhaustion sets in after 3 + CON days.</p></div>`}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-sailjob],[data-sailforce],[data-sailstop]');if(!b)return;e.preventDefault();e.stopPropagation();if(b.dataset.sailjob)pickSailJob(b.dataset.sailjob,!!b.dataset.auto);else if(b.dataset.sailstop)stopAuto();else resolveSailDay(true)},true);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-sailjob],[data-sailforce],[data-sailstop],[data-sailresume]');if(!b)return;e.preventDefault();e.stopPropagation();if(b.dataset.sailresume){if(ST.owner&&ST.state.sail){ST.state={...ST.state,sail:{...ST.state.sail,hold:false}};put('table/state',ST.state);addStory({kind:'system',text:'⛵ The crew hoists the sails again.'})}return}if(b.dataset.sailjob)pickSailJob(b.dataset.sailjob,!!b.dataset.auto);else if(b.dataset.sailstop)stopAuto();else resolveSailDay(true)},true);
 
 // ================= port call: after an island is done, the crew prepares before heading out to sea =================
 function portOn(){return!!(ST.state&&ST.state.portCall&&!(ST.state.sail&&ST.state.sail.on))}
@@ -7378,6 +7380,67 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-rpus
     else if(b.dataset.rphd)await spendHitDie();else if(b.dataset.rprest){if(b.dataset.rprest==='long'&&!tapTwice(b,'Tap again: sleep 8 hours')){b.disabled=false;return}await askRest(b.dataset.rprest)}}finally{setTimeout(()=>{b.disabled=false},800)}});
 (function(){const st=document.createElement('style');st.textContent=`.restpanel h3{margin-bottom:6px}.rp-hp{margin:0 0 8px}.rp-items{margin:6px 0 10px}.rp-item{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0}.rp-item span{flex:1 1 140px}.rp-item select{max-width:150px}
 .rp-sr{margin:6px 0 10px;padding:8px 10px;border:1px solid var(--brass);border-radius:10px}.rp-sr p{margin:4px 0 6px}.rp-rest{gap:6px;flex-wrap:wrap}.rp-rules{font-size:12px;margin-top:8px}`;document.head.appendChild(st)})();
+// ---------- at sea there are no shops, except a passing merchant ship ----------
+function atSea(){return!!(ST.state&&ST.state.sail&&ST.state.sail.on)}
+{const _sh=shopHTML;shopHTML=function(){const sh=ST.state.shop;if(atSea()&&sh&&sh.name!=='Merchant at sea')return'';return _sh.apply(this,arguments)}}
+{const _b=buyItem;buyItem=async function(k){const sh=ST.state.shop;if(atSea()&&sh&&sh.name!=='Merchant at sea'){toast('You are at sea: the shops are back in port.');return}return _b.apply(this,arguments)}}
+setInterval(()=>{try{if(!ST.owner||!atSea())return;const sh=ST.state.shop;if(sh&&sh.open&&sh.name!=='Merchant at sea'){ST.state={...ST.state,shop:{...sh,open:false}};put('table/state',ST.state)}}catch(e){}},1500);
+(function(){const st=document.createElement('style');st.textContent='.sailhold{margin:6px 0 8px;padding:8px 10px;border:1px solid var(--brass);border-radius:10px}.sailhold p{margin:4px 0 6px}';document.head.appendChild(st)})();
+
+// ================= consequences: on Normal, a lost fight means starting the chapter again =================
+// The game keeps a checkpoint at the start of every chapter (in the Tide Bell Saga each chapter, in AI games each new
+// island, in other campaigns the start). On Normal, a lost fight ends the run: GAME OVER, and the host restarts the
+// chapter from its checkpoint, with the crew, the bag, the Berries, the ship and the clock as they were then.
+// The old Normal ("a lost fight is part of the story") lives on as the Story difficulty.
+{const old=DIFFS;const n={easy:old.easy,story:{label:'Story',hint:'No retries: a lost fight is part of the story. The crew wakes up captured, rescued or washed ashore.'},
+  normal:{label:'Normal',hint:'Lose a fight and it is GAME OVER for this chapter: start it again from its beginning, as you were then.'},hardcore:old.hardcore};
+  for(const k of Object.keys(old))delete old[k];Object.assign(old,n)}
+function chapNo(id){const m=String(id||'').match(/^ch(\d+)_/)||String(id||'').match(/_ch(\d+)$/);return m?+m[1]:1}
+function chapterKey(){const st=ST.state||{};const camp=st.campaign||'';
+  if(typeof offOn==='function'&&offOn()){const n=chapNo(st.off&&st.off.node);return{key:camp+':ch'+n,n,label:'Chapter '+n}}
+  if(st.ai&&typeof planKey==='function'){const v=(st.endless&&st.endless.voyage)||0;return{key:'ai:'+planKey(),n:v+1,label:v?'Island '+(v+1):'the first island'}}
+  return{key:camp+':start',n:1,label:'the adventure'}}
+function chapterLabel(){const cp=ST.dm&&ST.dm.checkpoint;return cp?cp.label:'the chapter'}
+async function saveCheckpoint(over){const ck={...chapterKey(),...(over||{})};const chars={};for(const [u,c] of Object.entries(ST.chars))if(charOK(c))chars[u]=c;
+  const state={...ST.state};delete state.gameOver;
+  await put('dm/checkpoint',{type:'checkpoint',key:ck.key,label:ck.label,t:nowT(),startNode:(over&&over.startNode)||(ST.state.off&&ST.state.off.node)||null,state:JSON.parse(JSON.stringify(state)),chars:JSON.parse(JSON.stringify(chars))})}
+let CP_BUSY=false;
+setInterval(async()=>{try{if(!ST.owner||CP_BUSY)return;const st=ST.state||{};if(!st.campaign||st.combat||st.gameOver||st.awaitCrew||(st.naval&&st.naval.on)||st.thinking)return;
+  if(!Object.values(ST.chars).some(charOK))return;const ck=chapterKey();const cp=ST.dm&&ST.dm.checkpoint;if(cp&&cp.key===ck.key)return;
+  // the Tide Bell Saga only moves forward: never overwrite a later chapter's checkpoint with an earlier one
+  if(cp&&cp.key&&typeof offOn==='function'&&offOn()){const m=String(cp.key).match(/:ch(\d+)$/);if(m&&String(cp.key).split(':')[0]===String(st.campaign)&&+m[1]>ck.n)return}
+  CP_BUSY=true;await saveCheckpoint()}catch(e){console.warn('checkpoint',e)}finally{CP_BUSY=false}},2000);
+// in the Tide Bell Saga the checkpoint is taken just before the chapter's first scene, so a restart replays it
+{const _go=offGo;offGo=async function(id,depth){try{const st=ST.state||{};if(ST.owner&&!st.gameOver&&typeof offOn==='function'&&offOn()&&st.off&&st.off.node){const a=chapNo(st.off.node),b=chapNo(id);
+    if(b>a){const key=(st.campaign||'')+':ch'+b;const cp=ST.dm&&ST.dm.checkpoint;if(!cp||cp.key!==key){CP_BUSY=true;try{await saveCheckpoint({key,n:b,label:'Chapter '+b,startNode:id})}finally{CP_BUSY=false}}}}}catch(e){console.warn('checkpoint',e)}
+  return _go.apply(this,arguments)}}
+// a new game starts without the old game's checkpoint
+{const _sc=startCampaign;startCampaign=async function(){try{if(ST.owner&&ST.dm&&ST.dm.checkpoint)await del('dm/checkpoint')}catch(e){}return _sc.apply(this,arguments)}}
+// ---------- the loss ----------
+{const _as=addStory;addStory=async function(e){
+  if(e&&ST.owner&&e.kind==='system'&&e.trigger&&/^The crew has fallen to|^The crew accepts the defeat/.test(e.text||'')&&difficulty()==='normal'&&!ST.state.gameOver){
+    await put('table/state',{...ST.state,gameOver:nowT(),chapterLoss:true,defeatPending:null,defeatChoice:null,sail:ST.state.sail?{...ST.state.sail,hold:true}:ST.state.sail});
+    try{SFX('defeat')}catch(x){}
+    return _as.call(this,{kind:'gameover',chapterLoss:true,text:`${String(e.text).replace(/ There is no second chance this time: the story goes on from here\.| The story goes on from here\./,'')} The crew is beaten, and this voyage ends here. Start ${chapterLabel()} again and do it better.`})}
+  return _as.apply(this,arguments)}}
+{const _sh=storyHTML;storyHTML=function(e,st,typing){if(e&&e.kind==='gameover'&&e.chapterLoss){const live=ST.state.gameOver&&ST.state.chapterLoss;const has=!!(ST.dm&&ST.dm.checkpoint)||!ST.owner;
+  return`<div class="e-gameover"><div class="go-t">☠ GAME OVER</div><p>${esc(e.text)}</p>${!live?'<p class="hint">The crew started again.</p>':ST.owner?`<div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">${has?`<button class="btn pri" type="button" data-cprestart="1">⟲ Start ${esc(chapterLabel())} again</button>`:''}<button class="btn" type="button" data-gonew="1">Start a new game</button></div>`:'<p class="hint">The host can start the chapter again.</p>'}</div>`}
+  return _sh.apply(this,arguments)}}
+// ---------- start the chapter again ----------
+async function restartChapter(){if(!ST.owner)return;const cp=ST.dm&&ST.dm.checkpoint;if(!cp){toast('No checkpoint saved for this chapter.');return}
+  // foes and their tokens go; allies come back with the chapter
+  for(const [id,f] of Object.entries(ST.dm))if(f&&f.type==='foe')await del('dm/'+id);
+  for(const [id,t] of Object.entries(ST.tokens))if(t&&(t.kind==='foe'||t.kind==='ally'))await del('tokens/'+id);
+  for(const [u,c] of Object.entries(cp.chars||{}))await put('chars/'+u,c);
+  for(const [u,c] of Object.entries(ST.chars))if(charOK(c)&&!(cp.chars||{})[u])await put('chars/'+u,{...c,hp:derive(c.build).maxhp,dead:false,death:{s:0,f:0},stable:false,cond:{}});
+  const st={...cp.state,settings:ST.state.settings,difficulty:ST.state.difficulty,gameOver:null,chapterLoss:null,combat:false,init:[],turn:0,round:1,thinking:false,defeatPending:null,defeatChoice:null,rollReq:[],
+    restSeen:nowT()+1,shortRest:null,deaths:(ST.state.deaths||0)+1};
+  if(st.off)st.off={...st.off,seenT:nowT()+1,fight:null,pend:null,retry:null};
+  await put('table/state',st);await put('table/econ',{});
+  await addStory({kind:'system',text:`⟲ ${cp.label[0].toUpperCase()+cp.label.slice(1)} begins again. Everything is as it was when it started: the crew, the bags, the Berries, the ship and the time of day.`});
+  if(st.off&&cp.startNode&&typeof offGo==='function'&&cp.startNode!==(cp.state.off&&cp.state.off.node))await offGo(cp.startNode);
+  if(!(typeof offOn==='function'&&offOn())&&st.ai)await addStory({kind:'system',trigger:true,text:`(DM: the crew LOST and the game has been rewound to the start of ${cp.label}. Forget everything that happened after that point. Describe the opening of ${cp.label} again, briefly, and let the players choose again.)`})}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-cprestart]');if(!b)return;if(!tapTwice(b,'Tap again: start over'))return;b.disabled=true;try{await restartChapter()}finally{b.disabled=false}});
 
 </script>
 </body></html>
