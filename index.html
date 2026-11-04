@@ -7318,5 +7318,66 @@ const NPC_SAVED=new Set();
 autoNpcPortrait=function(name){const nm=String(name||'').trim();if(!nm)return null;const {doc}=npcTextOf(nm);if(doc&&doc.portrait&&doc.portrait.url)return doc.portrait;
   const p=npcPick(nm);try{if(p&&ST.owner&&doc&&!NPC_SAVED.has(nm.toLowerCase())){NPC_SAVED.add(nm.toLowerCase());const id=Object.keys(ST.npcs).find(k=>ST.npcs[k]===doc);if(id)put('npcs/'+id,{...doc,portrait:p})}}catch(e){}return p};
 
+// ================= rest and heal anywhere, outside battle =================
+// A "Rest & heal" panel on the Story tab for everyone with a character:
+//  - use a healing item (bandages, medicine, meat) on yourself, or as the host on any crewmate
+//  - take a short rest (1 hour) or a long rest (8 hours) anywhere, any time outside a fight; during a short rest
+//    everyone can spend hit dice to heal
+// Rests still follow the rules: one long rest per 16 hours in the game's clock, a day of food per person when not at
+// an inn (or the night only counts as a short rest), and in the ready-made adventures the clock moves on.
+// Players ask, the host's game applies the rest to the whole crew (only the host may change everyone's sheet).
+function restBlocked(){const st=ST.state||{};if(st.combat&&st.battleMode!=='story')return'Not during a fight.';if(st.awaitCrew)return'The adventure has not started yet.';if(st.gameOver)return'The game is over.';if(st.fruitFind&&!st.fruitFind.claimedBy)return'Decide about the fruit first.';return''}
+function healItemsOf(c){return invOf(c).map((it,i)=>({it,i,k:it.key||itemKeyByName(it.name)})).filter(x=>x.k&&ITEMS[x.k]&&ITEMS[x.k].use&&ITEMS[x.k].use.kind==='heal'&&x.it.qty>0)}
+function shortRestOn(){const s=ST.state&&ST.state.shortRest;return!!(s&&s.until>nowT())}
+function restPanelHTML(){const c=myChar();if(!charOK(c))return'';const why=restBlocked();const D=derive(c.build);const hdUsed=(c.res||{}).hd||0;const hdLeft=Math.max(0,D.lvl-hdUsed);const items=healItemsOf(c);
+  const crew=Object.entries(ST.chars).filter(([u,x])=>charOK(x)&&!x.dead);const SR=shortRestOn();const sea=!!(ST.state.sail&&ST.state.sail.on);
+  return`<div class="panel restpanel"><h3>🛌 Rest &amp; heal</h3>
+    <p class="rp-hp">${esc(c.build.name)}: <b>${c.hp}/${D.maxhp} HP</b> · hit dice <b>${hdLeft}/${D.lvl}</b></p>
+    ${why?`<p class="hint">${why}</p>`:`
+    ${SR?`<div class="rp-sr"><b>⏳ Short rest under way</b><p class="hint">Spend hit dice to heal: each heals d${CLASSES[c.build.cls].hd} + CON ${fmt(mod(D.ab.CON))}.</p><button type="button" class="btn sm pri" data-rphd="1" ${hdLeft&&c.hp<D.maxhp?'':'disabled'}>🎲 Spend a hit die</button></div>`:''}
+    ${items.length?`<div class="rp-items"><div class="eyebrow">Healing items</div>${items.map(x=>{const u=ITEMS[x.k].use;return`<div class="rp-item"><span>${esc(ITEMS[x.k].name)} ×${x.it.qty} <small class="hint">heals ${u.n}d${u.die}+${u.plus||0}</small></span><select data-rptgt="${x.i}">${crew.filter(([u])=>u===ST.me||ST.owner).map(([u,x2])=>`<option value="${esc(u)}" ${u===ST.me?'selected':''}>${esc(x2.build.name)} (${x2.hp}/${derive(x2.build).maxhp})</option>`).join('')}</select><button type="button" class="btn sm" data-rpuse="${x.i}">Use</button></div>`}).join('')}</div>`:'<p class="hint">No healing items in your bag. Shops sell bandages and medicine.</p>'}
+    <div class="row rp-rest"><button type="button" class="btn sm" data-rprest="short" ${SR?'disabled':''}>⏳ Short rest (1 hour)</button>${sea?'<span class="hint">At sea, a fed crew long-rests every night.</span>':`<button type="button" class="btn sm" data-rprest="long">🛏 Long rest (8 hours)</button>`}</div>
+    <p class="hint rp-rules">A long rest heals everyone fully and gives back all hit dice, but costs a day of food per person (outside inns), only works once per day, and the world does not wait for you.</p>`}</div>`}
+setInterval(()=>{try{const rail=document.querySelector('#view-story .rail');if(!rail)return;let el=document.getElementById('sRest');if(!el){el=document.createElement('div');el.id='sRest';const j=document.getElementById('sJournal');rail.insertBefore(el,j||null)}
+  const h=restPanelHTML();if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}}catch(e){}},700);
+// ---------- healing items, out of battle ----------
+async function useHealItem(i,targetUid){const c=myChar();if(!charOK(c))return;const inv=invOf(c).map(x=>({...x}));const it=inv[i];const k=it&&(it.key||itemKeyByName(it.name));const u=k&&ITEMS[k]&&ITEMS[k].use;if(!u||u.kind!=='heal')return;
+  const tu=targetUid&&ST.chars[targetUid]?targetUid:ST.me;if(tu!==ST.me&&!ST.owner){toast('Only the host can heal a crewmate from here. Hand them the item instead.');return}
+  const rolls=Array.from({length:u.n},()=>d(u.die));const amt=rolls.reduce((a,b)=>a+b,0)+(u.plus||0);it.qty-=1;const newInv=inv.filter(x=>x.qty>0);
+  if(tu===ST.me){const D=derive(c.build);const nh=Math.min(D.maxhp,Math.max(0,c.hp)+amt);await put('chars/'+ST.me,{...c,inv:newInv,hp:nh,...(nh>0?{death:{s:0,f:0},stable:false}:{})});await addStory({kind:'system',text:`🩹 ${c.build.name} uses ${ITEMS[k].name}: ${rolls.join('+')}${u.plus?'+'+u.plus:''} = +${nh-Math.max(0,c.hp)} HP (now ${nh}/${D.maxhp}).`})}
+  else{const t=ST.chars[tu];const D=derive(t.build);const nh=Math.min(D.maxhp,Math.max(0,t.hp)+amt);await put('chars/'+ST.me,{...c,inv:newInv});await put('chars/'+tu,{...t,hp:nh,...(nh>0?{death:{s:0,f:0},stable:false}:{})});await addStory({kind:'system',text:`🩹 ${c.build.name} patches up ${t.build.name} with ${ITEMS[k].name}: +${nh-Math.max(0,t.hp)} HP (now ${nh}/${D.maxhp}).`})}
+  try{SFX('heal')}catch(e){}}
+// ---------- hit dice during a short rest ----------
+async function spendHitDie(){const c=myChar();if(!charOK(c)||!shortRestOn())return;const D=derive(c.build);const used=(c.res||{}).hd||0;if(used>=D.lvl){toast('No hit dice left. A long rest gives them back.');return}
+  const hd=CLASSES[c.build.cls].hd;const r=d(hd);const h=Math.max(1,r+mod(D.ab.CON));const nh=Math.min(D.maxhp,Math.max(0,c.hp)+h);await put('chars/'+ST.me,{...c,hp:nh,res:{...(c.res||{}),hd:used+1}});
+  addLog({by:ST.me,who:c.build.name,label:'Hit die',detail:`d${hd} ${r} + CON ${fmt(mod(D.ab.CON))}`,total:'+'+h});await addStory({kind:'system',text:`💚 ${c.build.name} spends a hit die: +${nh-Math.max(0,c.hp)} HP, now ${nh}/${D.maxhp}.`})}
+// ---------- the rest itself: asked by anyone, applied by the host ----------
+async function askRest(kind){const why=restBlocked();if(why){toast(why);return}const c=myChar();await addStory({kind:'system',restReq:kind,by:ST.me,text:`${kind==='long'?'🛏':'⏳'} ${charOK(c)?c.build.name:'The crew'} calls for a ${kind} rest.`})}
+async function setState(patch){ST.state={...ST.state,...patch};await put('table/state',ST.state)}
+async function restCrew(k){for(const [u,c] of Object.entries(ST.chars)){if(!charOK(c)||c.dead)continue;const D=derive(c.build);
+  if(k==='long')await put('chars/'+u,{...c,hp:D.maxhp,res:{},death:{s:0,f:0},stable:false,cond:{}});
+  else{const nr={...(c.res||{})};for(const [rk,r] of Object.entries(D.res||{}))if(r.rest==='short'||r.rest==='turn')nr[rk]=0;if(nr.wind)nr.wind=Math.max(0,nr.wind-1);await put('chars/'+u,{...c,res:nr})}}}
+async function applyRest(kind){if(!ST.owner)return;const crew=Object.entries(ST.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u])=>u);const off=typeof offOn==='function'&&offOn();let k=kind;let note='';
+  if(k==='long'){const now=clockNow();const last=ST.state.lastLongRest;
+    if(last!=null&&now-last<16*60&&now>=last){k='short';note='😴 Nobody can sleep: you rested only a few hours ago (one long rest per day). It counts as a short rest.'}
+    else if(foodAvailable()<crew.length){k='short';note=`🍽 Not enough food for everyone (${foodAvailable()} day${foodAvailable()===1?'':'s'} of food for ${crew.length}): you sleep hungry and badly, and it only counts as a short rest.`}
+    else{await eatFor(crew);note=`🍖 Supper before sleep: ${crew.length} day${crew.length===1?'':'s'} of food eaten (${foodAvailable()} left).`}}
+  if(note)await addStory({kind:'system',text:note});
+  // the clock moves on (the game's clock exists in every mode; deadlines in the ready-made adventures keep ticking)
+  let m=clockNow()+(k==='long'?8*60:60);const patch={clock:m,shortRest:k==='short'?{until:nowT()+10*60*1000}:null};if(k==='long')patch.lastLongRest=m;await setState(patch);
+  await restCrew(k);
+  await addStory({kind:'system',text:k==='long'?`🛏 Long rest: eight hours later everyone wakes with full HP, all hit dice and all powers back.${off&&typeof clockText==='function'?' ('+clockText(m)+')':''}`:`⏳ Short rest (1 hour): short-rest powers are back, and everyone can spend hit dice in the Rest & heal panel for the next 10 minutes.${off&&typeof clockText==='function'?' ('+clockText(m)+')':''}`});
+  // the AI DM narrates what happens while the crew rests; a ready-made adventure waits where it was
+  if(!off&&ST.state.ai)await addStory({kind:'system',trigger:true,text:`The crew ${k==='long'?'makes camp and sleeps for eight hours':'rests for an hour'}. (DM: narrate the rest briefly. If the villain's clock or a danger should move while they rest, now is the moment.)`})}
+// the host's game watches for rest calls; each call is handled once, even after a reload
+let REST_BUSY=false;
+setInterval(async()=>{if(!ST.owner||REST_BUSY)return;try{const seen=ST.state.restSeen||0;const e=(ST.story||[]).filter(x=>x.restReq&&(x.t||0)>seen).pop();if(!e)return;REST_BUSY=true;
+  await setState({restSeen:e.t||nowT()});const why=restBlocked();if(why)await addStory({kind:'system',text:'No rest now: '+why});else await applyRest(e.restReq)}catch(x){console.warn('rest',x)}finally{REST_BUSY=false}},1200);
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-rpuse],[data-rphd],[data-rprest]');if(!b)return;b.disabled=true;
+  try{if(b.dataset.rpuse!==undefined){const sel=document.querySelector(`[data-rptgt="${b.dataset.rpuse}"]`);await useHealItem(+b.dataset.rpuse,sel?sel.value:ST.me)}
+    else if(b.dataset.rphd)await spendHitDie();else if(b.dataset.rprest){if(b.dataset.rprest==='long'&&!tapTwice(b,'Tap again: sleep 8 hours')){b.disabled=false;return}await askRest(b.dataset.rprest)}}finally{setTimeout(()=>{b.disabled=false},800)}});
+(function(){const st=document.createElement('style');st.textContent=`.restpanel h3{margin-bottom:6px}.rp-hp{margin:0 0 8px}.rp-items{margin:6px 0 10px}.rp-item{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0}.rp-item span{flex:1 1 140px}.rp-item select{max-width:150px}
+.rp-sr{margin:6px 0 10px;padding:8px 10px;border:1px solid var(--brass);border-radius:10px}.rp-sr p{margin:4px 0 6px}.rp-rest{gap:6px;flex-wrap:wrap}.rp-rules{font-size:12px;margin-top:8px}`;document.head.appendChild(st)})();
+
 </script>
 </body></html>
