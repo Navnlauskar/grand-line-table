@@ -1916,7 +1916,10 @@ function foeAttackRoll(f,ft,targetChar,ranged,far,ftok){const cond=targetChar.co
 async function foeTurn(id,key){
   const st=ST.state;if(turnKey()!==key)return;const f=ST.dm[id];const ft=FOES[f&&f.foe]||FOES.grunt;const me=ST.tokens[id];
   const pcs=Object.entries(ST.tokens).filter(([,t])=>t.kind==='pc'&&t.scene===st.scene&&charOK(ST.chars[t.owner])&&!ST.chars[t.owner].dead);
-  const up=pcs.filter(([,t])=>ST.chars[t.owner].hp>0&&!(ST.chars[t.owner].cond&&ST.chars[t.owner].cond.hidden&&!(hasLOS(st.scene,me,t)&&(typeof fxCanSee!=='function'||fxCanSee(me,t)))));const allies=Object.entries(ST.tokens).filter(([,t])=>t.kind==='ally'&&t.scene===st.scene&&(t.hp||0)>0);let pool=[...up,...allies];
+  // a hidden pirate stays hidden even in plain sight, unless this enemy notices them (Perception vs their Stealth roll)
+  if(me&&f&&f.hp>0)for(const [tid,t] of pcs){const hc=ST.chars[t.owner];if(!(hc.hp>0&&hc.cond&&hc.cond.hidden))continue;if(!(hasLOS(st.scene,me,t)&&(typeof fxCanSee!=='function'||fxCanSee(me,t))))continue;
+    const dc=Math.max(10,+hc.cond.hidden||10);const r=d20roll(0);const per=r.v+FOE_SAVE(ft,'WIS');if(per>=dc){await put('chars/'+t.owner,{...hc,cond:{...hc.cond,hidden:false}});await addLog({by:'',who:f.name,label:'Spot',detail:`${f.name} looks around: Perception ${per} vs Stealth ${dc}. Spots ${hc.build.name}!`,total:'👁',fx:{tg:tid,k:'info',txt:'SPOTTED'}})}}
+  const up=pcs.filter(([,t])=>ST.chars[t.owner].hp>0&&!(ST.chars[t.owner].cond&&ST.chars[t.owner].cond.hidden));const allies=Object.entries(ST.tokens).filter(([,t])=>t.kind==='ally'&&t.scene===st.scene&&(t.hp||0)>0);let pool=[...up,...allies];
   if(f&&me&&!pool.length&&pcs.some(([,t])=>ST.chars[t.owner].hp>0)){const fx=typeof mapFx==='function'?mapFx():null;const hid=pcs.filter(([,t])=>ST.chars[t.owner].hp>0).sort((a,b)=>cheb(((f.seen||{})[a[0]])||a[1],me)-cheb(((f.seen||{})[b[0]])||b[1],me));
     const [hidId,ht]=hid[0];const hc=ST.chars[ht.owner];const dc=Math.max(10,+(hc.cond&&hc.cond.hidden)||10);const hearOnly=fx&&(!fxCanSee(me,ht));const r=d20roll(0);const per=r.v+FOE_SAVE(ft,'WIS');
     if(per>=dc){await put('chars/'+ht.owner,{...hc,cond:{...(hc.cond||{}),hidden:false}});await addLog({by:'',who:f.name,label:'Search',detail:`${f.name} searches${hearOnly?' by sound':''}: Perception ${per} vs Stealth ${dc}. Found ${hc.build.name}!`,total:'👁',fx:{tg:hidId,k:'info',txt:'FOUND'}});await new Promise(r=>setTimeout(r,400));return foeTurn(id,key)}
@@ -7441,6 +7444,41 @@ async function restartChapter(){if(!ST.owner)return;const cp=ST.dm&&ST.dm.checkp
   if(st.off&&cp.startNode&&typeof offGo==='function'&&cp.startNode!==(cp.state.off&&cp.state.off.node))await offGo(cp.startNode);
   if(!(typeof offOn==='function'&&offOn())&&st.ai)await addStory({kind:'system',trigger:true,text:`(DM: the crew LOST and the game has been rewound to the start of ${cp.label}. Forget everything that happened after that point. Describe the opening of ${cp.label} again, briefly, and let the players choose again.)`})}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-cprestart]');if(!b)return;if(!tapTwice(b,'Tap again: start over'))return;b.disabled=true;try{await restartChapter()}finally{b.disabled=false}});
+
+// ================= fair fights: rewards for every enemy beaten, a fresh table log per battle, hands off the enemy =================
+// ---------- rewards: every beaten enemy pays out, in every kind of game ----------
+// People carry Berries (and sometimes gear); beasts of the sea carry meat. Bosses always drop something good.
+function foeIsBeast(f){const ft=FOES[f.foe]||{};const n=String(f.name||ft.name||'');if(/pirate|marine|captain|buccaneer|lackey|thug|fish-?m[ae]n|bounty|hunter|monk|guard|soldier|sailor|bandit/i.test(n))return false;
+  return/sea ?king|shark|squid|dugong|wani|fish|wolf|beast|crab|eel|serpent|bird|boar|bear|ape|gorilla|lizard|snake|tiger/i.test(n)}
+lootFromFight=async function(foes,sc){const beaten=foes.filter(f=>f.hp<=0);if(!beaten.length)return;
+  const pcs=Object.values(ST.tokens).filter(t=>t.kind==='pc'&&t.scene===sc).map(t=>t.owner).filter(u=>charOK(ST.chars[u]));if(!pcs.length)return;
+  let ber=0,meat=0;const items=[];
+  for(const f of beaten){const mx=+f.max||10;const boss=mx>=30;
+    if(foeIsBeast(f)){meat+=boss?3:1+(Math.random()<.4?1:0);if(boss&&Math.random()<.5)items.push(spoilPick(SPOILS));continue}
+    ber+=Math.round((mx*(60+Math.random()*80))/100)*100;if(boss)items.push(SPOILS_BOSS[Math.floor(Math.random()*SPOILS_BOSS.length)]);else if(Math.random()<.3)items.push(spoilPick(SPOILS))}
+  for(let i=0;i<meat;i++)items.push(ITEMS.meat?ITEMS.meat.name:'Meat on the bone');
+  const each=Math.round(ber/pcs.length/100)*100;const notes=[];
+  if(each)for(const u of pcs){const c=ST.chars[u];await put('chars/'+u,{...c,berries:(c.berries??0)+each})}
+  if(each)notes.push(`฿${(each*pcs.length).toLocaleString('en-US')} from their pockets${pcs.length>1?` (฿${each.toLocaleString('en-US')} each)`:''}`);
+  const got={};for(const it of items){const u=pcs[Math.floor(Math.random()*pcs.length)];const c=ST.chars[u];const inv=invOf(c).map(x=>({...x}));const ex=inv.find(x=>x.name.toLowerCase()===it.toLowerCase());const key=itemKeyByName(it);
+    if(ex)ex.qty+=1;else inv.push({name:it,qty:1,tag:key&&ITEMS[key]?ITEMS[key].tag:'gear',...(key?{key}:{})});await put('chars/'+u,{...ST.chars[u],inv});const g=it+' → '+c.build.name;got[g]=(got[g]||0)+1}
+  for(const [g,n] of Object.entries(got))notes.push(n>1?`${n} × ${g}`:g);
+  if(notes.length)await addStory({kind:'system',spoils:true,text:`💰 Spoils from ${beaten.length} beaten ${beaten.length===1?'enemy':'enemies'}: ${notes.join(', ')}.`})};
+// a little "+฿" / "+🍖" over each enemy the moment it drops, so every kill feels like something
+{const SEEN=new Set();setInterval(()=>{try{if(!ST.state.combat)return;for(const [id,f] of Object.entries(ST.dm)){if(!f||f.type!=='foe'||f.scene!==ST.state.scene)continue;const k=id+':'+(ST.state.combatT||0);
+  if(f.hp<=0&&!SEEN.has(k)){SEEN.add(k);const el=document.querySelector(`.tok[data-id="${id}"]`)||document.querySelector(`[data-tok="${id}"]`);if(!el)continue;const r=el.getBoundingClientRect();const p=document.createElement('div');p.className='killpop';p.textContent=foeIsBeast(f)?'+🍖':'+฿';p.style.left=(r.left+r.width/2)+'px';p.style.top=(r.top)+'px';document.body.appendChild(p);setTimeout(()=>p.remove(),1600)}
+  else if(f.hp>0)SEEN.delete(k)}}catch(e){}},300)}
+// ---------- the table log starts fresh for every battle ----------
+const LOG_FROM={k:null,t:0};
+{const _rl=renderLog;renderLog=function(){const st=ST.state||{};if(!(st.combat&&st.combatT))return _rl.apply(this,arguments);const el=$('log');if(!el)return;const keep=ST.log;
+  try{const from=LOG_FROM.k===st.combatT?LOG_FROM.t:st.combatT;ST.log=keep.filter(l=>(l.t||0)>=from);if(!ST.log.length){el.innerHTML='<p class="m">A new battle. No rolls yet.</p>';return}return _rl.apply(this,arguments)}finally{ST.log=keep}}}
+{let was=null;setInterval(()=>{try{const k=ST.state&&ST.state.combat?ST.state.combatT||1:0;if(k!==was){if(was===0&&k){LOG_FROM.k=ST.state.combatT;LOG_FROM.t=Math.max(ST.state.combatT,nowT()-2500)}was=k;renderLog()}}catch(e){}},500)}
+// ---------- the enemy is not yours to move ----------
+// In the ready-made adventures and AI games the host is a player like everyone else: only the game moves the enemies.
+// Only a human DM (custom campaigns run by hand) can drag enemy tokens around.
+{const _cd=canDrag;canDrag=function(t){if(t&&t.kind!=='pc'&&!(ST.state&&ST.state.manual)&&((typeof offOn==='function'&&offOn())||(ST.state&&ST.state.ai)||(ST.state&&ST.state.combat&&ST.state.battleMode!=='story'&&!ST.state.manual)))return false;
+  if(t&&t.kind==='pc'&&t.owner!==ST.me&&!(ST.state&&ST.state.manual)&&ST.state&&ST.state.combat)return false;return _cd.apply(this,arguments)}}
+(function(){const st=document.createElement('style');st.textContent='.killpop{position:fixed;z-index:60;transform:translate(-50%,-50%);font:700 20px/1 inherit;color:#ffd36b;text-shadow:0 2px 4px #000;pointer-events:none;animation:killpop 1.6s ease-out forwards}@keyframes killpop{0%{opacity:0;transform:translate(-50%,-20%) scale(.6)}20%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-220%) scale(1)}}';document.head.appendChild(st)})();
 
 </script>
 </body></html>
