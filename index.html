@@ -2010,7 +2010,7 @@ async function hostCombatCheck(){
   if(!ST.owner||!ST.state.combat||ending)return;const sc=ST.state.scene;
   const foes=Object.values(ST.dm).filter(f=>f.type==='foe'&&f.scene===sc&&!f.hidden);
   const pcs=Object.values(ST.tokens).filter(t=>t.kind==='pc'&&t.scene===sc).map(t=>ST.chars[t.owner]).filter(charOK);
-  const won=foes.length>0&&foes.every(f=>f.hp<=0);const lost=pcs.length>0&&pcs.every(c=>c.hp<=0);
+  const won=foes.length>0&&foes.every(f=>f.hp<=0);const allyUp=Object.values(ST.tokens).some(t=>t.kind==='ally'&&t.scene===sc&&(t.hp||0)>0);const lost=pcs.length>0&&pcs.every(c=>c.hp<=0)&&!allyUp;
   if(!won&&!lost)return;ending=true;
   await new Promise(r=>setTimeout(r,1400));
   const names=foes.map(f=>f.name).join(', ');
@@ -7765,6 +7765,17 @@ const LOG_FROM={k:null,t:0};
 {const _cd=canDrag;canDrag=function(t){if(t&&t.kind!=='pc'&&!(ST.state&&ST.state.manual)&&((typeof offOn==='function'&&offOn())||(ST.state&&ST.state.ai)||(ST.state&&ST.state.combat&&ST.state.battleMode!=='story'&&!ST.state.manual)))return false;
   if(t&&t.kind==='pc'&&t.owner!==ST.me&&!(ST.state&&ST.state.manual)&&ST.state&&ST.state.combat)return false;return _cd.apply(this,arguments)}}
 (function(){const st=document.createElement('style');st.textContent='.killpop{position:fixed;z-index:60;transform:translate(-50%,-50%);font:700 20px/1 inherit;color:#ffd36b;text-shadow:0 2px 4px #000;pointer-events:none;animation:killpop 1.6s ease-out forwards}@keyframes killpop{0%{opacity:0;transform:translate(-50%,-20%) scale(.6)}20%{opacity:1;transform:translate(-50%,-80%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-220%) scale(1)}}';document.head.appendChild(st)})();
+// ---------- when a pirate falls, the crew fights on, and after a won fight they pull the fallen back ----------
+// The battle is only lost when every pirate AND every companion fighting beside them is down. After a victory, anyone
+// who is down (or even dead, except on Hardcore) is carried back by the crew: 1 HP and a level of exhaustion.
+{const _hc=hostCombatCheck;hostCombatCheck=async function(){const was=!!(ST.state&&ST.state.combat);const sc=ST.state&&ST.state.scene;
+  const allies=Object.values(ST.tokens||{}).filter(t=>t.kind==='ally'&&t.scene===sc&&(t.hp||0)>0).map(t=>t.name);
+  const r=await _hc.apply(this,arguments);
+  try{if(was&&ST.owner&&!ST.state.combat&&!ST.state.gameOver&&!ST.state.defeatPending){const up=Object.values(ST.chars).filter(c=>charOK(c)&&c.hp>0&&!c.dead);if(!up.length&&!allies.length)return r;
+    const hard=difficulty()==='hardcore';const saved=[];
+    for(const [u,c] of Object.entries(ST.chars)){if(!charOK(c)||c.hp>0)continue;if(c.dead&&hard)continue;await put('chars/'+u,{...c,hp:1,dead:false,stable:false,death:{s:0,f:0},exh:Math.min(6,(c.exh||0)+(c.dead?1:0))});saved.push((c.dead?'☠→💓 ':'')+c.build.name)}
+    if(saved.length){const who=[...up.map(c=>c.build.name),...allies][0]||'The crew';await addStory({kind:'system',text:`🩹 ${who} drags ${saved.join(', ')} back from the edge after the fight: 1 HP${saved.some(x=>x.startsWith('☠'))?' (and a level of exhaustion for whoever was gone)':''}.`})}}}catch(e){console.warn('fallen',e)}
+  return r}}
 
 // ================= the crew at sea: companions work the ship, and the day's jobs sit where the story choices sit =================
 // Every companion aboard does a job each day at sea, picked by their crew role (set on the Crew & ship tab):
