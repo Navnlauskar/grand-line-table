@@ -50,7 +50,7 @@ function startJoin(code){N.role='guest';N.code=code;LSS('glt-last-join',code);
   return new Promise((res,rej)=>{const p=new Peer(window.GLT_PEER_OPTS||{});N.peer=p;let opened=false;
     const fail=setTimeout(()=>{if(!opened)rej(new Error('Could not reach the host. Check the room code, and that the host has the game open.'))},15000);
     p.on('error',e=>{if(e.type==='peer-unavailable'){clearTimeout(fail);if(!opened)rej(new Error('No game with that room code is open right now.'));else lost()}else if(!opened){clearTimeout(fail);rej(e)}});
-    p.on('open',()=>connect(()=>{opened=true;clearTimeout(fail);res()}))})}
+    p.on('open',()=>{const go=()=>connect(()=>{opened=true;clearTimeout(fail);res()});go();const rt=setInterval(()=>{if(opened||N.lost){clearInterval(rt);return}try{if(N.hostConn)N.hostConn.close()}catch(e){}go()},4500);setTimeout(()=>clearInterval(rt),14500)})})}
 function connect(onFull){const cn=N.peer.connect(PREFIX+N.code,{reliable:true,serialization:'json'});N.hostConn=cn;
   cn.on('open',()=>{cn.send({t:'hello',uid,pres:N.myPres})});
   cn.on('data',m=>{N.seen=Date.now();if(!m||typeof m!=='object'||m.t==='ping')return;
@@ -127,7 +127,7 @@ function lobby(){const st=document.createElement('style');st.textContent=`
     <details class="nl-ai"><summary>🤖 AI Dungeon Master (optional, for the host)</summary><p>Paste an Anthropic API key from console.anthropic.com to let an AI run the story. It is billed to your own API account, and the key is kept only in this browser.</p>
       <div class="row"><input id="nlKey" type="password" placeholder="${AIKEY()?'Key saved: paste a new one to replace it':'sk-ant-…'}" autocomplete="off"><button type="button" id="nlKeySave">Save</button></div>${AIKEY()?'<button type="button" id="nlKeyDel" class="alt" style="margin-top:6px">Remove the saved key</button>':''}</details>
     <div class="err" id="nlErr"></div>
-    <div class="small">The host's browser runs the game and keeps the save. Keep it open while your friends play.</div></div>`;
+    <div class="small">The host's browser runs the game and keeps the save. Keep it open while your friends play.</div>${window.GLT_LOBBY_EXTRA||''}</div>`;
   document.body.appendChild(el);const $$=id=>document.getElementById(id);const err=t=>{$$('nlErr').textContent=t};
   const busy=b=>el.querySelectorAll('button').forEach(x=>x.disabled=b);
   const done=mode=>{N.readyDone=true;el.remove();if(mode!=='solo'){const b=document.createElement('div');b.id='netBadge';document.body.appendChild(b);netBadge();
