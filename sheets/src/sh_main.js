@@ -1,15 +1,15 @@
 // ================= screen, taps and typing =================
 function typing(){const a=document.activeElement;return!!(a&&a.closest&&a.closest('#app')&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.type!=='checkbox')}
 let dirty=false;
-function render(force){if(!force&&typing()){dirty=true;return}dirty=false;const app=q('#app');if(!app)return;
-  const open=[...qa('details[open]',app)].map(d=>d.querySelector('summary')?.textContent||'');const y=window.scrollY;
+function render(force){try{applyTheme()}catch(e){}if(!force&&typing()){dirty=true;return}dirty=false;const app=q('#app');if(!app)return;
+  const dk=d=>d.dataset.dk||d.querySelector('summary')?.textContent||'';const open=[...qa('details[open]',app)].map(dk);const y=window.scrollY;
   app.innerHTML=screenHTML();
-  for(const d of qa('details',app)){const s=d.querySelector('summary');if(s&&open.includes(s.textContent))d.open=true}
+  for(const d of qa('details',app)){if(open.includes(dk(d)))d.open=true}
   window.scrollTo(0,y)}
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(dirty&&!typing())render()},80)});
 function netHTML(){const N=window.GLT_NET;if(SH.solo)return'<span class="net">this device only</span>';if(!N||!N.code)return'<span class="net">live</span>';
   return N.role==='host'?`<span class="net">Room <b>${esc(N.code)}</b> · ${N.conns.size} 👥</span>`:N.lost?`<button type="button" class="net bad" data-a="rejoin">⚠ Reconnect</button>`:`<span class="net">Room <b>${esc(N.code)}</b></span>`}
-function topHTML(){return`<header class="top"><div class="advsw" role="group" aria-label="Advantage for the next roll">${[[-1,'Dis'],[0,'Normal'],[1,'Adv']].map(([v,l])=>`<button type="button" class="${SH.adv===v?'on':''}" data-a="adv" data-k="${v}">${l}</button>`).join('')}</div>${netHTML()}
+function topHTML(){return`<header class="top"><div class="advsw" role="group" aria-label="Advantage for the next roll">${[[-1,'Dis'],[0,'Normal'],[1,'Adv']].map(([v,l])=>`<button type="button" class="${SH.adv===v?'on':''}" data-a="adv" data-k="${v}">${l}</button>`).join('')}</div>${netHTML()}<button type="button" class="btn xs" data-a="themeOpen" aria-label="Change the look">🎨</button>
   ${SH.owner&&(SH.solo||myChar())?`<button type="button" class="btn xs" data-a="swapDM">${isDM()?'My sheet':'DM screen'}</button>`:''}</header>`}
 function navHTML(tabs,cur,act){return`<nav class="nav">${tabs.map(([k,i,l])=>`<button type="button" class="${cur===k?'on':''}" data-a="${act}" data-k="${k}"><i>${i}</i><span>${l}</span></button>`).join('')}</nav>`}
 function setupHTML(){return`<div class="builder"><div class="hero"><div class="hn"><h1>Set up your table</h1><div class="sub">You are the DM. Your players only need the invite link.</div></div></div>
@@ -19,6 +19,7 @@ function setupHTML(){return`<div class="builder"><div class="hero"><div class="h
   <p class="hint">You can change this later; characters keep the rules they were made with.</p></div>`}
 function screenHTML(){if(!SH.ready)return'<p class="hint" style="padding:40px;text-align:center">Opening the table…</p>';
   if(!SH.state.rules){return SH.owner?setupHTML():'<div class="builder"><div class="hero"><div class="hn"><h1>Almost there</h1><div class="sub">The DM is still setting up the table. This page will continue by itself.</div></div></div></div>'}
+  if(SH.pick)return themePickHTML();
   if(SH.edit)return topHTML()+builderHTML();
   if(SH.lu)return topHTML()+luHTML();
   if(SH.open&&SH.chars[SH.open])return topHTML()+`<div class="dmopen"><button type="button" class="btn sm" data-a="closeSheet">← Back to the DM screen</button></div>`+initStripHTML()+sheetHTML(SH.open)+navHTML(TABS.filter(t=>t[0]!=='table'),SH.tab,'tab');

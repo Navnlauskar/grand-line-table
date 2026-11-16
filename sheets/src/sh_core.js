@@ -100,7 +100,7 @@ function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElem
   clearTimeout(rollT);rollT=setTimeout(()=>{el.className=''},follow?9000:4500)}
 // other people's rolls pop up as a small line
 function onLog(fresh){const boot=!SH.seenLog;const newest=fresh.reduce((m,e)=>Math.max(m,e.t||0),0);
-  if(!boot)for(const e of fresh){if(e.by===SH.me||(e.t||0)<=SH.seenLog)continue;if(e.quiet)continue;if(e.kind==='note')toast(e.label,3500);else toast(`${e.who}: ${e.label} → ${e.total}${e.nat===20?' (nat 20!)':e.nat===1?' (nat 1)':''}`,3500)}
+  if(!boot)for(const e of fresh){if(e.by===SH.me||(e.t||0)<=SH.seenLog)continue;if(e.quiet)continue;if(e.kind==='note')toast(e.label,e.read?9000:3500);else toast(`${e.who}: ${e.label} → ${e.total}${e.nat===20?' (nat 20!)':e.nat===1?' (nat 1)':''}`,3500)}
   SH.seenLog=Math.max(SH.seenLog||1,newest);hostTick()}
 
 // ---------------- sheet actions (uid = whose sheet: your own, or any sheet if you are the DM) ----------------

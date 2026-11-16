@@ -1,0 +1,79 @@
+/* ---------- shared hooks the skins use ---------- */
+@font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'IM Fell English';src:url(fonts/im-fell-english-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Crimson Pro';font-weight:400;src:url(fonts/crimson-pro-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Crimson Pro';font-weight:700;src:url(fonts/crimson-pro-latin-700-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Rye';src:url(fonts/rye-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Special Elite';src:url(fonts/special-elite-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Alfa Slab One';src:url(fonts/alfa-slab-one-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Cinzel';font-weight:400;src:url(fonts/cinzel-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Cinzel';font-weight:700;src:url(fonts/cinzel-latin-700-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Bangers';src:url(fonts/bangers-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Comic Neue';font-weight:400;src:url(fonts/comic-neue-latin-400-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Comic Neue';font-weight:700;src:url(fonts/comic-neue-latin-700-normal.woff2) format('woff2');font-display:swap}
+:root{--fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fh:var(--fb);--bgimg:none;--hw:800;--shadow:none;--bw:1px}
+body{font-family:var(--fb);background-image:var(--bgimg);background-attachment:fixed}
+h1,.hpn b,.rc-t,.st b,.ab b,.th-h,.th-hp b,.rd,.tapc b,.money>b{font-family:var(--fh);font-weight:var(--hw)}
+.card,.rb,.st,.ab,.spell,.item,.pm,.lg,.feats details,.feats>p,.inits,.btn,input,select,textarea,.chip{border-width:var(--bw);box-shadow:var(--shadow)}
+.lg.note,.chip,.pip,input,select,textarea{box-shadow:none}
+.top{background:var(--topbg,var(--bg))}
+.nav button.on,details.add>summary{color:var(--acctext,var(--acc))}
+.form.inline2{grid-template-columns:1fr auto;margin-top:8px}
+.form.mon{grid-template-columns:repeat(3,1fr);background:var(--card2);border-radius:var(--r);padding:10px;margin-top:8px}.form.mon>input:first-child{grid-column:1/-1}.form.mon>input[id^=cmD_]{grid-column:span 2}.form.mon .ck{grid-column:span 2;margin:0}.form.mon .btn{grid-column:1/-1}
+.feats details.done{opacity:.6}.feats details .fl:first-of-type{margin-top:8px}
+.lg.note.read{font-style:italic;color:var(--ink);border-style:solid;border-left:5px solid var(--acc);background:var(--card);font-size:15px}
+/* ---------- the look picker ---------- */
+.thgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (min-width:700px){.thgrid{grid-template-columns:repeat(3,1fr)}}
+.thprev{--bw:1px;--shadow:none;--hw:800}.thprev[data-theme=plain]{--bg:#12161c;--card:#1b222b;--card2:#232c37;--line:#33404f;--ink:#eef2f6;--mute:#9aa8b8;--acc:#f0b35a;--accink:#1c1304;--grn:#3fae6b;--red:#e06055;--blu:#5aa2f0;--r:14px;--bgimg:none;--fb:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--fh:var(--fb)}@media (prefers-color-scheme:light){.thprev[data-theme=plain]{--bg:#f3f1ec;--card:#fff;--card2:#f6f3ee;--line:#d8d2c6;--ink:#1d2228;--mute:#5d6875;--acc:#b86a12;--accink:#fff;--grn:#23824a;--red:#c0392b;--blu:#1f6fc4}}
+.thprev{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;border-radius:var(--r);border:var(--bw) solid var(--line);background-color:var(--bg);background-image:var(--bgimg);color:var(--ink);font-family:var(--fb);cursor:pointer;min-height:190px;box-shadow:var(--shadow)}
+.thprev.sel{outline:4px solid var(--blu);outline-offset:3px}
+.th-h{font-size:21px;line-height:1.1}.th-hp{color:var(--mute);font-size:13px}.th-hp b{font-size:26px;color:var(--ink)}
+.th-bar{height:7px;border-radius:99px;background:var(--card2);overflow:hidden;display:block}.th-bar i{display:block;width:79%;height:100%;background:var(--grn)}
+.th-row{display:flex;gap:6px;flex-wrap:wrap}.th-btn{background:var(--acc);color:var(--accink);border-radius:calc(var(--r) - 4px);padding:5px 9px;font-weight:700;font-size:13px;border:var(--bw) solid var(--line)}
+.th-chip{background:var(--card);border:var(--bw) solid var(--line);border-radius:calc(var(--r) - 4px);padding:5px 9px;font-size:13px}.th-d{font-size:12.5px;color:var(--mute);margin-top:auto}
+
+/* ---------- 1. Sea Chart: parchment, ink and red wax ---------- */
+[data-theme=chart]{--bg:#eadcbd;--card:#f6ecd4;--card2:#e6d6b2;--line:#b89f6f;--ink:#2a1f14;--mute:#6b573d;--acc:#8c2a1c;--accink:#fff4e0;--acctext:#8c2a1c;--grn:#3f6b3a;--red:#a3271a;--blu:#2d5d7c;--gold:#a8741a;--r:6px;
+  --fb:'Crimson Pro',Georgia,serif;--fh:'IM Fell English','Crimson Pro',Georgia,serif;--hw:400;
+  --bgimg:radial-gradient(ellipse at 15% 10%,rgba(120,84,36,.16),transparent 45%),radial-gradient(ellipse at 90% 85%,rgba(120,84,36,.2),transparent 50%),radial-gradient(circle at 60% 40%,rgba(255,250,235,.5),transparent 60%);--shadow:0 1px 0 rgba(90,60,20,.25)}
+html[data-theme=chart] body{font-size:17.5px}html[data-theme=chart] h2{font-family:var(--fh);text-transform:none;letter-spacing:0;font-size:19px;color:var(--acc);font-weight:400;border-bottom:1px solid var(--line);padding-bottom:2px}
+html[data-theme=chart] .card{border-style:double;border-width:4px}html[data-theme=chart] .btn.pri{box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),0 2px 4px rgba(60,20,10,.35);border-radius:999px}
+/* ---------- 2. Grand Line: navy and pirate gold ---------- */
+[data-theme=grandline]{--bg:#0a1b2e;--card:#11304d;--card2:#17406a;--line:#2c5f8f;--ink:#f6ecd4;--mute:#9fbcd6;--acc:#f4b82e;--accink:#1c1300;--acctext:#f4b82e;--grn:#4fc48a;--red:#ff6b57;--blu:#6fb8ff;--gold:#f4b82e;--r:14px;
+  --fb:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;--fh:'Pirata One',Georgia,serif;--hw:400;--topbg:#0a1b2e;
+  --bgimg:radial-gradient(ellipse 120% 60% at 50% -10%,rgba(60,130,200,.35),transparent 60%),repeating-radial-gradient(ellipse 140% 40% at 50% 120%,rgba(255,255,255,.035) 0 6px,transparent 6px 26px);--shadow:0 4px 14px rgba(0,0,0,.35)}
+html[data-theme=grandline] h1{font-size:28px;letter-spacing:.02em;color:var(--acc)}html[data-theme=grandline] .hpn b{font-size:52px}html[data-theme=grandline] h2{color:var(--acc)}
+html[data-theme=grandline] .card{background:linear-gradient(160deg,#143a5e,#0e2944);border-color:#3a74a8}html[data-theme=grandline] .btn.pri{background:linear-gradient(#ffd055,#e89c14);border-color:#ffd97a;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+html[data-theme=grandline] .rb.p{border-left-color:var(--acc)}html[data-theme=grandline] .nav{background:#0c2238;border-top:2px solid var(--acc)}
+/* ---------- 3. Wanted Poster ---------- */
+[data-theme=wanted]{--bg:#d8c096;--card:#ecdbb4;--card2:#dcc79c;--line:#2b1c0d;--ink:#22160a;--mute:#5f4a2f;--acc:#22160a;--accink:#f3e4c0;--acctext:#7a1f12;--grn:#35602f;--red:#96200f;--blu:#1f4f73;--gold:#8a5a12;--r:3px;--bw:2px;
+  --fb:'Special Elite','Courier New',monospace;--fh:'Rye',Georgia,serif;--hw:400;
+  --bgimg:radial-gradient(circle at 20% 30%,rgba(80,50,15,.12) 0 2px,transparent 3px),radial-gradient(circle at 70% 65%,rgba(80,50,15,.1) 0 1.5px,transparent 2.5px),radial-gradient(ellipse at center,transparent 55%,rgba(70,40,10,.28));--shadow:3px 3px 0 rgba(40,25,8,.35)}
+html[data-theme=wanted] body{background-size:37px 41px,53px 47px,100% 100%}html[data-theme=wanted] h1{text-transform:uppercase;letter-spacing:.06em;font-size:24px}
+html[data-theme=wanted] h2{font-family:var(--fh);color:var(--ink);letter-spacing:.14em;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);padding:4px 0;text-align:center;font-weight:400}
+html[data-theme=wanted] .hpn b{font-size:54px}html[data-theme=wanted] .btn{text-transform:uppercase;letter-spacing:.04em;font-size:14px}html[data-theme=wanted] .av{border-radius:3px;border:2px solid var(--ink)}
+html[data-theme=wanted] .pip{border-radius:3px;border-color:var(--ink)}html[data-theme=wanted] .pip.on{background:var(--ink)}
+/* ---------- 4. Tavern: dark wood and lantern light ---------- */
+[data-theme=tavern]{--bg:#1a100a;--card:#2b1a0f;--card2:#3a2415;--line:#63432a;--ink:#f7e8cf;--mute:#c9ab86;--acc:#ffa23f;--accink:#231200;--acctext:#ffb561;--grn:#8fc46a;--red:#ff7a5c;--blu:#8ac6ff;--gold:#ffc861;--r:10px;
+  --fb:'Crimson Pro',Georgia,serif;--fh:'Alfa Slab One',Georgia,serif;--hw:400;--topbg:#1a100a;
+  --bgimg:radial-gradient(ellipse 80% 50% at 50% 0,rgba(255,160,60,.22),transparent 70%),repeating-linear-gradient(92deg,rgba(255,220,170,.035) 0 3px,transparent 3px 46px,rgba(0,0,0,.18) 46px 48px);--shadow:inset 0 1px 0 rgba(255,210,150,.12),0 3px 10px rgba(0,0,0,.45)}
+html[data-theme=tavern] body{font-size:17.5px}html[data-theme=tavern] h1{letter-spacing:.02em}html[data-theme=tavern] h2{color:var(--acctext)}
+html[data-theme=tavern] .card{background:linear-gradient(#32200f,#27170c)}html[data-theme=tavern] .btn.pri{box-shadow:0 0 18px rgba(255,160,60,.45)}html[data-theme=tavern] .hpn b{text-shadow:0 0 22px rgba(255,160,60,.35)}
+/* ---------- 5. Arcane: midnight purple, glowing runes ---------- */
+[data-theme=arcane]{--bg:#0c0918;--card:#161030;--card2:#211845;--line:#44357f;--ink:#efeaff;--mute:#aaa0d6;--acc:#6ef2d3;--accink:#04201a;--acctext:#6ef2d3;--grn:#6ef2d3;--red:#ff6f9b;--blu:#9d8cff;--gold:#ffd772;--r:4px;
+  --fb:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--fh:'Cinzel',Georgia,serif;--hw:700;--topbg:#0c0918;
+  --bgimg:radial-gradient(circle at 12% 18%,rgba(255,255,255,.5) 0 1px,transparent 1.5px),radial-gradient(circle at 78% 62%,rgba(180,160,255,.5) 0 1px,transparent 1.5px),radial-gradient(circle at 45% 85%,rgba(110,242,211,.45) 0 1px,transparent 1.5px),radial-gradient(ellipse 90% 60% at 50% 0,rgba(110,70,220,.35),transparent 70%);--shadow:0 0 0 1px rgba(110,242,211,.06),0 6px 20px rgba(0,0,0,.5)}
+html[data-theme=arcane] body{background-size:140px 160px,190px 170px,230px 210px,100% 100%}html[data-theme=arcane] h1{letter-spacing:.06em;text-transform:uppercase;font-size:19px}html[data-theme=arcane] h2{font-family:var(--fh);color:var(--acc);letter-spacing:.2em}
+html[data-theme=arcane] .hpn b{text-shadow:0 0 18px rgba(110,242,211,.55)}html[data-theme=arcane] .btn.pri{box-shadow:0 0 16px rgba(110,242,211,.5)}html[data-theme=arcane] .card{border-color:#5a48a8}
+html[data-theme=arcane] .pip{border-radius:2px;transform:rotate(45deg) scale(.82)}html[data-theme=arcane] .pip.on{box-shadow:0 0 10px var(--acc)}html[data-theme=arcane] .rb.p{border-left-color:var(--acc)}
+/* ---------- 6. Manga: black ink, white paper, loud yellow ---------- */
+[data-theme=manga]{--bg:#fff;--card:#fff;--card2:#f1f1f1;--line:#000;--ink:#000;--mute:#3d3d3d;--acc:#ffe02e;--accink:#000;--acctext:#d00000;--grn:#0a8f3c;--red:#e00000;--blu:#0057d9;--gold:#b07a00;--r:5px;--bw:3px;
+  --fb:'Comic Neue','Comic Sans MS',system-ui,sans-serif;--fh:'Bangers','Comic Neue',system-ui,sans-serif;--hw:400;--topbg:#fff;
+  --bgimg:radial-gradient(circle,rgba(0,0,0,.16) 1.3px,transparent 1.6px);--shadow:4px 4px 0 #000}
+html[data-theme=manga] body{background-size:9px 9px;font-weight:700}html[data-theme=manga] h1{font-size:32px;letter-spacing:.04em;transform:skew(-6deg);transform-origin:left}
+html[data-theme=manga] h2{font-family:var(--fh);font-size:20px;letter-spacing:.08em;color:#000;background:var(--acc);display:inline-block;padding:2px 12px;border:3px solid #000;transform:skew(-6deg);font-weight:400}
+html[data-theme=manga] h2 small{font-family:var(--fb);font-size:12px;color:#000}html[data-theme=manga] .hpn b{font-size:60px}html[data-theme=manga] .btn{box-shadow:3px 3px 0 #000}html[data-theme=manga] .btn:active{transform:translate(3px,3px);box-shadow:none}
+html[data-theme=manga] .nav{border-top:3px solid #000}html[data-theme=manga] .bar{border:2px solid #000;height:12px}html[data-theme=manga] .pip{border-color:#000;border-width:3px}html[data-theme=manga] .pip.on{background:var(--red)}
+html[data-theme=manga] #rollCard{border:4px solid #000;box-shadow:8px 8px 0 #000;transform-origin:center}html[data-theme=manga] .rc-t{font-size:76px;color:var(--red)}
+html[data-theme=manga] .advsw{border:3px solid #000}html[data-theme=manga] small,html[data-theme=manga] .hint{font-weight:400}
+.advsw{flex:none}.net{flex:1 1 0;min-width:0;text-align:right}.top .btn{flex:none}
