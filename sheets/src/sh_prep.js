@@ -42,11 +42,11 @@ function dmPrep(){const C=campOf();const pcs=Object.entries(SH.chars).filter(([,
 // add planned or typed-in enemies to the running fight (starting one if needed)
 function addMons(list){if(!initOf().on)ACT.fightStart();const ini=initOf();const order=[...(ini.order||[])];const cur=ini.started&&order[ini.turn]?order[ini.turn].id:null;const mons={...((SH.dm.enc||{}).mons||{})};
   for(const m of list){const name=String(m.name||'Enemy');const n=Math.max(1,Math.min(12,+m.n||1));const have=order.filter(o=>!o.pc&&o.name.replace(/ \d+$/,'')===name).length;
-    for(let i=0;i<n;i++){const id='m_'+uidNew()+i;const nm=n>1||have?`${name} ${have+i+1}`:name;mons[id]={name:nm,hp:m.hp,max:m.hp,ac:m.ac||null,...(m.atk!==null&&m.atk!==undefined&&m.atk!==''?{atk:+m.atk,dmg:m.dmg||''}:{})};order.push({id,name:nm,v:d(20)+(+m.init||0),hide:!!m.hide})}}
+    for(let i=0;i<n;i++){const id='m_'+uidNew()+i;const nm=n>1||have?`${name} ${have+i+1}`:name;mons[id]={name:nm,hp:m.hp,max:m.hp,ac:m.ac||null,...(m.atk!==null&&m.atk!==undefined&&m.atk!==''?{atk:+m.atk,dmg:m.dmg||''}:{}),...(m.atks&&m.atks.length?{atks:m.atks}:{}),...(m.lib?{lib:m.lib}:{})};order.push({id,name:nm,v:d(20)+(+m.init||0),hide:!!m.hide})}}
   order.sort((a,b)=>b.v-a.v);put('dm/enc',{mons});setInit({order,turn:cur?Math.max(0,order.findIndex(o=>o.id===cur)):0})}
 Object.assign(ACT,{
   cpAdd(b){const f=b.dataset.f;const inp={scenes:'cpSN',encs:'cpEN',npcs:'cpNN',loot:'cpLN'}[f];const name=val(inp).trim();if(!name){toast('Give it a name first.');return}
-    campEdit(c=>{c[f].push(f==='scenes'?{id:uidNew(),title:name,read:'',notes:'',enc:''}:f==='encs'?{id:uidNew(),name,notes:'',mons:[]}:f==='npcs'?{id:uidNew(),name,role:'',notes:''}:{id:uidNew(),name,money:0,items:[]})});const e=document.getElementById(inp);if(e)e.value='';render(true);const all=qa('.feats details[data-dk]');const nid=campOf()[f].slice(-1)[0].id;const nd=all.find(x=>x.dataset.dk===nid);if(nd)nd.open=true},
+    campEdit(c=>{c[f].push(f==='scenes'?{id:uidNew(),title:name,read:'',notes:'',enc:''}:f==='encs'?{id:uidNew(),name,notes:'',mons:[]}:f==='npcs'?{id:uidNew(),name,role:'',notes:''}:{id:uidNew(),name,money:0,items:[]})});const e=document.getElementById(inp);if(e)e.value='';SH.forceOpen=campOf()[f].slice(-1)[0].id;render(true)},
   cpDel(b){if(!tapTwice(b,'Tap again: delete'))return;campEdit(c=>{c[b.dataset.f]=c[b.dataset.f].filter(x=>x.id!==b.dataset.k)})},
   cpDone(b){campEdit(c=>{const s=byId(c.scenes,b.dataset.k);s.done=!s.done})},
   cpUp(b){campEdit(c=>{const i=c.scenes.findIndex(x=>x.id===b.dataset.k);if(i>0)[c.scenes[i-1],c.scenes[i]]=[c.scenes[i],c.scenes[i-1]]})},

@@ -17,14 +17,12 @@ function builderHTML(){const E=SH.edit;const b=E.b;const r5=b.rules==='5e';const
   const subLvl=r5?cl.subLvl:c2SubLevel(b.cls);
   return`<div class="builder"><div class="hero"><div class="hn"><h1>${E.isNew?'New character':'Edit '+esc(b.name||'character')}</h1><div class="sub">${r5?'D&D 5e':'One Piece · Dungeons & Devil Fruits'}</div></div><button type="button" class="btn sm" data-a="bCancel">Cancel</button></div>
   <label class="fl">Name<input data-c="bText" data-f="name" value="${esc(b.name)}" maxlength="30" placeholder="Character name"></label>
-  <label class="fl">Species<select data-c="bSpecies">${Object.entries(SP).map(([k,s])=>`<option value="${k}" ${k===b.species?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>
-  ${!r5&&sp.subs?`<label class="fl">${esc(sp.name)} type<select data-c="bSel" data-f="sub">${Object.entries(sp.subs).map(([k,s])=>`<option value="${k}" ${k===b.sub?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>`:''}
+  ${speciesPickHTML(b)}
   ${r5?`<label class="ck"><input type="checkbox" data-c="bFlex" ${b.flex?'checked':''}> Choose my own ability bonuses (+2 and +1) instead of the species ones</label>`:''}
   ${picks.map((v,i)=>`<label class="fl">Ability bonus +${v}<select data-c="bAsi" data-i="${i}"><option value="">Choose…</option>${ABS.map(a=>`<option ${(b.asiPicks||[])[i]===a?'selected':''}>${a}</option>`).join('')}</select></label>`).join('')}
   ${sub&&sub.skillPick?`<label class="fl">${esc(sub.name)} skill<select data-c="bSel" data-f="speciesPick"><option value="">Choose…</option>${sub.skillPick.map(s=>`<option ${b.speciesPick===s?'selected':''}>${s}</option>`).join('')}</select></label>`:''}
-  <div class="hintbox">${[...(sp.traits||[]),...((sub&&sub.traits)||[])].map(t=>`<p>${esc(t)}</p>`).join('')}</div>
-  <label class="fl">Class<select data-c="bClass">${Object.entries(CL).filter(([k,c])=>!c.legacy||k===b.cls).map(([k,c])=>`<option value="${k}" ${k===b.cls?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label>
-  ${cl.blurb?`<div class="hintbox"><p>${esc(cl.blurb)}</p></div>`:''}
+  <details class="add" open data-dk="sptraits"><summary>${esc(sp.name)} traits</summary><div class="hintbox">${[...(sp.traits||[]),...((sub&&sub.traits)||[])].map(t=>`<p>${esc(t)}</p>`).join('')}</div></details>
+  ${classPickHTML(b)}
   ${b.level>=subLvl?(r5?`<label class="fl">${esc(cl.subName)}<input data-c="bText" data-f="subclass" value="${esc(b.subclass||'')}" maxlength="40" placeholder="e.g. ${esc(R5.srdSub[b.cls])}"></label>`:(SUBCLASSES[b.cls]||[]).length?`<label class="fl">Subclass<select data-c="bSel" data-f="subclass"><option value="">Choose…</option>${SUBCLASSES[b.cls].filter(s=>!s.legacy||s.key===b.subclass).map(s=>`<option value="${s.key}" ${b.subclass===s.key?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>`:''):''}
   ${r5?`<label class="fl">Armor<select data-c="bSel" data-f="armor">${Object.entries(R5.armor).map(([k,a])=>`<option value="${k}" ${k===(b.armor||'none')?'selected':''}>${esc(a.name)} (${a.base}${a.dex===99?' + DEX':a.dex===2?' + DEX max 2':''})</option>`).join('')}</select></label>
     <label class="ck"><input type="checkbox" data-c="bShield" ${b.shield?'checked':''}> Carries a shield (+2 AC)</label>
@@ -79,5 +77,5 @@ function luSave(){const U=SH.lu;const c=SH.chars[U.uid];const b=clone(c.build);c
   const oldMax=DV(c).maxhp;b.level=I.L;b.hpRolls={...(b.hpRolls||{}),[I.L]:U.hp};if(I.needSub)b.subclass=String(U.sub).trim();
   if(I.asi){if(U.mode==='feat')b.featLv={...(b.featLv||{}),[I.L]:String(U.feat).trim()};else b.asiLv={...(b.asiLv||{}),[I.L]:U.mode==='two'?{[U.a1]:2}:{[U.a1]:1,[U.a2]:1}}}
   if(I.exp){if(b.rules==='5e')b.expertise=[...(b.expertise||[]),...U.exp];else b.expertise6=U.exp}
-  const nc={...c,build:b};const gain=Math.max(0,DV(nc).maxhp-oldMax);nc.hp=c.hp+gain;put('chars/'+U.uid,nc);
+  const nc={...c,build:b};const gain=Math.max(0,DV(nc).maxhp-oldMax);nc.hp=Math.min(DV(nc).maxhp,c.hp+gain);put('chars/'+U.uid,nc);
   addLog({by:SH.me,who:b.name,kind:'note',label:`⬆ ${b.name} reaches level ${I.L}! (+${gain} max HP)`,total:''});SH.lu=null;render();window.scrollTo(0,0)}

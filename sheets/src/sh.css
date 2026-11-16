@@ -74,3 +74,57 @@ details.add{margin:10px 0}details.add>summary{cursor:pointer;color:var(--acc);fo
 @media (min-width:700px){.abil{grid-template-columns:repeat(6,1fr)}.pick2{grid-template-columns:1fr 1fr}.builder{max-width:640px;margin:0 auto}.pages:not(.wide):not(.dm){max-width:640px;margin:0 auto}}
 @media print{.top,.nav,.btn,details.add,#rollCard,.toast,.req,.inits,.chipsel,.hpr{display:none!important}body{background:#fff;color:#000}#app{max-width:none;padding:0}.pg{break-inside:avoid-page;margin-bottom:12px}.card,.rb,.st,.ab,.spell,.item{border-color:#999;background:#fff;color:#000}.feats details{break-inside:avoid}}
 #netBadge{display:none!important}
+.fbtns{display:flex;gap:4px;align-items:center;flex:none}.fbtns .btn:disabled{opacity:.4}
+.dfe h3{margin:12px 0 4px;font-size:1rem}.dfe h3 small{font-weight:400;opacity:.7}.dfe .fsp p{margin:2px 0 0}.dfe details{margin:6px 0}.dfe .tog{gap:6px;margin:8px 0;font-size:.9rem}
+/* ---- picture pickers (species, class, NPC gallery) ---- */
+.pickcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px;margin:6px 0 10px}
+.pcard{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 6px 8px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;text-align:center;min-height:44px}
+.pcard img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:var(--card2)}
+.pcard b{font-size:13.5px;line-height:1.2}.pcard small{font-size:11.5px;line-height:1.25}
+.pcard.on{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 30%,transparent)}
+.pcicon{display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:1;border-radius:8px;background:var(--card2);font-size:34px}
+.pickcards.npcs{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
+.lore{display:flex;gap:12px;align-items:flex-start;background:var(--card2);border-radius:12px;padding:10px;margin:4px 0 8px}
+.lore img{width:92px;height:92px;object-fit:cover;border-radius:10px;flex:none}.lore p{font-size:14px;color:var(--mute);margin:4px 0 0}
+h3{font-size:14px;margin:12px 0 4px}
+/* ---- NPCs and the monster book ---- */
+.npcimg{border-radius:10px;object-fit:cover;flex:none;vertical-align:middle;background:var(--card2)}.npcimg.emo{display:inline-flex;align-items:center;justify-content:center;font-size:20px}
+summary .npcimg{width:28px;height:28px;border-radius:50%;margin-right:4px}
+.npchead{display:flex;gap:12px;align-items:flex-start}.npchead>.npcimg{border-radius:12px}
+.statblock{border-left:3px solid var(--red);padding:4px 0 4px 12px;margin:8px 0;font-size:14px}.statblock p{margin:4px 0}.sbt{color:var(--mute)}
+.sbab{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center;margin:6px 0}.sbab span{background:var(--card2);border-radius:8px;padding:4px 2px;font-size:12.5px}.sbab small{display:block}
+.libadd{align-items:center}.libadd .ck{flex:none;white-space:nowrap}
+/* ---- enemy attacks ---- */
+.matks{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%;margin-top:6px}.matks .btn{min-height:36px}
+.mtarget{flex-basis:100%;background:var(--card2);border-radius:10px;padding:8px 10px;margin-top:6px}.mtarget>span{font-weight:600;font-size:14px}
+.orow{flex-wrap:wrap}.orow .statblock{flex-basis:100%}
+.dmgrow{flex-wrap:wrap;gap:6px}.dmgrow>span{flex:1 1 180px}.dmgrow select{width:auto;flex:1 1 140px;min-height:36px}.dtot{font-size:20px}
+/* ---- gifts ---- */
+.modal{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s}
+.mbox{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;max-width:440px;width:100%;max-height:calc(100vh - 32px);overflow:auto;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.mbox h2{text-transform:none;letter-spacing:0;font-size:20px;color:var(--ink);margin:8px 0}.mname{font-size:17px}.mbox p{text-align:left}.mbox p.mname,.mbox p.hint{text-align:center}
+.mico{font-size:54px}.mpic{display:flex;justify-content:center}.mpic img,.mpic svg{border-radius:16px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.4));animation:pop .5s}
+.mbtn{justify-content:center;flex-wrap:wrap;margin:12px 0 8px}.mbtn .btn{flex:1 1 160px}
+@keyframes pop{0%{transform:scale(.6) rotate(-10deg);opacity:0}70%{transform:scale(1.06) rotate(3deg)}100%{transform:none;opacity:1}}@keyframes fadeIn{from{opacity:0}}
+body.modal-open{overflow:hidden}
+.fhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.fhead .fpic,.fhead .fsvg{border-radius:10px;flex:none}
+.fitem{align-items:center}.fitem .fpic,.fitem .fsvg{border-radius:8px;flex:none}
+/* ---- the log dock ---- */
+.dock{position:fixed;z-index:40;background:var(--card);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.dock.side{top:0;right:0;bottom:0;width:330px}
+.dock.drawer{top:0;right:0;bottom:0;width:min(360px,88vw);box-shadow:-10px 0 40px rgba(0,0,0,.45);z-index:70}
+.dockh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}.dockh b{flex:1}
+.dockdice{display:flex;gap:4px;padding:8px 10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}.dockdice .btn{min-height:34px;padding:4px 9px;flex:1}
+.dock .log{flex:1;overflow:auto;padding:6px 10px;max-height:none}
+body.docked #app{margin-right:340px;margin-left:max(0px,calc((100vw - 340px - 1100px)/2))}body.docked .nav{right:330px}
+.badge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;font-style:normal;line-height:17px;padding:0 4px}
+.top .btn{position:relative}.top .btn.on{border-color:var(--acc);color:var(--acc)}
+.npcnote{display:flex;gap:8px;align-items:center}.npcnote img{width:40px;height:40px;border-radius:8px;object-fit:cover}
+@media print{.dock,.modal{display:none!important}body.docked #app{margin:0}}
+.dockbg{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45)}
+.dock .log{align-content:start}
+@media (max-width:640px){.orow .on{flex:1 1 calc(100% - 140px)}.orow input[id^=oN_]{flex:1 1 60px;width:auto}.orow .btn.xs{min-height:40px}}
+.toast{top:58px}
+.mtools{margin-left:auto;display:flex;gap:6px}
+@media (max-width:640px){.orow input[id^=oN_]{flex:0 1 72px}}
+@media (max-width:640px){.orow input[id^=oN_]{flex:none;width:68px;min-width:0}}

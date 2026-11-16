@@ -105,7 +105,7 @@ const ACT={
   reqFor(b){const u=b.dataset.u;const r=SH.state.req;const D=DV(SH.chars[u]);let bonus=0;if(r.kind==='skill')bonus=D.skills[r.key].bonus;else if(r.kind==='save')bonus=D.saves[r.key].bonus;else if(r.kind==='abil')bonus=mod(D.ab[r.key]);
     const a=d(20);addLog({by:u,who:who(u),label:r.label+' (rolled by the DM)',detail:`d20 ${a} ${fmt(bonus)}`,total:a+bonus,nat:a,kind:'d20',req:r.id})},
   secD20(){const label=val('sxLabel').trim()||'Secret d20';const bonus=Math.round(num('sxBonus'));rollD20(label,bonus,bonus?fmt(bonus):'',{secret:true,name:'DM'})},
-  fightStart(){const id=uidNew();put('dm/enc',{mons:{}});setState({init:{on:true,id,req:id,started:false,round:1,turn:0,order:[]},req:null});addLog({by:SH.me,who:'DM',kind:'note',label:'⚔ A fight begins! Roll for initiative.',total:''})},
+  fightStart(){const id=uidNew();put('dm/enc',{mons:{}});setState({init:{on:true,id,t:Date.now(),req:id,started:false,round:1,turn:0,order:[]},req:null});addLog({by:SH.me,who:'DM',kind:'note',label:'⚔ A fight begins! Roll for initiative.',total:''})},
   fightGo(){setInit({started:true,turn:0,round:1});const o=(initOf().order||[])[0];if(o)addLog({by:SH.me,who:'DM',kind:'note',label:`▶ Round 1. ${o.pc||!o.hide?o.name:'An enemy'} goes first.`,total:''})},
   fightEnd(b){if(!tapTwice(b,'Tap again: end the fight'))return;setState({init:{on:false}});put('dm/enc',{mons:{}});addLog({by:SH.me,who:'DM',kind:'note',label:'The fight is over.',total:''})},
   turnNext(){turnStep(1)},turnPrev(){turnStep(-1)},
@@ -145,6 +145,7 @@ const CHG={
   dmNotes(e){put('dm/notes',{text:e.value})},
   initV(e){const ini=initOf();const order=(ini.order||[]).map(o=>o.id===e.dataset.k?{...o,v:Math.round(+e.value)||0}:o);const cur=(ini.order||[])[ini.turn];order.sort((a,b)=>b.v-a.v);setInit({order,turn:cur&&ini.started?Math.max(0,order.findIndex(o=>o.id===cur.id)):0})}
 };
+Object.assign(ACT,{bPickSp(b){CHG.bSpecies({value:b.dataset.k});render(true)},bPickSub(b){CHG.bSel({value:b.dataset.k,dataset:{f:'sub'}});render(true)},bPickCls(b){CHG.bClass({value:b.dataset.k});render(true)}});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;const f=ACT[b.dataset.a];if(!f)return;try{f(b,ev)}catch(e){console.error(e);toast('Something went wrong: '+e.message)}});
 document.addEventListener('change',ev=>{const e=ev.target.closest('[data-c]');if(!e)return;const f=CHG[e.dataset.c];if(!f)return;let r;try{r=f(e)}catch(x){console.error(x);toast('Something went wrong: '+x.message)}
   if(r!=='norender'&&/^(SELECT)$/.test(e.tagName)||e.type==='checkbox'){setTimeout(()=>render(true),0)}else dirty=true});

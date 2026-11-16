@@ -9,7 +9,7 @@ const restTxt=r=>{r=String(r||'');return r.startsWith('short')?'short rest':r===
 function levelAllowed(c){const b=c.build;const max=b.rules==='5e'?20:10;if(b.level>=max)return false;return!!SH.state.freeLevel||(+c.lvlOk||0)>b.level}
 
 function sheetHTML(uid){const c=SH.chars[uid];const D=DV(c);const b=c.build;const mine=uid===SH.me;const ed=canEdit(uid);const tab=SH.tab;
-  const wide=window.innerWidth>=1000;const second=wide?(tab==='main'?'skills':tab):null;
+  const wide=contentW()>=1000;const second=wide?(tab==='main'?'skills':tab):null;
   const page=t=>t==='main'?pgMain(uid,c,D):t==='skills'?pgSkills(uid,c,D):t==='actions'?pgActions(uid,c,D):t==='feats'?pgFeats(uid,c,D):t==='bag'?pgBag(uid,c,D):pgTable(uid);
   return`<div class="hero">${avatar(b.name,46)}<div class="hn"><h1>${esc(b.name)}</h1><div class="sub">${esc(D.speciesName)} · ${esc(D.clsName)} ${D.lvl}</div></div>
     ${levelAllowed(c)&&ed?`<button type="button" class="btn pri sm" data-a="luOpen" data-u="${uid}">⬆ Level ${b.level+1}</button>`:''}${ed?`<button type="button" class="btn sm" data-a="editOpen" data-u="${uid}" aria-label="Edit character">✎</button>`:''}</div>
