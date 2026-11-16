@@ -2,8 +2,9 @@ import os,re,subprocess
 L=lambda f:open(f).read()
 def lines(f,a,b):return '\n'.join(open(f).read().split('\n')[a-1:b])
 c2=lines('v3_classes2.js',1,40)+'\n'+lines('v3_classes2.js',42,66)
+bc=L('v3_bookclasses.js').split('// ---------- battle-map actions')[0]+'\nCLASSES.fighter.pool="Elemental power slots";CLASSES.monk.pool="Ki points";CLASSES.bruiser.pool="Fury points";'
 s2=lines('v3_species2.js',1,14)
-op='\n'.join([L('v3_rules.js'),L('v3_levels.js'),L('v3_powers.js'),L('v3_fruitnames.js'),c2,s2])
+op='\n'.join([L('v3_rules.js'),L('v3_levels.js'),L('v3_powers.js'),L('v3_fruitnames.js'),'const MAX_LEVEL=10;function asiLevels(cls){return cls===\'fighter\'?[4,6,8]:cls===\'rogue\'?[4,8,10]:[4,8]}',c2,s2,bc])
 mine='\n'.join(L('sheet/'+f) for f in ['sh_rules5e.js','sh_core.js','sheet_dummy.js'] if os.path.exists('sheet/'+f))
 mine='\n'.join(L('sheet/'+f) for f in ['sh_rules5e.js','sh_core.js','sh_sheet.js','sh_build.js','sh_dm.js','sh_main.js','sh_prep.js'])
 js=op+'\n'+mine
