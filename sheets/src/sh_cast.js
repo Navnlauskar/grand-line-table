@@ -137,3 +137,36 @@ spellRowHTML=(function(prev){return function(uid,s,ed){let h=prev(uid,s,ed);cons
   if(again)h=h.replace(`<button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}"`,`<button type="button" class="btn dmg ready" data-a="spCast" data-u="${uid}" data-k="${s.id}" data-free="1" title="Use it again this turn without a new slot">♻ Again</button><button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}"`);
   return h}})(spellRowHTML);
 pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);if(c.rider)h=`<p class="conc">⚔ Next weapon hit${c.rider.once?'':'s'}: +${esc(c.rider.dice)} ${esc(c.rider.type||'')} (${esc(c.rider.name)})</p>`+h;return h}})(pgActions);
+// Revivify / Raise Dead: bring a dead ally back with 1 HP
+ACT.spCast=(function(prev){return function(b){const u=b.dataset.u;const c=SH.chars[u];const s=(c.spells||[]).find(x=>x.id===b.dataset.k);const sp=s&&spellFind(s.name);
+  if(sp&&/^(Revivify|Raise Dead)$/.test(sp.n)){const dead=Object.entries(SH.chars).filter(([,x])=>x.dead);if(!dead.length){toast('Nobody is dead. Good!');return}
+    const CI=casterInfo(c,DV(c));const slot=CI.levels.find(x=>x.L>=sp.l);if(!slot){toast('No spell slot of level '+sp.l+' or higher left.');return}
+    SH.pk={u,who:'dead',max:1,sel:[],title:`${sp.n}: who do you bring back?`,go:([id])=>{const r={...(SH.chars[u].res||{})};r[slot.key]=(r[slot.key]||0)+1;saveChar(u,{res:r});addLog({by:SH.me,who:c.build.name,kind:'note',label:`✨ ${c.build.name} casts ${sp.n} on ${SH.chars[id].build.name}!`,total:'',reviveTo:id});render(true)}};render(true);return}
+  return prev(b)}})(ACT.spCast);
+pickHTML=(function(prev){return function(uid){const k=SH.pk;if(!k||k.u!==uid||k.who!=='dead')return prev(uid);return`<div class="mtarget ptarget"><span>${esc(k.title)}</span><div class="chipset">${Object.entries(SH.chars).filter(([,c])=>c.dead).map(([u,c])=>`<button type="button" class="chip tog" data-a="pkTo" data-k="${u}">☠ ${esc(c.build.name)}</button>`).join('')}</div><button type="button" class="btn sm" data-a="pkCancel">Cancel</button></div>`}})(pickHTML);
+onLog=(function(prev){return function(fresh){prev(fresh);if(!SH.owner)return;SH.doneR=SH.doneR||new Set();for(const e of fresh){if(!e.reviveTo||SH.doneR.has(e.t+e.reviveTo)||(e.t||0)<(SH.hostT||0)-1000)continue;SH.doneR.add(e.t+e.reviveTo);const c=SH.chars[e.reviveTo];if(c&&c.dead){saveChar(e.reviveTo,{dead:false,hp:1,death:{s:0,f:0},stable:false});addLog({by:SH.me,who:'DM',kind:'note',label:`💫 ${c.build.name} comes back to life with 1 HP!`,total:''})}}}})(onLog);
+dmParty=(function(prev){return function(){let h=prev();for(const [u,c] of Object.entries(SH.chars)){if(!c.dead)continue;h=h.replace(`data-a="openSheet" data-u="${u}">Sheet</button>`,`data-a="openSheet" data-u="${u}">Sheet</button><button type="button" class="btn xs" data-a="dmRevive" data-u="${u}" title="DM: bring back to life with 1 HP">☠ → 1 HP</button>`)}return h}})(dmParty);
+ACT.dmRevive=function(b){const u=b.dataset.u;if(!tapTwice(b,'Tap again: bring back to life'))return;const c=SH.chars[u];saveChar(u,{dead:false,hp:1,death:{s:0,f:0},stable:false});addLog({by:SH.me,who:'DM',kind:'note',label:`💫 ${c.build.name} is back with 1 HP.`,total:''})};
+
+// ---------- Devil Fruit techniques use the same targeting as spells (charges instead of slots) ----------
+function castFlow(u,sp,dice,rays,CI,nm){const foes=fightCtx(u)?foeList().filter(f=>!f.down):[];
+  if(sp.k==='atk'){const a={name:nm,atk:CI.atk,dmg:dice,spell:1};const ak='sp:f'+uidNew();SH.pseudo=SH.pseudo||{};SH.pseudo[ak]=a;
+    if(!foes.length){for(let i=0;i<rays;i++)rollD20(nm+(rays>1?` (${i+1} of ${rays})`:'')+' attack',CI.atk,fmt(CI.atk),{uid:u,follow:dice?[{t:'Damage '+dice,run:crit=>rollDmg(nm+' damage',dice,{uid:u,crit})}]:null});return}
+    let left=rays;const next=()=>{if(left<=0){render(true);return}const i=rays-left+1;left--;SH.pk={u,who:'foes',max:1,sel:[],title:`${nm}${rays>1?` (${i} of ${rays})`:''}: who is the target?`,go:([id])=>{doAttack(u,a,foeList().find(f=>f.id===id),ak,{spell:1});setTimeout(next,300)}};render(true)};next();return}
+  if(sp.k==='save'){const go=ids=>{const tg=foeList().filter(f=>ids.includes(f.id));const meta={save:{ab:sp.ab,dc:CI.dc,h:!!sp.h,tgts:tg.map(t=>t.id),tnames:tg.map(t=>t.name),spell:nm}};
+      if(dice)rollDmg(`${nm} (${sp.ab} save DC ${CI.dc})${tg.length?' → '+tg.map(t=>t.name).join(', '):''}`,dice,{uid:u,...meta});else addLog({by:SH.me,who:who(u),kind:'note',label:`${nm}: ${sp.ab} save DC ${CI.dc}.`,total:'',...meta});render(true)};
+    if(!foes.length){go([]);return}SH.pk={u,who:'foes',max:sp.tn||8,sel:[],title:`${nm}: who is caught in it?`,go};render(true);return}
+  if(sp.k==='auto'){const go=ids=>{const tg=foeList().find(f=>f.id===ids[0]);rollDmg(`${nm}${tg?' → '+tg.name:''}`,dice,{uid:u,...(tg?{tgt:tg.id,of:'auto'+uidNew()}:{})});render(true)};if(!foes.length){go([]);return}SH.pk={u,who:'foes',max:1,sel:[],title:`${nm}: who is the target?`,go};render(true);return}
+  if(sp.k==='heal'){SH.pk={u,who:'allies',max:sp.tn||1,sel:[],title:`${nm}: who do you heal?`,go:ids=>{const r=rollExprNow(dice);if(!r)return;for(const id of ids)rollDmgFixed(u,`${nm} healing → ${SH.chars[id].build.name}`,r,{healTo:id});render(true)}};render(true);return}
+  if(sp.k==='temp'){rollDmg(`${nm}: temporary HP`,dice,{uid:u,tempTo:u});return}
+  addLog({by:SH.me,who:who(u),kind:'note',label:`🍇 ${nm}: ${sp.txt}`,total:''})}
+ACT.fCast=(function(prev){return function(b){const u=b.dataset.u,i=+b.dataset.k;const c=SH.chars[u];const fr=fruitOf(c);if(!fr||!fr.dfe)return prev(b);const s=fr.dfe.sp[i];const sp=s&&(spellFind(s[3])||spellFind(s[0]));
+  if(!sp)return prev(b);const ctx=dmFor(u)?null:fightCtx(u);if(ctx&&!ctx.mine&&sp.ct!=='R'){toast('Not your turn yet.');return}
+  const ex=((SH.fup||{})[u]||{})[i]||0;const cost=s[1]+ex;if(!fruitSpend(u,cost))return;if(SH.fup&&SH.fup[u])delete SH.fup[u][i];
+  const D=DV(c);const CI={atk:fruitAtk(D,c),dc:fruitDC(D,c),mod:0};const L=Math.max(sp.l,sp.l+ex);const dice=spellDiceAt(sp,L,D.lvl,0);const rays=raysAt(sp,L,D.lvl);
+  if(ctx&&ctx.mine){const st=turnSt(u,ctx.key);const k=(CT[sp.ct]||CT.A)[0];if(k)st[k]=1}
+  if(sp.conc)saveChar(u,{conc:s[0]});
+  addLog({by:SH.me,who:c.build.name,kind:'note',label:`🍇 ${c.build.name} uses ${s[0]} (${cost} charge${cost>1?'s':''})${spellKey2(s[0])!==spellKey2(sp.n)?' as '+sp.n:''}.`,total:'',quiet:true});
+  castFlow(u,sp,dice,rays,CI,s[0])}})(ACT.fCast);
+// a fight that ends closes any open target picker
+render=(function(prev){return function(f){const ini=initOf();if(!(ini&&ini.on)){if(SH.pk&&SH.pk.who==='foes')SH.pk=null;if(SH.pt)SH.pt=null}return prev(f)}})(render);

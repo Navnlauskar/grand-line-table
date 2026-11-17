@@ -204,3 +204,7 @@ const SPELLS=SPELLS_RAW.map(([n,l,cls,ct,rg,conc,mech,txt])=>{const m={};const p
 const spellKey2=s=>String(s||'').toLowerCase().replace(/[’']/g,"'").replace(/\^/g,'').replace(/\s+/g,' ').trim();
 const SPELL_IDX={};SPELLS.forEach(s=>SPELL_IDX[spellKey2(s.n)]=s);
 const spellFind=n=>SPELL_IDX[spellKey2(n)]||null;
+// how many targets a save spell can catch: areas hit everyone inside, others one (or "up to N")
+for(const s of SPELLS){if(s.k!=='save'&&s.k!=='heal'||s.tn)continue;const t=(s.rg+' '+s.txt).toLowerCase();const m=/up to (two|three|four|five|six)/.exec(t);
+  if(m)s.tn={two:2,three:3,four:4,five:5,six:6}[m[1]];else if(s.k==='save')s.tn=/cone|cube|sphere|line|cylinder|square|everyone|creatures|around you|area|wave|cloud|storm|swarm|explosion|explodes|burst|ground|wall|fog|webbing|colours|ringing/.test(t)?8:1}
+{const fix={'Moonbeam':8,'Spirit Guardians':8,'Stinking Cloud':8,'Thunder Step':8,'Vitriolic Sphere':8,'Flame Strike':8,'Meteor Swarm':8,'Flaming Sphere':1,'Sunbeam':1,'Create Bonfire':8,'Cloudkill':8};for(const s of SPELLS)if(fix[s.n])s.tn=fix[s.n]}

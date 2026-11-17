@@ -112,7 +112,7 @@ function hpChange(uid,delta,note,crit){const c=SH.chars[uid];if(!c)return;const 
     if(c.hp<=0&&dmg>0&&!c.dead){const dt={...(c.death||{s:0,f:0})};dt.f=Math.min(3,dt.f+(crit?2:1));patch.death=dt;patch.stable=false;if(dt.f>=3)patch.dead=true;extra=dt.f>=3?' · DEAD':crit?' · two failed death saves (hit while down)':' · a failed death save'}
     else if(dmg-hp>=D.maxhp&&hp>0){patch.dead=true;extra=' · killed outright (massive damage)'}
     if(c.conc&&dmg>0&&!patch.dead)extra+=` · concentration check: CON save DC ${Math.max(10,Math.floor(dmg/2))} to keep ${c.conc}`;
-    hp=Math.max(0,hp-dmg)}else hp=Math.min(D.maxhp,hp+delta);
+    hp=Math.max(0,hp-dmg)}else{if(c.dead&&!/revivify|raise dead|resurrection|reincarnate|revive/i.test(note||'')){toast(`${c.build.name} is dead. Healing does not help; only magic like Revivify can bring them back.`,4000);return}hp=Math.min(D.maxhp,c.dead?Math.max(1,Math.min(1,hp+delta)):hp+delta)}
   Object.assign(patch,{hp,temp});if(hp>0&&c.hp<=0){patch.death={s:0,f:0};patch.stable=false;patch.dead=false}
   saveChar(uid,patch);addLog({by:SH.me,who:who(uid),kind:'note',label:`${who(uid)} ${delta<0?'takes '+(-delta)+' damage':'heals '+delta}${note?' ('+note+')':''}: ${hp}/${D.maxhp} HP${hp<=0&&!extra?' · DOWN':''}${extra}`,total:'',quiet:hp>0})}
 function restFor(uid,kind){const c=SH.chars[uid];if(!c)return;const D=DV(c);const res={...(c.res||{})};
