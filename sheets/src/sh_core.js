@@ -36,7 +36,7 @@ async function del(path){const [c,id]=path.split('/');if(c==='chars')delete SH.c
 async function addLog(e){e.t=Date.now();if(SH.solo){SH.log.unshift({id:'l'+e.t+Math.random(),...e});SH.log=SH.log.slice(0,150);lsave();onLog([SH.log[0]]);render();return}
   try{await SH.db.collection('log').add(e)}catch(x){toast('Roll not shared ('+(x.code||'offline')+').')}}
 const setState=patch=>put('table/state',{...SH.state,...patch});
-const saveChar=(uid,patch)=>{const c=SH.chars[uid];if(!c)return;return put('chars/'+uid,{...c,...patch})};
+let saveChar=(uid,patch)=>{const c=SH.chars[uid];if(!c)return;return put('chars/'+uid,{...c,...patch})};
 const myChar=()=>SH.chars[SH.me]||null;
 const isDM=()=>SH.owner&&(SH.asDM||!SH.solo&&!myChar());
 async function boot(){
@@ -87,7 +87,7 @@ async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.a
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{})};
   {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{})};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{}),...(opts.save?{save:opts.save}:{}),...(opts.healTo?{healTo:opts.healTo}:{}),...(opts.tempTo?{tempTo:opts.tempTo}:{})};
   {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
 function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
@@ -111,6 +111,7 @@ function hpChange(uid,delta,note,crit){const c=SH.chars[uid];if(!c)return;const 
   if(delta<0){let dmg=-delta;const t=Math.min(temp,dmg);temp-=t;dmg-=t;
     if(c.hp<=0&&dmg>0&&!c.dead){const dt={...(c.death||{s:0,f:0})};dt.f=Math.min(3,dt.f+(crit?2:1));patch.death=dt;patch.stable=false;if(dt.f>=3)patch.dead=true;extra=dt.f>=3?' · DEAD':crit?' · two failed death saves (hit while down)':' · a failed death save'}
     else if(dmg-hp>=D.maxhp&&hp>0){patch.dead=true;extra=' · killed outright (massive damage)'}
+    if(c.conc&&dmg>0&&!patch.dead)extra+=` · concentration check: CON save DC ${Math.max(10,Math.floor(dmg/2))} to keep ${c.conc}`;
     hp=Math.max(0,hp-dmg)}else hp=Math.min(D.maxhp,hp+delta);
   Object.assign(patch,{hp,temp});if(hp>0&&c.hp<=0){patch.death={s:0,f:0};patch.stable=false;patch.dead=false}
   saveChar(uid,patch);addLog({by:SH.me,who:who(uid),kind:'note',label:`${who(uid)} ${delta<0?'takes '+(-delta)+' damage':'heals '+delta}${note?' ('+note+')':''}: ${hp}/${D.maxhp} HP${hp<=0&&!extra?' · DOWN':''}${extra}`,total:'',quiet:hp>0})}

@@ -8,10 +8,10 @@ const dmFor=u=>SH.owner&&u!==SH.me;
 function foeList(){const ini=initOf();let k=0;return(ini.order||[]).filter(o=>!o.pc).map(o=>({id:o.id,name:o.hide?'Enemy '+(++k):o.name,down:!!o.down}))}
 function nAtkOf(u){return DV(SH.chars[u]).nAtk||1}
 
-function doAttack(u,a,tg,ak){const ctx=fightCtx(u);let tag='',st=null;
-  if(ctx&&ctx.mine){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{if(!st.bonus){st.bonus=1;tag=' (bonus action)'}else tag=' (extra attack)'}}
+function doAttack(u,a,tg,ak,o){o=o||{};const ctx=fightCtx(u);let tag='',st=null;
+  if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{if(!st.bonus){st.bonus=1;tag=' (bonus action)'}else tag=' (extra attack)'}}
   if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:''};
-    rollD20(`${a.name} attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
+    rollD20(`${a.name} ${o.spell?'spell ':''}attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
   else rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});
   SH.pt=null;render(true)}
 ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)return;const ctx=dmFor(u)?null:fightCtx(u);

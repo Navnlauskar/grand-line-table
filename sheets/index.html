@@ -156,6 +156,7 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .chip.downpc{opacity:.75;border-style:dashed}
 .diff{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;border-left:4px solid}.diff small{display:block;color:var(--mute)}
 .d-triv,.d-easy{border-color:#2f7d4f;background:color-mix(in srgb,#2f7d4f 10%,transparent)}.d-med{border-color:#c07a12;background:color-mix(in srgb,#c07a12 12%,transparent)}.d-hard{border-color:#d0541e;background:color-mix(in srgb,#d0541e 13%,transparent)}.d-deadly{border-color:var(--red);background:color-mix(in srgb,var(--red) 15%,transparent)}
+.warn{color:var(--red)}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -992,6 +993,7 @@ const FURY=[0,0,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,12];
 {const _pr=pcResists;pcResists=function(c,dt){const r=_pr(c,dt);if(r)return r;if(c&&c.cond&&c.cond.frenzy&&['bludgeoning','piercing','slashing'].includes(dt))return'half';return null}}
 
 CLASSES.fighter.pool="Elemental power slots";CLASSES.monk.pool="Ki points";CLASSES.bruiser.pool="Fury points";
+const OP_SPELL_LISTS={"chemist": {"0": ["Control Flames","Create Bonfire","Druidcraft","Frostbite","Guidance","Gust","Infestation","Magic Stone","Mending","Mold Earth","Poison Spray","Primal Savagery","Produce Flame","Resistance","Shillelagh","Thorn Whip","Thunderclap"],"1": ["Absorb Elements","Animal Friendship","Beast Bond","Charm Person","Create or Destroy Water","Cure Wounds","Earth Tremor","Entangle","Faerie Fire","Fog Cloud","Goodberry","Healing Word","Ice Knife","Jump","Longstrider","Protection from Evil and Good","Purify Food and Drink","Snare","Speak with Animals","Thunderwave"],"2": ["Air Bubble","Animal Messenger","Barkskin","Beast Sense","Continual Flame","Darkvision","Dust Devil","Earthbind","Enhance Ability","Enlarge/Reduce","Find Traps","Flame Blade","Flaming Sphere","Gust of Wind","Healing Spirit","Heat Metal","Hold Person","Lesser Restoration","Locate Animals or Plants","Locate Object","Moonbeam","Pass Without Trace","Protection from Poison","Skywrite","Spike Growth","Summon beast","Warding Wind","Wither and Bloom","Call Lightning","Conjure Animals","Daylight","Dispel Magic","Elemental Weapon","Erupting Earth","Feign Death","Flame Arrows","Meld into Stone","Plant Growth","Protection from Energy","Revivify","Sleet Storm","Soap Bubble^","Speak with Plants","Summon fey","Slime Wave^","Wall of Goo^","Water Breathing","Water Walk","Wind Wall"],"4": ["Blight","Charm Monster","Confusion","Conjure Minor Elementals","Conjure Woodland Beings","Control Water","Divination","Dominate Beast","Elemental Bane","Fire Shield","Freedom of Movement","Giant Insect","Grasping Vine","Hallucinatory Terrain","Ice Storm","Locate Creature","Polymorph","Stone Shape","Summon Elemental","Swamp Sphere^","Antilife Shell","Awaken","Cone of Cold","Conjure Elemental","Contagion","Control Winds","Geas","Greater Restoration","Insect Plague","Mass Cure Wounds","Planar Binding","Scrying","Summon Draconic Spirit","Transmute Rock","Wall of Stone","Wrath of Nature"],"6": ["Bones of the Earth","Conjure Fey","Find the Path","Flesh to Stone","Heal","Heroes' Feast","Investiture of Flame","Investiture of Ice","Investiture of Stone","Investiture of Wind","Move Earth","Primordial Wind","Sunbeam","Wall of Thorns","Wind Walk"],"7": ["Draconic Transformation","Fire Storm","Mirage Arcane","Regenerate","Reverse Gravity","Symbol","Whirlwind"],"8": ["Earthquake","Feeblemind","Incendiary Cloud","Poison Giant: Hell's","Judgement^","Slime Tsunami^","Sunburst"],"9": ["Foresight","Ice Age^","Locate Devil Fruit Power^","Storm of Vengeance","True Resurrection"]},"devilforged": {"0": ["Blade Ward","Booming Blade","Chill Touch","Create Bonfire","Eldritch Blast","Friends","Frostbite","Green-Flame Blade","Infestation","Lightning Lure","Mage Hand","Magic Stone","Mind Sliver","Minor Illusion","Poison Spray","Prestidigitation","Sword Burst","Thunderclap","Toll the Dead","True Strike"],"1": ["Armor of Agathys","Arms of Hadar","Cause Fear","Charm Person","Distort Value","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Witch Bolt"],"2": ["Borrowed Knowledge","Cloud of Daggers","Crown of Madness","Darkness","Earthbind","Enthrall","Flock of Familiars","Hold Person","Invisibility","Mind Spike","Mirror Image","Misty Step","Ray of Enfeeblement","Shadow Blade","Shatter","Spider Climb","Suggestion"],"3": ["Counterspell","Dispel","Enemies Abound","Fear","Fly","Gaseous Form","Hunger of Hadar","Hypnotic Pattern","Incite Greed","Intellect Fortress","Magic Circle","Major Image","Remove Curse","Spirit Shroud","Summon Fey","Summon Lesser Demons","Summon Shadowspawn","Summon Undead","Thunder Step","Vampiric Touch"],"4": ["Banishment","Blight","Charm Monster","Dimension Door","Elemental Bane","Galder's Speedy Courier","Hallucinatory Terrain","Raulothim's Psychic Lance","Shadow of Moil","Sickening Radiance","Summon Aberration","Summon Greater Demon"],"5": ["Danse Macabre","Dream","Enervation","Far Step","Great Heaven Splitter^","Hold Monster","Infernal Calling","Mislead","Negative Energy Flood","Planar Binding","Scrying","Synaptic Static","Wall of Light"],"6": ["Circle of Death","Conjure Fey","Create Undead","Eyebite","Flesh to Stone","Investiture of Flame","Investiture of Ice","Investiture of Stone","Investiture of Wind","Mass Suggestion","Mental Prison","Scatter","Soul Cage","Summon Fiend","Tasha's Otherworldly Guise","True Seeing"],"7": ["Crown of Stars","Finger of Death","Forcecage","Power Word: Pain"],"8": ["Dominate Monster","Feeblemind","Glibness","Maddening Darkness","Power Word: Stun"],"9": ["Blade of Disaster","Foresight","Imprisonment","Locate Devil Fruit Power^","Power Word: Kill","Psychic Scream","Shapechange","True Polymorph","Weird"]},"hybrid": {"0": ["Acid Splash","Blade Ward","Booming Blade","Chill Touch","Control Flames","Create Bonfire","Dancing Lights","Fire Bolt","Friends","Frostbite","Green-Flame Blade","Gust","Infestation","Light","Lightning Lure","Mage Hand","Mending","Message","Mind Sliver","Minor Illusion","Mold Earth","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","Sword Burst","Thunderclap","True Strike"],"1": ["Absorb Elements","Burning Hands","Catapult","Chaos Bolt","Charm Person","Chromatic Orb","Color Spray","Expeditious Retreat","False Life","Featherfall","Fog Cloud","Grease","Ice Knife","Jump","Mage Armor","Magic Missile","Ray of Sickness","Shield","Silent Image","Silvery Barbs","Sleep","Tasha's Caustic Brew","Thunderwave","Witch Bolt"],"2": ["Aganazzar's Scorcher","Air Bubble","Alter Self","Blindness/Deafness","Blur","Cloud of Daggers","Crown of Madness","Darkness","Detect Thoughts","Dragon's Breath","Dust Devil","Earthbind","Enhance Ability","Enlarge/Reduce","Flame Blade","Flaming Sphere","Gust of Wind","Hold Person","Invisibility","Kinetic Jaunt","Knock","Levitate","Magic Weapon","Maximillian's Earthen Grasp","Ice Spike","Mirror Image","Misty Step","Nathair's Mischief","Phantasmal Force","Pyrotechnics","Rime's Binding Ice","Scorching Ray","See Invisibility","Shadow Blade","Shatter","Snilloc's Snowball Storm","Warding Wind","Web","Wither and Bloom"],"3": ["Ashardalon's Stride","Blink","Catnap","Clairvoyance","Counterspell","Daylight","Dispel Magic","Enemies Abound","Erupting Earth","Fear","Fireball","Flame Arrows","Fly","Gaseous Form","Haste","Hypnotic Pattern","Incite Greed","Intellect Fortress","Lightning Bolt","Major Image","Melf's Minute Meteors","Protection from Energy","Sleet Storm","Slow","Soap Bubble^","Stinking Cloud","Thunder Step","Vampiric Touch","Slime Wave^","Wall of Goo^","Water Breathing","Water Walk"],"4": ["Blight","Charm Monster","Confusion","Dominate Beast","Fire Shield","Greater Invisibility","Ice Storm","Polymorph","Raulothim's Psychic Lance","Sickening Radiance","Stoneskin","Storm Sphere","Vitriolic Sphere","Wall of Fire","Swamp Sphere^","Bigby's Hand","Cloudkill","Cone of Cold","Control Winds","Creation","Dominate Person","Enervation","Far Step","Hold Monster","Immolation","Insect Plague","Seeming","Skill Empowerment","Summon Draconic Spirit","Synaptic Static","Telekinesis","Wall of Light","Wall of Stone"],"6": ["Chain Lightning","Circle of Death","Disintegrate","Eyebite","Fizban's Platinum Shield","Flesh to Stone","Globe of Invulnerability","Investiture of Flame","Investiture of Ice","Investiture of Stone","Investiture of Wind","Mass Suggestion","Mental Prison","Move Earth","Otiluke's Freezing Sphere","Scatter","Sunbeam","Tasha's Otherworldly Guise","True Seeing"],"7": ["Crown of Stars","Delayed Blast Fireball","Draconic Transformation","Dream of the Blue Veil","Etherealness","Finger of Death","Fire Storm","Power Word: Pain","Prismatic Spray","Reverse Gravity"],"8": ["Abi-Dalzim's Horrid Wilting","Power Word: Stun","Sunburst"],"9": ["Blade of Disaster","Flame Emperor^","Island Shaking^","Mass Polymorph","Meteor Swarm","Power Word: Kill","Psychic Scream","Time Stop"]},"marksman": {"1": ["Absorb Elements","Alarm","Animal Friendship","Beast Bond","Cure Wounds","Detect Magic","Detect Poison and Disease","Ensnaring Strike","Entangle","Fog Cloud","Hail of Thorns","Hunter's Mark","Jump","Longstrider","Searing Smite","Snare","Speak with Animals","Zephyr Strike"],"2": ["Aid","Air Bubble","Animal Messenger","Barkskin","Beast Sense","Cordon of Arrows","Darkvision","Enhance Ability","Find Traps","Gust of Wind","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Weapon","Pass Without Trace","Protection from Poison","Silence","Spike Growth","Summon Beast"],"3": ["Ashardalon's Stride","Conjure Animals","Conjure Barrage","Daylight","Elemental Weapon","Flame Arrows","Lightning Arrow","Nondetection","Protection from Energy","Revivify","Soap Bubble^","Speak with Plants","Summon Fey","Water Breathing","Water Walk","Wind Wall"],"4": ["Conjure Woodland Beings","Dominate Beast","Freedom of Movement","Grasping Vine","Locate Creature","Stoneskin","Summon Elemental"],"5": ["Commune With Nature","Conjure Volley","Great Heaven Splitter^","Greater Restoration","Steel Wind Strike","Swift Quiver"]},"priest": {"0": ["Guidance","Light","Mending","Resistance","Sacred Flame","Spare the Dying","Thaumaturgy","Toll the Dead","Word of Radiance"],"1": ["Bane","Bless","Ceremony","Command","Create or Destroy Water","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Guiding Bolt","Healing Word","Inflict Wounds","Protection from Evil and Good","Purify Food and Drink","Sanctuary","Shield of Faith"],"2": ["Aid","Augury","Blindness/Deafness","Borrowed Knowledge","Calm Emotions","Continual Flame","Enhance Ability","Find Traps","Gentle Repose","Hold Person","Lesser Restoration","Locate Object","Prayer of Healing","Protection from Poison","Silence","Spiritual Weapon","Warding Bond","Zone of Truth"],"3": ["Animate Dead","Aura of Vitality","Beacon of Hope","Bestow Curse","Clairvoyance","Create Food and Water","Daylight","Dispel Magic","Fast Friends","Feign Death","Glyph of Warding","Incite Greed","Life Transference","Magic Circle","Mass Healing Word","Meld Into Stone","Motivational Speech","Protection from Energy","Remove Curse","Revivify","Sending","Speak with Dead","Spirit Guardians","Spirit Shroud","Water Walk"],"4": ["Aura of Life","Aura of Purity","Death Ward","Divination","Freedom of Movement","Guardian of Faith","Locate Creature","Stone Shape"],"5": ["Commune","Contagion","Dawn","Dispel Evil and Good","Flame Strike","Geas","Greater Restoration","Hallow","Holy Weapon","Insect Plague","Legend Lore","Mass Cure Wounds","Planar Binding","Raise Dead","Scrying","Summon Celestial"],"6": ["Blade Barrier","Create Undead","Find the Path","Forbiddance","Harm","Heal","Heroes' Feast","Sunbeam","True Seeing"],"7": ["Conjure Celestial","Divine Word","Etherealness","Fire Storm","Regenerate","Resurrection","Symbol","Temple of the Gods"],"8": ["Antimagic Field","Control Weather","Earthquake","Holy Aura","Poison Giant: Hell's","Judgement^","Sunburst"],"9": ["Flame Emperor^","Island Shaking^","Locate Devil Fruit Power^","Mass Heal","Power Word: Heal","True Resurrection"]},"skald": {"0": ["Blade Ward","Dancing Lights","Friends","Light","Mending","Message","Minor Illusion","Prestidigitation","Thunderclap","True Strike","Vicious Mockery"],"1": ["Animal Friendship","Bane","Charm Person","Color Spray","Command","Cure Wounds","Detect Magic","Disguise Self","Dissonant Whispers","Distort Value","Earth Tremor","Faerie Fire","Feather Fall","Healing Word","Heroism","Identify","Illusory Script","Longstrider","Silent Image","Silvery Barbs","Sleep","Speak with Animals","Tasha's Hideous Laughter","Thunderwave"],"2": ["Aid","Animal Messenger","Blindness/Deafness","Borrowed Knowledge","Calm Emotions","Cloud of Daggers","Crown of Madness","Detect Thoughts","Enhance Ability","Enthrall","Gift of Gab","Heat Metal","Hold Person","Invisibility","Kinetic Jaunt","Knock","Lesser Restoration","Locate Animals or Plants","Locate Object","Mirror Image","Nathair's Mischief","Phantasmal Force","Pyrotechnics","See Invisbility","Shatter","Silence","Skywrite","Suggestion","Warding Wind"],"3": ["Bestow Curse","Catnap","Clairvoyance","Dispel Magic","Enemies Abound","Fast Friends","Fear","Feign Death","Glyph of Warding","Hypnotic Pattern","Intellect Fortress","Leomund's Tiny Hut","Major Image","Mass Healing Word","Motivational Speech","Nondetection","Plant Growth","Sending","Slow","Speak with Dead","Speak with Plants","Stinking Cloud"],"4": ["Charm Monster","Compulsion","Confusion","Freedom of Movement","Greater Invisibility","Hallucinatory Terrain","Locate Creature","Phantasmal Killer","Raulothim's Psychic Lance"],"5": ["Dominate Person","Dream","Geas","Greater Restoration","Great Heaven Splitter^","Hold Monster","Legend Lore","Mass Cure Wounds","Mislead","Modify Memory","Planar Binding","Rary's Telepathic Bond","Scrying","Skill Empowerment","Synaptic Static"],"6": ["Eyebite","Find the Path","Heroes' Feast","Mass Suggestion","Otto's Irresistable Dance","Programmed Illusion","True Seeing"],"7": ["Forcecage","Mirage Arcane","Mordenkainen's Sword","Prismatic Spray","Project Image","Regenerate","Resurrection","Symbol"],"8": ["Antpathy/Sympathy","Dominate Monster","Feeblemind","Gibness","Mind Blank","Power Word: Stun"],"9": ["Foresight","Power Word: Heal","Power Word: Kill","Psychic Scream"]},"tinkerer": {"0": ["Acid Splash","Blade Ward","Booming Blade","Chill Touch","Control Flames","Create Bonfire","Dancing Lights","Encode Thoughts","Fire Bolt","Friends","Frostbite","Green-Flame Blade","Gust","Infestation","Light","Lightning Lure","Mage Hand","Mending","Message","Mind Sliver","Minor Illusion","Mold Earth","Poison Spray","Prestidigitation","Ray of Frost","Sapping Sting","Shocking Grasp","Sword Burst","Thunderclap","Toll the Dead","True Strike"],"1": ["Absorb Elements","Alarm","Burning Hands","Catapult","Color Spray","Detect Magic","Disguise Self","Distort Value","Earth Tremor","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Frost Fingers","Gift of Alacrity","Grease","Ice Knife","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Magnify Gravity","Protection from Evil and Good","Ray of Sickness","Shield","Silent Image","Silvery Barbs","Sleep","Snare","Tasha's Caustic Brew","Tasha's Hideous Laughter","Tenser's Floating Disk","Thunderwave","Unseen Servant","Witch Bolt"],"2": ["Aganazzar's Scorcher","Air Bubble","Alter Self","Arcane Lock","Augury","Blindness/Deafness","Blur","Borrowed Knowledge","Cloud of Daggers","Continual Flame","Crown of Madness","Darkness","Darkvision","Detect Thoughts","Dragon's Breath","Dust Devil","Earthbind","Enhance Ability","Fortune's Favor","Gentle Repose","Gift of Gab","Gust of Wind","Hold Person","Immovable Object","Invisibility","Kinetic Jaunt","Knock","Levitate","Locate Object","Magic Mouth","Magic Weapon","Maximillian's Earthern Grasp","Melf's Acid Arrow","Mind Spike","Mirror Image","Misty Step","Nathair's Mischief","Phantasmal Force","Pyrotechnics","Ray of Enfeeblement","Rime's Binding Ice","Rope Trick","Scorching Ray","See Invisibility","Shadow Blade","Shatter","Skywrite","Snilloc's Snowball Storm","Spider Climb","Suggestion","Tasha's Mind Whip","Vortex Warp","Warding Wind","Web","Wither and Bloom","Wristpocket"],"3": ["Animate Dead","Ashardalon's Stride","Bestow Curse","Blink","Catnap","Clairvoyance","Counterspell","Dispel Magic","Enemies Abound","Erupting Earth","Fast Friends","Fear","Feign Death","Fireball","Flame Arrows","Haste","Hypnotic Pattern","Incite Greed","Intellect Fortress","Leomund's Tiny Hut","Life Transference","Lightning Bolt","Magic Circle","Major Image","Melf's Minute Meteors","Nondetection","Phantom Steed","Protection from Energy","Pulse Wave","Remove Curse","Sending","Sleet Storm","Slow","Soap Bubble^","Speak With Dead","Spirit Shroud","Stinking Cloud","Summon Fey","Summon Lesser Demons","Summon Shadowspawn","Summon Undead","Thunder Step","Slime Wave^","Tiny Servant","Vampiric Touch","Wall of Sand","Wall of Goo^","Water Breathing"],"4": ["Arcane Eye","Blight","Charm Monster","Confusion","Conjure Minor Elementals","Dimension Door","Divination","Elemental Bane","Evard's Black Tentacles","Fabricate","Fire Shield","Gravity Sinkhole","Greater Invisibility","Hallucinatory Terrain","Ice Storm","Leomund's Secret Chest","Locate Creature","Mordenkainen's Faithful","Hound","Otiluke's Resilient Sphere","Sickening Radiance","Stone Shape","Stoneskin","Storm Sphere","Summon Abberration","Summon Construct","Summon Elemental","Summon Greater Demon","Swamp Sphere^","Vitriolic Sphere","Wall of Fire"]}};
 const FRUIT_IMG=["awa", "bane", "bara", "bari", "bata", "batto", "beri", "bisu", "bomu", "buta", "choco", "doa", "doku", "doru", "gasu", "gomu", "goro", "guma", "gura", "guru", "guwa", "hana", "hebi", "hie", "hira", "hito", "hobi", "horo", "inu", "ito", "jake", "juku", "kachi", "kage", "kagi", "kame", "kani", "kilo", "kumo", "kuri", "kutsu", "kyubu", "magu", "maki", "mane", "mato", "mera", "mero", "mini", "mochi", "mogu", "moku", "mori", "mushi", "nagi", "neko", "nemu", "nezu", "nikyu", "noro", "nui", "numa", "ookami", "ope", "ori", "pika", "poke", "ropu", "ryu", "sabi", "sake", "sara", "shibo", "shika", "soru", "sube", "suke", "suna", "toge", "tori", "tsuri", "uma", "ushi", "woshu", "yagi", "yami", "yomi", "yuki", "zou"];
 // ================= plain D&D 5e ruleset (from the 5.1 System Reference Document, CC-BY-4.0, summarised) =================
 // Data-driven: species, the twelve classes with their features by level, spell slots, armor and weapons.
@@ -1166,7 +1168,7 @@ async function del(path){const [c,id]=path.split('/');if(c==='chars')delete SH.c
 async function addLog(e){e.t=Date.now();if(SH.solo){SH.log.unshift({id:'l'+e.t+Math.random(),...e});SH.log=SH.log.slice(0,150);lsave();onLog([SH.log[0]]);render();return}
   try{await SH.db.collection('log').add(e)}catch(x){toast('Roll not shared ('+(x.code||'offline')+').')}}
 const setState=patch=>put('table/state',{...SH.state,...patch});
-const saveChar=(uid,patch)=>{const c=SH.chars[uid];if(!c)return;return put('chars/'+uid,{...c,...patch})};
+let saveChar=(uid,patch)=>{const c=SH.chars[uid];if(!c)return;return put('chars/'+uid,{...c,...patch})};
 const myChar=()=>SH.chars[SH.me]||null;
 const isDM=()=>SH.owner&&(SH.asDM||!SH.solo&&!myChar());
 async function boot(){
@@ -1217,7 +1219,7 @@ async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.a
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{})};
   {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{})};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{}),...(opts.save?{save:opts.save}:{}),...(opts.healTo?{healTo:opts.healTo}:{}),...(opts.tempTo?{tempTo:opts.tempTo}:{})};
   {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
 function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
@@ -1241,6 +1243,7 @@ function hpChange(uid,delta,note,crit){const c=SH.chars[uid];if(!c)return;const 
   if(delta<0){let dmg=-delta;const t=Math.min(temp,dmg);temp-=t;dmg-=t;
     if(c.hp<=0&&dmg>0&&!c.dead){const dt={...(c.death||{s:0,f:0})};dt.f=Math.min(3,dt.f+(crit?2:1));patch.death=dt;patch.stable=false;if(dt.f>=3)patch.dead=true;extra=dt.f>=3?' · DEAD':crit?' · two failed death saves (hit while down)':' · a failed death save'}
     else if(dmg-hp>=D.maxhp&&hp>0){patch.dead=true;extra=' · killed outright (massive damage)'}
+    if(c.conc&&dmg>0&&!patch.dead)extra+=` · concentration check: CON save DC ${Math.max(10,Math.floor(dmg/2))} to keep ${c.conc}`;
     hp=Math.max(0,hp-dmg)}else hp=Math.min(D.maxhp,hp+delta);
   Object.assign(patch,{hp,temp});if(hp>0&&c.hp<=0){patch.death={s:0,f:0};patch.stable=false;patch.dead=false}
   saveChar(uid,patch);addLog({by:SH.me,who:who(uid),kind:'note',label:`${who(uid)} ${delta<0?'takes '+(-delta)+' damage':'heals '+delta}${note?' ('+note+')':''}: ${hp}/${D.maxhp} HP${hp<=0&&!extra?' · DOWN':''}${extra}`,total:'',quiet:hp>0})}
@@ -1311,8 +1314,8 @@ function pgActions(uid,c,D){const ed=canEdit(uid);const res=c.res||{};const b=c.
     ${sp?`<div class="row"><button type="button" class="rb" style="flex:1" data-a="spAtk" data-u="${uid}"><span>Spell attack</span><b>${fmt(sp.atk)}</b></button>${sp.prep?`<span class="chip">Prepare ${sp.prep}</span>`:''}</div>
       ${sp.pact?`<div class="resrow"><span>Pact slots <small>level ${sp.pact.lvl} · short rest</small></span>${pipsHTML(uid,'pact',sp.pact.n,res.pact||0,'Pact slot')}</div>`:''}
       ${sp.slots.map((n,i)=>`<div class="resrow"><span>Level ${i+1} slots</span>${pipsHTML(uid,'slot'+(i+1),n,res['slot'+(i+1)]||0,'Level '+(i+1)+' slot')}</div>`).join('')}`:''}
-    <div class="list">${spells.map(s=>`<div class="spell"><div><b>${esc(s.name)}</b> <small>${s.lvl?'level '+s.lvl:'cantrip'}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>${s.roll?`<button type="button" class="btn dmg" data-a="spRoll" data-u="${uid}" data-k="${s.id}">${esc(s.roll)}</button>`:''}${ed?`<button type="button" class="btn xs" data-a="spDel" data-u="${uid}" data-k="${s.id}" aria-label="Remove ${esc(s.name)}">✕</button>`:''}</div>`).join('')}</div>
-    ${ed?`<details class="add"><summary>+ Add a ${b.rules==='5e'?'spell':'power'}</summary><div class="form"><input id="spN_${uid}" placeholder="Name" maxlength="40"><select id="spL_${uid}"><option value="0">Cantrip / at will</option>${[1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">Level ${n}</option>`).join('')}</select><input id="spR_${uid}" placeholder="Dice (optional, e.g. 8d6)" maxlength="24"><input id="spT_${uid}" placeholder="What it does (optional)" maxlength="200"><button type="button" class="btn pri" data-a="spAdd" data-u="${uid}">Add</button></div></details>`:''}`:''}
+    <div class="list">${spells.map(s=>spellRowHTML(uid,s,ed)).join('')}</div>
+    ${ed?spellLibHTML(uid,c,D):''}${ed?`<details class="add"><summary>+ Make up your own ${b.rules==='5e'?'spell':'power'}</summary><div class="form"><input id="spN_${uid}" placeholder="Name" maxlength="40"><select id="spL_${uid}"><option value="0">Cantrip / at will</option>${[1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">Level ${n}</option>`).join('')}</select><input id="spR_${uid}" placeholder="Dice (optional, e.g. 8d6)" maxlength="24"><input id="spT_${uid}" placeholder="What it does (optional)" maxlength="200"><button type="button" class="btn pri" data-a="spAdd" data-u="${uid}">Add</button></div></details>`:''}`:''}
   ${b.rules!=='5e'?opPowersHTML(uid,c,D):''}`}
 
 function opPowersHTML(uid,c,D){const ed=canEdit(uid);const res=c.res||{};const fr=fruitOf(c);const haki=(c.haki||[]).map(k=>hakiOpt(k)).filter(Boolean);
@@ -2160,10 +2163,10 @@ const dmFor=u=>SH.owner&&u!==SH.me;
 function foeList(){const ini=initOf();let k=0;return(ini.order||[]).filter(o=>!o.pc).map(o=>({id:o.id,name:o.hide?'Enemy '+(++k):o.name,down:!!o.down}))}
 function nAtkOf(u){return DV(SH.chars[u]).nAtk||1}
 
-function doAttack(u,a,tg,ak){const ctx=fightCtx(u);let tag='',st=null;
-  if(ctx&&ctx.mine){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{if(!st.bonus){st.bonus=1;tag=' (bonus action)'}else tag=' (extra attack)'}}
+function doAttack(u,a,tg,ak,o){o=o||{};const ctx=fightCtx(u);let tag='',st=null;
+  if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{if(!st.bonus){st.bonus=1;tag=' (bonus action)'}else tag=' (extra attack)'}}
   if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:''};
-    rollD20(`${a.name} attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
+    rollD20(`${a.name} ${o.spell?'spell ':''}attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
   else rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});
   SH.pt=null;render(true)}
 ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)return;const ctx=dmFor(u)?null:fightCtx(u);
@@ -2239,5 +2242,352 @@ screenHTML=(function(prev){return function(){let h=prev();const c=myChar();if(!c
 // DM: say so when the whole party is down
 dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!ini.on)return h;const pcs=Object.values(SH.chars).filter(c=>charOK(c)&&(ini.order||[]).some(o=>o.pc&&SH.chars[o.pc]===c));
   if(pcs.length&&pcs.every(c=>c.hp<=0||c.dead))h=`<div class="dsban"><b>The whole party is down.</b><span>Enemies can finish them, take them prisoner or leave. You decide: end the fight when the scene is over.</span></div>`+h;return h}})(dmFight);
+
+// ================= spells: game numbers from the D&D 5e SRD 5.1 (CC-BY-4.0) and common 5e spells, short descriptions in our own words =================
+// [name, level, classes (B bard C cleric D druid P paladin R ranger S sorcerer K warlock W wizard), cast (A action, B bonus, R reaction, L longer), range, concentration, mechanics, text]
+// mechanics: "a:DICE:type" spell attack · "s:ABI:DICE:type[:h]" save (h = half on success) · "auto:DICE:type" no roll · "heal:DICE[:m]" (m = + ability mod) · "temp:DICE"
+//            then optional ";u:DICE" per slot level above, ";c" cantrip dice grow at levels 5/11/17, ";r:N" N rays/beams (attack each), ";t:N" up to N targets
+const SPELLS_RAW=[
+// cantrips
+['Acid Splash',0,'SW','A','60 ft',0,'s:DEX:1d6:acid;c;t:2','Hurl a bubble of acid at one or two creatures next to each other.'],
+['Chill Touch',0,'SKW','A','120 ft',0,'a:1d8:necrotic;c','A ghostly hand; the target cannot regain HP until your next turn.'],
+['Eldritch Blast',0,'K','A','120 ft',0,'a:1d10:force;r:1;rc','A beam of crackling energy. More beams at levels 5, 11 and 17.'],
+['Fire Bolt',0,'SW','A','120 ft',0,'a:1d10:fire;c','A mote of fire; it also lights unattended flammable objects.'],
+['Frostbite',0,'DSKW','A','60 ft',0,'s:CON:1d6:cold;c','Numbing frost; on a failed save the target has disadvantage on its next weapon attack.'],
+['Infestation',0,'DSKW','A','30 ft',0,'s:CON:1d6:poison;c','A cloud of mites; the target moves 5 ft in a random direction.'],
+['Mind Sliver',0,'SKW','A','60 ft',0,'s:INT:1d6:psychic;c','A psychic spike; the target subtracts 1d4 from its next saving throw.'],
+['Poison Spray',0,'DSKW','A','10 ft',0,'s:CON:1d12:poison;c','A puff of noxious gas.'],
+['Produce Flame',0,'D','A','30 ft',0,'a:1d8:fire;c','A flame in your hand that sheds light, or that you throw.'],
+['Ray of Frost',0,'SW','A','60 ft',0,'a:1d8:cold;c','A frigid beam; the target loses 10 ft of speed until your next turn.'],
+['Sacred Flame',0,'C','A','60 ft',0,'s:DEX:1d8:radiant;c','Radiant flame descends on a creature; cover does not help.'],
+['Shocking Grasp',0,'SW','A','Touch',0,'a:1d8:lightning;c','Lightning from your hand; advantage against metal armor, and the target cannot take reactions.'],
+['Thorn Whip',0,'D','A','30 ft',0,'a:1d6:piercing;c','A thorny vine whip that pulls a Large or smaller target 10 ft closer.'],
+['Thunderclap',0,'BDSKW','A','5 ft',0,'s:CON:1d6:thunder;c','A thunderous boom heard 100 ft away hits everyone next to you.'],
+['Toll the Dead',0,'CKW','A','60 ft',0,'s:WIS:1d8:necrotic;c','A dolorous bell; 1d12 instead if the target is missing any HP.'],
+['Vicious Mockery',0,'B','A','60 ft',0,'s:WIS:1d4:psychic;c','A string of insults; the target has disadvantage on its next attack.'],
+['Word of Radiance',0,'C','A','5 ft',0,'s:CON:1d6:radiant;c','Burning light hits the creatures of your choice next to you.'],
+['Create Bonfire',0,'DSKW','A','60 ft',1,'s:DEX:1d8:fire;c','A bonfire on the ground that burns anyone who ends a turn in it.'],
+['Magic Stone',0,'DK','B','Touch',0,'a:1d6:bludgeoning','Up to three pebbles become magic sling stones (add your ability modifier).'],
+['Booming Blade',0,'SKW','A','5 ft',0,'','Make a melee weapon attack; if the target moves before your next turn it takes thunder damage.'],
+['Green-Flame Blade',0,'SKW','A','5 ft',0,'','Make a melee weapon attack; fire leaps to a second creature nearby.'],
+['Guidance',0,'CD','A','Touch',1,'','The target adds 1d4 to one ability check.'],
+['Resistance',0,'CD','A','Touch',1,'','The target adds 1d4 to one saving throw.'],
+['Spare the Dying',0,'C','A','Touch',0,'','A dying creature becomes stable.'],
+['Shillelagh',0,'D','B','Touch',0,'','Your club or staff uses your spellcasting ability and deals 1d8.'],
+['Blade Ward',0,'BSKW','A','Self',0,'','Resistance to weapon damage until the end of your next turn.'],
+['True Strike',0,'BSKW','A','30 ft',1,'','Advantage on your first attack against the target next turn.'],
+['Light',0,'BCSW','A','Touch',0,'','An object sheds bright light for an hour.'],
+['Mage Hand',0,'BSKW','A','30 ft',0,'','A spectral hand that can carry up to 10 pounds.'],
+['Minor Illusion',0,'BSKW','A','30 ft',0,'','A sound or a small image that is not real.'],
+['Prestidigitation',0,'BSKW','A','10 ft',0,'','Small magical tricks: clean, warm, flavour, sparks.'],
+['Message',0,'BSW','A','120 ft',0,'','Whisper a message only the target hears; it can whisper back.'],
+['Mending',0,'BCDSW','L','Touch',0,'','Repair a single break or tear in an object.'],
+['Thaumaturgy',0,'C','A','30 ft',0,'','Minor wonders: booming voice, tremors, flickering flames.'],
+['Druidcraft',0,'D','A','30 ft',0,'','Small nature effects: predict weather, make a flower bloom.'],
+['Friends',0,'BSKW','A','Self',1,'','Advantage on Charisma checks against one creature; it knows afterwards.'],
+['Gust',0,'DSW','A','30 ft',0,'','A blast of air pushes a Medium creature 5 ft or moves a small object.'],
+['Mold Earth',0,'DSW','A','30 ft',0,'','Shape and move loose earth.'],
+['Control Flames',0,'DSW','A','60 ft',0,'','Shape, grow or put out nonmagical flames.'],
+// level 1
+['Absorb Elements',1,'DRSW','R','Self',0,'','When you take acid, cold, fire, lightning or thunder damage: resist it, and your next melee hit deals +1d6 of that type.'],
+['Arms of Hadar',1,'K','A','10 ft',0,'s:STR:2d6:necrotic:h;u:1d6','Dark tendrils lash everyone around you; those who fail cannot take reactions.'],
+['Armor of Agathys',1,'K','A','Self',0,'temp:5;u:5','Spectral frost armor: temporary HP, and attackers who hit you in melee take 5 cold damage per slot level.'],
+['Bane',1,'BC','A','30 ft',1,'s:CHA:0:','Up to three creatures subtract 1d4 from attacks and saves.'],
+['Bless',1,'CP','A','30 ft',1,'','Up to three creatures add 1d4 to attacks and saves.'],
+['Burning Hands',1,'SW','A','15 ft cone',0,'s:DEX:3d6:fire:h;u:1d6','A thin sheet of flame shoots from your fingers.'],
+['Catapult',1,'SW','A','60 ft',0,'s:DEX:3d8:bludgeoning;u:1d8','Hurl a small object at a creature.'],
+['Chaos Bolt',1,'S','A','120 ft',0,'a:2d8+1d6:random;u:1d6','A bolt of chaotic energy; on matching d8s it leaps to another target.'],
+['Charm Person',1,'BDSKW','A','30 ft',0,'s:WIS:0:','A humanoid regards you as a friendly acquaintance for an hour.'],
+['Chromatic Orb',1,'SW','A','90 ft',0,'a:3d8:chosen;u:1d8','A sphere of acid, cold, fire, lightning, poison or thunder.'],
+['Color Spray',1,'SW','A','15 ft cone',0,'','Roll 6d10: creatures with that many HP or fewer, lowest first, are blinded.'],
+['Command',1,'CP','A','60 ft',0,'s:WIS:0:','A one-word command (flee, drop, grovel, halt) that the target obeys on a failed save.'],
+['Cure Wounds',1,'BCDPR','A','Touch',0,'heal:1d8:m;u:1d8','Heal a creature you touch.'],
+['Detect Magic',1,'BCDPRSW','A','Self',1,'','Sense magic within 30 ft for 10 minutes.'],
+['Dissonant Whispers',1,'B','A','60 ft',0,'s:WIS:3d6:psychic:h;u:1d6','A discordant melody only the target hears; on a failure it must use its reaction to run away.'],
+['Divine Favor',1,'P','B','Self',1,'','Your weapon hits deal +1d4 radiant damage for a minute.'],
+['Earth Tremor',1,'BDSW','A','10 ft',0,'s:DEX:1d6:bludgeoning;u:1d6','The ground shakes; those who fail are knocked prone.'],
+['Ensnaring Strike',1,'R','B','Self',1,'','Your next weapon hit makes vines grab the target (STR save or restrained, 1d6 piercing each turn).'],
+['Entangle',1,'D','A','90 ft',1,'s:STR:0:','Grasping weeds restrain creatures in a 20 ft square.'],
+['Expeditious Retreat',1,'SKW','B','Self',1,'','Dash as a bonus action every turn.'],
+['Faerie Fire',1,'BD','A','60 ft',1,'s:DEX:0:','Outlines creatures in light: attacks against them have advantage.'],
+['False Life',1,'SW','A','Self',0,'temp:1d4+4;u:5','Temporary hit points.'],
+['Feather Fall',1,'BSW','R','60 ft',0,'','Up to five falling creatures float down gently.'],
+['Fog Cloud',1,'DRSW','A','120 ft',1,'','A 20 ft sphere of heavy fog.'],
+['Frost Fingers',1,'W','A','15 ft cone',0,'s:CON:2d8:cold:h;u:1d8','Freezing cold sprays from your fingers.'],
+['Goodberry',1,'DR','A','Touch',0,'','Ten berries, each heals 1 HP and feeds a person for a day.'],
+['Guiding Bolt',1,'C','A','120 ft',0,'a:4d6:radiant;u:1d6','A flash of light; the next attack against the target has advantage.'],
+['Hail of Thorns',1,'R','B','Self',1,'s:DEX:1d10:piercing:h;u:1d10','Your next ranged hit explodes in thorns around the target.'],
+['Healing Word',1,'BCD','B','60 ft',0,'heal:1d4:m;u:1d4','Heal a creature you can see, as a bonus action.'],
+['Hellish Rebuke',1,'K','R','60 ft',0,'s:DEX:2d10:fire:h;u:1d10','When someone damages you: flames surround them.'],
+['Heroism',1,'BP','A','Touch',1,'','Immune to fear, and temporary HP equal to your modifier each turn.'],
+['Hex',1,'K','B','90 ft',1,'','Curse a creature: +1d6 necrotic on your hits against it, disadvantage on one ability.'],
+["Hunter's Mark",1,'R','B','90 ft',1,'','Mark a creature: +1d6 damage on your weapon hits against it.'],
+['Ice Knife',1,'DSW','A','60 ft',0,'a:1d10:piercing','A shard of ice; it explodes for 2d6 cold (DEX save) around the target.'],
+['Inflict Wounds',1,'C','A','Touch',0,'a:3d10:necrotic;u:1d10','A touch that rots flesh.'],
+['Jump',1,'DRSW','A','Touch',0,'','The target jumps three times as far for a minute.'],
+['Longstrider',1,'BDRW','A','Touch',0,'','+10 ft speed for an hour.'],
+['Mage Armor',1,'SW','A','Touch',0,'','AC becomes 13 + Dexterity modifier for 8 hours (no armor).'],
+['Magic Missile',1,'SW','A','120 ft',0,'auto:3d4+3:force;u:1d4+1','Three darts of force that never miss.'],
+['Protection from Evil and Good',1,'CPW','A','Touch',1,'','Protection against aberrations, celestials, elementals, fey, fiends and undead.'],
+['Ray of Sickness',1,'SW','A','60 ft',0,'a:2d8:poison;u:1d8','A ray of sickening energy; the target may be poisoned.'],
+['Sanctuary',1,'C','B','30 ft',0,'','Attackers must make a WIS save or pick another target.'],
+['Searing Smite',1,'P','B','Self',1,'auto:1d6:fire;u:1d6','Your next weapon hit sets the target on fire.'],
+['Shield',1,'SW','R','Self',0,'','+5 AC until your next turn, including against the attack that triggered it.'],
+['Shield of Faith',1,'CP','B','60 ft',1,'','+2 AC to a creature for 10 minutes.'],
+['Silvery Barbs',1,'BSW','R','60 ft',0,'','Force a creature that just succeeded to reroll and take the lower roll.'],
+['Sleep',1,'BSW','A','90 ft',0,'','Roll 5d8 (+2d8 per slot level): creatures with that many HP or fewer fall asleep, lowest first.'],
+['Speak with Animals',1,'BDR','A','Self',0,'','Talk with beasts for 10 minutes.'],
+["Tasha's Hideous Laughter",1,'BW','A','30 ft',1,'s:WIS:0:','The target falls prone laughing and cannot act.'],
+['Thunderous Smite',1,'P','B','Self',1,'auto:2d6:thunder','Your next weapon hit thunders: STR save or pushed 10 ft and knocked prone.'],
+['Thunderwave',1,'BDSW','A','15 ft cube',0,'s:CON:2d8:thunder:h;u:1d8','A wave of thunder; those who fail are pushed 10 ft.'],
+['Witch Bolt',1,'SKW','A','30 ft',1,'a:1d12:lightning;u:1d12','A beam of lightning; each turn you can deal 1d12 again as your action.'],
+['Wrathful Smite',1,'P','B','Self',1,'auto:1d6:psychic','Your next weapon hit can frighten the target.'],
+// level 2
+['Acid Arrow',2,'W','A','90 ft',0,'a:4d4:acid;u:1d4','A green arrow; 2d4 more acid at the end of the target\'s next turn.'],
+['Aid',2,'CP','A','30 ft',0,'','Up to three creatures gain +5 maximum and current HP for 8 hours.'],
+['Barkskin',2,'DR','A','Touch',1,'','The target\'s AC cannot be lower than 16.'],
+['Blur',2,'SW','A','Self',1,'','Attacks against you have disadvantage.'],
+['Branding Smite',2,'P','B','Self',1,'auto:2d6:radiant;u:1d6','Your next weapon hit glows and reveals the target if invisible.'],
+['Cloud of Daggers',2,'BSKW','A','60 ft',1,'auto:4d4:slashing;u:2d4','Spinning daggers fill a 5 ft cube.'],
+['Darkness',2,'SKW','A','60 ft',1,'','Magical darkness in a 15 ft sphere.'],
+["Dragon's Breath",2,'SW','B','Touch',1,'s:DEX:3d6:chosen:h;u:1d6','A creature can breathe a 15 ft cone of energy as an action.'],
+['Enhance Ability',2,'BCDRS','A','Touch',1,'','Advantage on checks with one ability, plus a small bonus.'],
+['Flame Blade',2,'D','B','Self',1,'a:3d6:fire','A fiery scimitar you attack with as an action.'],
+['Flaming Sphere',2,'DW','A','60 ft',1,'s:DEX:2d6:fire:h;u:1d6','A ball of fire you can ram into creatures each turn (bonus action).'],
+['Gust of Wind',2,'DSW','A','60 ft line',1,'s:STR:0:','A strong wind pushes creatures 15 ft away.'],
+['Heat Metal',2,'BD','B','60 ft',1,'auto:2d8:fire;u:1d8','A metal object glows red-hot; whoever holds it burns.'],
+['Hold Person',2,'BCDSKW','A','60 ft',1,'s:WIS:0:','A humanoid is paralyzed (repeat the save each turn).'],
+['Invisibility',2,'BSKW','A','Touch',1,'','A creature is invisible until it attacks or casts.'],
+['Lesser Restoration',2,'BCDPR','A','Touch',0,'','End blindness, deafness, paralysis or poison.'],
+['Magic Weapon',2,'PRW','B','Touch',1,'','A weapon becomes +1 (more with higher slots).'],
+['Mind Spike',2,'SKW','A','60 ft',1,'s:WIS:3d8:psychic:h;u:1d8','A spike of psychic pain; you always know where the target is.'],
+['Mirror Image',2,'SKW','A','Self',0,'','Three illusory duplicates that attacks may hit instead.'],
+['Misty Step',2,'SKW','B','Self',0,'','Teleport up to 30 ft.'],
+['Moonbeam',2,'D','A','120 ft',1,'s:CON:2d10:radiant:h;u:1d10','A beam of silver light you can move each turn.'],
+['Pass without Trace',2,'DR','A','Self',1,'','+10 to Stealth for you and your allies.'],
+['Prayer of Healing',2,'C','L','30 ft',0,'heal:2d8:m;u:1d8;t:6','Up to six creatures regain HP (takes 10 minutes).'],
+['Scorching Ray',2,'SW','A','120 ft',0,'a:2d6:fire;r:3;u:r','Three rays of fire, one attack roll each (one more ray per slot level).'],
+['Shatter',2,'BSKW','A','60 ft',0,'s:CON:3d8:thunder:h;u:1d8','A painful ringing noise in a 10 ft sphere.'],
+['Silence',2,'BCR','A','120 ft',1,'','No sound in a 20 ft sphere; no spells with words.'],
+['Spike Growth',2,'DR','A','150 ft',1,'auto:2d4:piercing','Hidden spikes: 2d4 per 5 ft moved through the area.'],
+['Spiritual Weapon',2,'C','B','60 ft',0,'a:1d8:force:m;u2:1d8','A floating weapon you attack with as a bonus action each turn.'],
+['Suggestion',2,'BSKW','A','30 ft',1,'s:WIS:0:','The target follows a reasonable-sounding suggestion.'],
+['Web',2,'SW','A','60 ft',1,'s:DEX:0:','Sticky webbing restrains creatures in a 20 ft cube.'],
+// level 3
+['Aura of Vitality',3,'P','A','Self',1,'heal:2d6','Each turn, as a bonus action, heal a creature near you 2d6.'],
+['Blinding Smite',3,'P','B','Self',1,'auto:3d8:radiant','Your next weapon hit can blind the target.'],
+['Call Lightning',3,'D','A','120 ft',1,'s:DEX:3d10:lightning:h;u:1d10','A storm cloud; call a bolt each turn as your action.'],
+['Conjure Barrage',3,'R','A','60 ft cone',0,'s:DEX:3d8:weapon:h','Throw a weapon that becomes hundreds of copies.'],
+['Counterspell',3,'SKW','R','60 ft',0,'','Stop a spell being cast (automatic for level 3 or lower).'],
+['Dispel Magic',3,'BCDPSKW','A','120 ft',0,'','End spells on a creature or object.'],
+['Erupting Earth',3,'DSW','A','120 ft',0,'s:DEX:3d12:bludgeoning:h;u:1d12','The ground erupts in a 20 ft cube.'],
+['Fear',3,'BSKW','A','30 ft cone',1,'s:WIS:0:','Creatures drop what they hold and flee.'],
+['Fireball',3,'SW','A','150 ft',0,'s:DEX:8d6:fire:h;u:1d6','A bright streak that explodes in a 20 ft sphere of flame.'],
+['Fly',3,'SKW','A','Touch',1,'','The target can fly at 60 ft.'],
+['Haste',3,'SW','A','30 ft',1,'','Double speed, +2 AC, an extra limited action each turn.'],
+['Hunger of Hadar',3,'K','A','150 ft',1,'auto:2d6:cold','A sphere of freezing blackness.'],
+['Hypnotic Pattern',3,'BSKW','A','120 ft',1,'s:WIS:0:','Colours that charm and incapacitate creatures.'],
+['Lightning Arrow',3,'R','B','Self',0,'auto:4d8:lightning;u:1d8','Your next ranged attack becomes a bolt of lightning.'],
+['Lightning Bolt',3,'SW','A','100 ft line',0,'s:DEX:8d6:lightning:h;u:1d6','A stroke of lightning in a 100 ft line.'],
+['Mass Healing Word',3,'C','B','60 ft',0,'heal:1d4:m;u:1d4;t:6','Up to six creatures regain HP.'],
+['Revivify',3,'CP','A','Touch',0,'','A creature dead for less than a minute returns with 1 HP.'],
+['Slow',3,'SW','A','120 ft',1,'s:WIS:0:','Up to six creatures are slowed.'],
+['Spirit Guardians',3,'C','A','15 ft',1,'s:WIS:3d8:radiant:h;u:1d8','Spirits protect you and hurt enemies who come near.'],
+['Stinking Cloud',3,'BSW','A','90 ft',1,'s:CON:0:','Nauseating gas; those who fail waste their turn.'],
+['Thunder Step',3,'SKW','A','90 ft',0,'s:CON:3d10:thunder:h;u:1d10','Teleport with a thunderclap that hits those you leave behind.'],
+['Tidal Wave',3,'DW','A','120 ft',0,'s:DEX:4d8:bludgeoning:h','A wave crashes down and knocks creatures prone.'],
+['Vampiric Touch',3,'KW','A','Self',1,'a:3d6:necrotic;u:1d6','Your touch drains life; you heal half the damage.'],
+// level 4
+['Banishment',4,'CPSKW','A','60 ft',1,'s:CHA:0:','Send a creature to another plane.'],
+['Blight',4,'DSKW','A','30 ft',0,'s:CON:8d8:necrotic:h;u:1d8','Drain the moisture and life from a creature.'],
+['Death Ward',4,'CP','A','Touch',0,'','The next time the target would drop to 0 HP, it drops to 1 instead.'],
+['Dimension Door',4,'BSKW','A','500 ft',0,'','Teleport up to 500 ft, with one passenger.'],
+["Evard's Black Tentacles",4,'W','A','90 ft',1,'s:DEX:3d6:bludgeoning','Tentacles grab creatures in a 20 ft square.'],
+['Fire Shield',4,'W','A','Self',0,'auto:2d8:fire','Flames around you hurt creatures that hit you in melee.'],
+['Greater Invisibility',4,'BSW','A','Touch',1,'','Invisible even while attacking or casting.'],
+['Guardian of Faith',4,'C','A','30 ft',0,'s:DEX:0:','A spectral guardian deals 20 radiant damage to hostile creatures that come near.'],
+['Ice Storm',4,'DSW','A','300 ft',0,'s:DEX:2d8+4d6:bludgeoning + cold:h;u:1d8','Hailstones in a 20 ft cylinder; the ground becomes slippery.'],
+['Phantasmal Killer',4,'W','A','120 ft',1,'s:WIS:4d10:psychic','The target sees its worst fear.'],
+['Polymorph',4,'BDSW','A','60 ft',1,'s:WIS:0:','Turn a creature into a beast.'],
+['Staggering Smite',4,'P','B','Self',1,'auto:4d6:psychic','Your next weapon hit staggers the target.'],
+['Stoneskin',4,'DRSW','A','Touch',1,'','Resistance to nonmagical weapon damage.'],
+['Vitriolic Sphere',4,'SW','A','150 ft',0,'s:DEX:10d4:acid:h;u:2d4','A ball of acid that keeps burning.'],
+['Wall of Fire',4,'DSW','A','120 ft',1,'s:DEX:5d8:fire:h;u:1d8','A wall of flames 60 ft long.'],
+// level 5
+["Bigby's Hand",5,'W','A','120 ft',1,'a:4d8:force;u:2d8','A giant hand that punches, grabs or blocks.'],
+['Cloudkill',5,'SW','A','120 ft',1,'s:CON:5d8:poison:h;u:1d8','A poisonous fog that drifts away from you.'],
+['Cone of Cold',5,'SW','A','60 ft cone',0,'s:CON:8d8:cold:h;u:1d8','A blast of cold air.'],
+['Destructive Wave',5,'P','A','30 ft',0,'s:CON:10d6:thunder + radiant:h','A wave of divine energy knocks enemies prone.'],
+['Flame Strike',5,'C','A','60 ft',0,'s:DEX:8d6:fire + radiant:h;u:1d6','A column of divine fire.'],
+['Greater Restoration',5,'BCD','A','Touch',0,'','End charm, petrification, a curse or exhaustion.'],
+['Hold Monster',5,'BSKW','A','90 ft',1,'s:WIS:0:','Any creature is paralyzed.'],
+['Immolation',5,'SW','A','90 ft',1,'s:DEX:8d6:fire:h','Flames wreathe a creature and keep burning.'],
+['Insect Plague',5,'CDS','A','300 ft',1,'s:CON:4d10:piercing:h;u:1d10','A swarm of locusts.'],
+['Mass Cure Wounds',5,'BCD','A','60 ft',0,'heal:3d8:m;u:1d8;t:6','Up to six creatures regain HP.'],
+['Raise Dead',5,'BCP','L','Touch',0,'','Return a creature dead up to 10 days.'],
+['Steel Wind Strike',5,'RW','A','30 ft',0,'a:6d10:force;r:5','Flash between up to five creatures, a melee spell attack against each.'],
+['Synaptic Static',5,'BSKW','A','120 ft',0,'s:INT:8d6:psychic:h','A psychic explosion that muddles thought.'],
+['Wall of Force',5,'W','A','120 ft',1,'','An invisible, unbreakable wall.'],
+// level 6+
+['Chain Lightning',6,'SW','A','150 ft',0,'s:DEX:10d8:lightning:h;t:4','Lightning arcs to up to three more targets.'],
+['Circle of Death',6,'SKW','A','150 ft',0,'s:CON:8d6:necrotic:h;u:2d6','A sphere of negative energy.'],
+['Disintegrate',6,'SW','A','60 ft',0,'s:DEX:10d6+40:force','A thin green ray; a creature at 0 HP turns to dust.'],
+['Harm',6,'C','A','60 ft',0,'s:CON:14d6:necrotic:h','A virulent disease.'],
+['Heal',6,'CD','A','60 ft',0,'heal:70','A creature regains 70 HP and is cured of blindness, deafness and disease.'],
+['Sunbeam',6,'DSW','A','60 ft line',1,'s:CON:6d8:radiant:h','A beam of sunlight you can fire again each turn.'],
+['Finger of Death',7,'SKW','A','60 ft',0,'s:CON:7d8+30:necrotic:h','Negative energy that can raise a zombie.'],
+['Fire Storm',7,'CDS','A','150 ft',0,'s:DEX:7d10:fire:h','A storm of fire in ten 10 ft cubes.'],
+['Sunburst',8,'DSW','A','150 ft',0,'s:CON:12d6:radiant:h','Brilliant sunlight in a 60 ft sphere.'],
+['Meteor Swarm',9,'SW','A','1 mile',0,'s:DEX:40d6:fire + bludgeoning:h','Four blazing orbs crash down.'],
+['Power Word Kill',9,'BSKW','A','60 ft',0,'','A creature with 100 HP or fewer dies.'],
+];
+const SPELLS=SPELLS_RAW.map(([n,l,cls,ct,rg,conc,mech,txt])=>{const m={};const parts=(mech||'').split(';');const p0=parts[0].split(':');
+  if(p0[0]==='a'){m.k='atk';m.d=p0[1];m.t=p0[2];if(p0[3]==='m')m.mod=1}else if(p0[0]==='s'){m.k='save';m.ab=p0[1];m.d=p0[2]==='0'?'':p0[2];m.t=p0[3]||'';m.h=p0[4]==='h'}
+  else if(p0[0]==='auto'){m.k='auto';m.d=p0[1];m.t=p0[2]}else if(p0[0]==='heal'){m.k='heal';m.d=p0[1];m.mod=p0[2]==='m'}else if(p0[0]==='temp'){m.k='temp';m.d=p0[1]}else m.k='util';
+  for(const q of parts.slice(1)){const [a,b]=q.split(':');if(a==='u')m.u=b;else if(a==='u2')m.u2=b;else if(a==='c')m.c=1;else if(a==='rc')m.rc=1;else if(a==='r')m.r=+b;else if(a==='t')m.tn=+b}
+  return{n,l,cls,ct,rg,conc:!!conc,txt,...m}});
+const spellKey2=s=>String(s||'').toLowerCase().replace(/[’']/g,"'").replace(/\^/g,'').replace(/\s+/g,' ').trim();
+const SPELL_IDX={};SPELLS.forEach(s=>SPELL_IDX[spellKey2(s.n)]=s);
+const spellFind=n=>SPELL_IDX[spellKey2(n)]||null;
+
+// ================= casting spells from the spell list: slots, targets, saves the DM's device rolls, healing =================
+const CLS_LETTER={bard:'B',cleric:'C',druid:'D',paladin:'P',ranger:'R',sorcerer:'S',warlock:'K',wizard:'W'};
+const OP_FULL=['priest','skald','chemist','tinkerer','hybrid'];
+function abMod(D,ab){return Math.floor(((D.ab||{})[ab]||10)/2)-5}
+function casterInfo(c,D){const b=c.build;const sp=D.spell;if(!sp)return null;const res=c.res||{};const mod=abMod(D,sp.ab);const out={ab:sp.ab,mod,dc:sp.dc,atk:sp.atk,levels:[],maxLvl:0};
+  if(b.rules==='5e'){(sp.slots||[]).forEach((n,i)=>{const L=i+1;if(n)out.maxLvl=Math.max(out.maxLvl,L);if(n-(res['slot'+L]||0)>0)out.levels.push({L,key:'slot'+L,left:n-(res['slot'+L]||0)})});
+    if(sp.pact){out.maxLvl=Math.max(out.maxLvl,sp.pact.lvl);const left=sp.pact.n-(res.pact||0);if(left>0)out.levels.push({L:sp.pact.lvl,key:'pact',left,pact:1})}}
+  else{const R=(D.res||{}).slots;if(R){const l=b.level||1;const m=/\(level (\d)\)/.exec(R.name);
+      out.maxLvl=m?+m[1]:OP_FULL.includes(b.cls)?Math.min(9,Math.ceil(l/2)):b.cls==='marksman'?(l<2?0:l<5?1:l<9?2:l<13?3:l<17?4:5):(l<3?0:l<7?1:l<13?2:l<19?3:4);
+      const left=R.max-(res.slots||0);if(left>0)for(let L=1;L<=out.maxLvl;L++)if(!m||L===out.maxLvl)out.levels.push({L,key:'slots',left})}}
+  return out}
+function classSpells(c){const b=c.build;if(b.rules==='5e'){const L=CLS_LETTER[b.cls];return L?SPELLS.filter(s=>s.cls.includes(L)).map(s=>({n:s.n,l:s.l})):[]}
+  const lists=OP_SPELL_LISTS[b.cls];if(!lists)return[];const out=[];for(const [l,names] of Object.entries(lists))for(const n of names){const s=spellFind(n);out.push({n:n.replace(/\^$/,''),l:s?s.l:+l,custom:/\^$/.test(n)})}return out}
+function tierDice(sp,charLvl){if(!sp.c&&!sp.rc)return 1;return 1+(charLvl>=5)+(charLvl>=11)+(charLvl>=17)}
+function scaleDice(d,k){if(!d||k===1)return d;return d.replace(/(\d+)d(\d+)/g,(m,a,b)=>`${a*k}d${b}`)}
+function spellDiceAt(sp,L,charLvl,mod){let d=sp.d||'';if(!d)return'';const k=sp.c?tierDice(sp,charLvl):1;d=scaleDice(d,k);
+  const up=Math.max(0,L-sp.l);if(sp.u&&sp.u!=='r'&&up)for(let i=0;i<up;i++)d+='+'+sp.u;if(sp.u2&&up>=2)for(let i=0;i<Math.floor(up/2);i++)d+='+'+sp.u2;
+  if((sp.mod||(sp.k==='heal'&&sp.mod))&&mod)d+=(mod>=0?'+':'')+mod;
+  // tidy: merge same dice (3d4+1d4 → 4d4)
+  const parts={};let flat=0;for(const t of d.split('+')){const m=/^(\d+)d(\d+)$/.exec(t.trim());if(m)parts[m[2]]=(parts[m[2]]||0)+ +m[1];else if(/^-?\d+$/.test(t.trim()))flat+= +t;else return d}
+  return Object.entries(parts).sort((a,b)=>b[0]-a[0]).map(([s,n])=>`${n}d${s}`).join('+')+(flat?(flat>0?'+':'')+flat:'')}
+function raysAt(sp,L,charLvl){if(sp.rc)return tierDice(sp,charLvl);if(!sp.r)return 1;return sp.r+(sp.u==='r'?Math.max(0,L-sp.l):0)}
+const CT={A:['act','Action'],B:['bonus','Bonus action'],R:['react','Reaction'],L:['','10 min+']};
+function mechText(sp,CI,dice,rays){if(sp.k==='atk')return`spell attack ${fmt(CI.atk)} · ${rays>1?rays+' × ':''}${dice} ${sp.t}`;
+  if(sp.k==='save')return`${sp.ab} save, DC ${CI.dc}${dice?` · ${dice} ${sp.t}${sp.h?' (half on a save)':''}`:''}`;
+  if(sp.k==='auto')return`${dice} ${sp.t}, no roll to hit`;if(sp.k==='heal')return`heals ${dice}${sp.tn?` · up to ${sp.tn} creatures`:''}`;if(sp.k==='temp')return`${dice} temporary HP`;return''}
+
+// ---------- the spell rows and the picker (hooks used by pgActions) ----------
+function spellRowHTML(uid,s,ed){const c=SH.chars[uid];const sp=spellFind(s.name);
+  if(!sp)return`<div class="spell"><div><b>${esc(s.name)}</b> <small>${s.lvl?'level '+s.lvl:'cantrip'}</small>${s.note?`<p>${esc(s.note)}</p>`:''}</div>${s.roll?`<button type="button" class="btn dmg" data-a="spRoll" data-u="${uid}" data-k="${s.id}">${esc(s.roll)}</button>`:''}${ed?`<button type="button" class="btn xs" data-a="spDel" data-u="${uid}" data-k="${s.id}" aria-label="Remove ${esc(s.name)}">✕</button>`:''}</div>`;
+  const D=DV(c);const CI=casterInfo(c,D);if(!CI)return'';const ct=CT[sp.ct]||CT.A;
+  const avail=sp.l?CI.levels.filter(x=>x.L>=sp.l):[{L:0}];const sel=(SH.slotSel||{})[s.id];const L=sp.l?(avail.find(x=>x.L===sel)||avail[0]||{L:sp.l}).L:0;
+  const dice=spellDiceAt(sp,L,D.lvl,CI.mod);const rays=raysAt(sp,L,D.lvl);const conc=c.conc===sp.n;
+  return`<div class="spell srd ${conc?'concon':''}"><div><b>${esc(sp.n)}</b> <small>${sp.l?'level '+sp.l:'cantrip'} · <mark class="tg tg-${ct[0]||'act'}">${ct[1]}</mark> · ${esc(sp.rg)}${sp.conc?' · <i>concentration</i>':''}</small>
+    ${mechText(sp,CI,dice,rays)?`<p class="sptag">${esc(mechText(sp,CI,dice,rays))}</p>`:''}<details data-dk="spd_${s.id}"><summary>What it does</summary><p>${esc(sp.txt)}</p></details></div>
+    ${ed?`<span class="fbtns">${sp.l&&avail.length>1?`<select data-c="slotSel" data-k="${s.id}" aria-label="Slot level">${avail.map(x=>`<option value="${x.L}" ${x.L===L?'selected':''}>L${x.L}${x.pact?' pact':''}</option>`).join('')}</select>`:''}<button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}" ${sp.l&&!avail.length?'disabled title="No slots left"':''}>${sp.l&&!avail.length?'No slots':'Cast'}</button><button type="button" class="btn xs" data-a="spDel" data-u="${uid}" data-k="${s.id}" aria-label="Remove ${esc(sp.n)}">✕</button></span>`:''}</div>`}
+function spellLibHTML(uid,c,D){const L=classSpells(c);if(!L.length)return'';const CI=casterInfo(c,D);const max=CI?CI.maxLvl:0;const have=new Set((c.spells||[]).map(s=>spellKey2(s.name)));
+  const opts=L.filter(s=>s.l<=Math.max(max,0)&&!have.has(spellKey2(s.n))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n));
+  const nm=c.build.rules==='5e'?(R5.classes[c.build.cls]||{}).name:(CLASSES[c.build.cls]||{}).name;
+  return`<div class="form inline libadd"><input id="spLib_${uid}" list="spList_${uid}" placeholder="Add from the ${esc(nm||'')} list: type a name" aria-label="Spell from your list"><button type="button" class="btn pri" data-a="spLib" data-u="${uid}">Add</button></div>
+    <datalist id="spList_${uid}">${opts.map(s=>`<option value="${esc(s.n)}">${s.l?'Level '+s.l:'Cantrip'}${spellFind(s.n)?'':' (text only)'}</option>`).join('')}</datalist>
+    ${(()=>{const prep=(D.spell||{}).prep||0;const n=(c.spells||[]).filter(x=>(x.lvl||0)>0).length;const cn=(c.spells||[]).filter(x=>!(x.lvl||0)).length;return`<p class="hint">Spells up to level ${max} · ${cn} cantrip${cn===1?'':'s'}, ${n} levelled spell${n===1?'':'s'}${prep?` · you can prepare ${prep}${n>prep?' <b class="warn">(too many: pick which are ready today)</b>':''}`:''}</p>`})()}
+    ${c.conc?`<p class="conc">🔮 Concentrating on <b>${esc(c.conc)}</b>. Damage forces a CON save. <button type="button" class="btn xs" data-a="concEnd" data-u="${uid}">Stop</button></p>`:''}`}
+
+// ---------- target picker shared by spells ----------
+function pickHTML(uid){const k=SH.pk;if(!k||k.u!==uid)return'';const L=k.who==='foes'?foeList().filter(f=>!f.down).map(f=>({id:f.id,name:f.name})):Object.entries(SH.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u,c])=>({id:u,name:c.build.name+(u===uid?' (you)':''),sub:c.hp+'/'+DV(c).maxhp}));
+  return`<div class="mtarget ptarget"><span>${esc(k.title)}</span><div class="chipset">${L.map(x=>`<button type="button" class="chip tog ${k.sel.includes(x.id)?'on':''}" data-a="pkTo" data-k="${x.id}">${esc(x.name)}${x.sub?` <small>${x.sub}</small>`:''}</button>`).join('')}</div>
+    <div class="row">${k.max>1?`<button type="button" class="btn pri sm" data-a="pkGo" ${k.sel.length?'':'disabled'}>Cast on ${k.sel.length||'…'}</button>`:''}<button type="button" class="btn sm" data-a="pkCancel">Cancel</button></div></div>`}
+ACT.pkTo=function(b){const k=SH.pk;if(!k)return;const id=b.dataset.k;if(k.max<=1){k.sel=[id];SH.pk=null;k.go(k.sel);return}k.sel=k.sel.includes(id)?k.sel.filter(x=>x!==id):k.sel.length<k.max?[...k.sel,id]:k.sel;render(true)};
+ACT.pkGo=function(){const k=SH.pk;if(!k||!k.sel.length)return;SH.pk=null;k.go(k.sel)};ACT.pkCancel=function(){if(SH.pk&&SH.pk.refund)SH.pk.refund();SH.pk=null;render(true)};
+
+// ---------- casting ----------
+ACT.spLib=function(b){const u=b.dataset.u;const name=val('spLib_'+u).trim();const L=classSpells(SH.chars[u]);const hit=L.find(s=>spellKey2(s.n)===spellKey2(name));if(!hit){toast('Pick a spell from your list.');return}
+  const sp=spellFind(hit.n);listEdit(u,'spells',X=>[...X,{id:uidNew(),name:hit.n,lvl:hit.l,...(sp?{}:{note:'From your class list. Ask the DM how it works.'})}]);const e=document.getElementById('spLib_'+u);if(e)e.value=''};
+ACT.concEnd=function(b){const u=b.dataset.u;const c=SH.chars[u];addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} stops concentrating on ${c.conc}.`,total:''});saveChar(u,{conc:''})};
+Object.assign(CHG,{slotSel(e){SH.slotSel=SH.slotSel||{};SH.slotSel[e.dataset.k]=+e.value;setTimeout(()=>render(true),0)}});
+ACT.spCast=function(b){const u=b.dataset.u;const c=SH.chars[u];const s=(c.spells||[]).find(x=>x.id===b.dataset.k);const sp=s&&spellFind(s.name);if(!sp)return;const D=DV(c);const CI=casterInfo(c,D);if(!CI)return;
+  const ctx=dmFor(u)?null:fightCtx(u);const ct=(CT[sp.ct]||CT.A)[0];
+  if(ctx&&!ctx.mine&&sp.ct!=='R'){toast('Not your turn yet. Only reactions can be cast now.');return}
+  let st=ctx&&ctx.mine?turnSt(u,ctx.key):null;
+  if(st&&ct&&st[ct]&&!tapTwice(b,`Your ${ct==='act'?'Action':ct==='bonus'?'Bonus action':'Reaction'} is used. Tap again to cast anyway`))return;
+  // slot
+  let L=0,slot=null;if(sp.l){const avail=CI.levels.filter(x=>x.L>=sp.l);const sel=(SH.slotSel||{})[s.id];slot=avail.find(x=>x.L===sel)||avail[0];if(!slot){toast('No spell slots left of that level. A rest gets them back.');return}L=slot.L}
+  const res={...(c.res||{})};if(slot)res[slot.key]=(res[slot.key]||0)+1;const patch={res};
+  if(sp.conc){if(c.conc&&c.conc!==sp.n)addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} stops concentrating on ${c.conc}.`,total:'',quiet:true});patch.conc=sp.n}
+  saveChar(u,patch);if(st&&ct)st[ct]=1;
+  const refund=()=>{const cc=SH.chars[u];if(slot){const r2={...(cc.res||{})};r2[slot.key]=Math.max(0,(r2[slot.key]||0)-1);saveChar(u,{res:r2})}if(st&&ct)st[ct]=0};
+  const dice=spellDiceAt(sp,L,D.lvl,CI.mod);const rays=raysAt(sp,L,D.lvl);const tag=L?` (level ${L}${slot&&slot.pact?' pact':''} slot)`:'';const nm=`✨ ${sp.n}`;
+  const foes=fightCtx(u)?foeList().filter(f=>!f.down):[];
+  addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} casts ${sp.n}${tag}.`,total:'',quiet:true});
+  if(sp.k==='atk'){const a={name:sp.n,atk:CI.atk,dmg:dice,spell:1};const ak='sp:'+s.id;SH.pseudo=SH.pseudo||{};SH.pseudo[ak]=a;
+    if(!foes.length){for(let i=0;i<rays;i++)rollD20(sp.n+(rays>1?` (${i+1} of ${rays})`:'')+' spell attack',CI.atk,fmt(CI.atk),{uid:u,follow:dice?[{t:'Damage '+dice,run:crit=>rollDmg(sp.n+' damage',dice,{uid:u,crit})}]:null});return}
+    let left=rays;const next=()=>{if(left<=0){render(true);return}const i=rays-left+1;left--;SH.pk={u,who:'foes',max:1,sel:[],title:`${sp.n}${rays>1?` (${i} of ${rays})`:''}: who is the target?`,refund:left===rays-1?refund:null,go:([id])=>{const tg=foeList().find(f=>f.id===id);doAttack(u,a,tg,ak,{spell:1});setTimeout(next,300)}};render(true)};next();return}
+  if(sp.k==='save'){const go=ids=>{const tg=foeList().filter(f=>ids.includes(f.id));const meta={save:{ab:sp.ab,dc:CI.dc,h:!!sp.h,tgts:tg.map(t=>t.id),tnames:tg.map(t=>t.name),spell:sp.n}};
+      if(dice)rollDmg(`${sp.n} (${sp.ab} save DC ${CI.dc})${tg.length?' → '+tg.map(t=>t.name).join(', '):''}`,dice,{uid:u,...meta});
+      else addLog({by:SH.me,who:c.build.name,kind:'note',label:`${nm}: ${sp.ab} save DC ${CI.dc}${tg.length?' for '+tg.map(t=>t.name).join(', '):''}.`,total:'',...meta});render(true)};
+    if(!foes.length){go([]);return}SH.pk={u,who:'foes',max:sp.tn||8,sel:[],title:`${sp.n}: who is caught in it? Tap everyone in the area.`,refund,go};render(true);return}
+  if(sp.k==='auto'){const go=ids=>{const tg=foeList().find(f=>f.id===ids[0]);rollDmg(`${sp.n}${tg?' → '+tg.name:''}`,dice,{uid:u,...(tg?{tgt:tg.id,of:'auto'+uidNew()}:{})});render(true)};
+    if(/Smite$|Lightning Arrow/.test(sp.n))return;if(!foes.length){go([]);return}SH.pk={u,who:'foes',max:1,sel:[],title:`${sp.n}: who is the target?`,refund,go};render(true);return}
+  if(sp.k==='heal'){SH.pk={u,who:'allies',max:sp.tn||1,sel:[],title:`${sp.n}: who do you heal?`,refund,go:ids=>{const r=rollExprNow(dice);if(!r)return;for(const id of ids)rollDmgFixed(u,`${sp.n} healing → ${SH.chars[id].build.name}`,r,{healTo:id});render(true)}};render(true);return}
+  if(sp.k==='temp'){rollDmg(`${sp.n}: temporary HP`,dice,{uid:u,tempTo:u});return}
+  addLog({by:SH.me,who:c.build.name,kind:'note',label:`${nm}: ${sp.txt}`,total:''})};
+// a heal roll shared by several targets is rolled once
+function rollDmgFixed(u,label,r,extra){const e={by:SH.me,who:who(u),label,detail:r.detail,total:r.total,kind:'dmg',...extra};showRoll(e);addLog(e)}
+
+// ---------- the host applies saves, healing and temporary HP ----------
+onLog=(function(prev){return function(fresh){prev(fresh);if(!SH.owner)return;SH.hostT=SH.hostT||Date.now();SH.done3=SH.done3||new Set();
+  for(const e of fresh){if((e.t||0)<SH.hostT-1000)continue;const key=(e.id||'')+'|'+e.t+'|'+e.label;if(SH.done3.has(key))continue;
+    if(e.save&&e.save.tgts&&e.save.tgts.length){SH.done3.add(key);const mons=monsOf();const res=[];
+      for(const id of e.save.tgts){const m=mons[id];if(!m||m.hp<=0)continue;const L=m.lib&&monFind(m.lib);const idx=ABS.indexOf(e.save.ab);const bonus=L?mod(L.ab[idx]):0;const n=d(20);const ok=n+bonus>=e.save.dc;
+        secretLog({by:SH.me,who:m.name,label:`${e.save.ab} save vs ${e.save.spell}`,detail:`d20 ${n} ${fmt(bonus)}`,total:n+bonus,kind:'d20'});
+        const name=e.save.tnames[e.save.tgts.indexOf(id)]||m.name;
+        if(e.total!==''&&e.total!==undefined&&e.kind==='dmg'){const dmg=ok?(e.save.h?Math.floor(e.total/2):0):e.total;res.push(`${name} ${ok?'saves':'fails'}${dmg?` (${dmg})`:''}`);if(dmg)hurtMon(id,-dmg,`${e.save.spell}`)}
+        else res.push(`${name} ${ok?'saves':'fails and is affected'}`)}
+      if(res.length)addLog({by:SH.me,who:'DM',kind:'note',label:`${e.save.spell}: ${res.join(' · ')}`,total:''})}
+    if(e.healTo&&SH.chars[e.healTo]&&e.kind==='dmg'){SH.done3.add(key);hpChange(e.healTo,+e.total,`${e.who}: ${e.label.replace(/ → .*$/,'')}`)}
+    if(e.tempTo&&SH.chars[e.tempTo]){SH.done3.add(key);const c=SH.chars[e.tempTo];if((c.temp||0)<e.total)saveChar(e.tempTo,{temp:e.total})}}}})(onLog);
+// spell pseudo-attacks resolve like weapons
+atkById=(function(prev){return function(u,k){if(String(k).startsWith('sp:'))return(SH.pseudo||{})[k]||null;return prev(u,k)}})(atkById);
+pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const p=pickHTML(uid);if(p)h=p+h;
+  // pending spell hits get their own damage buttons
+  const ctx=fightCtx(uid);if(ctx&&ctx.mine){const st=turnSt(uid,ctx.key);const sh=st.hits.filter(x=>String(x.k).startsWith('sp:'));if(sh.length)h=`<div class="hitnote">${sh.map(x=>{const a=atkById(uid,x.k);return a?`<button type="button" class="btn dmg ready" data-a="dmg" data-u="${uid}" data-k="${x.k}">🎯 ${esc(a.name)} hit ${esc(x.tname)}: roll ${esc(a.dmg)}</button>`:''}).join(' ')}</div>`+h}
+  return h}})(pgActions);
+// when a target picker opens, bring it into view and move the roll card out of the way
+render=(function(prev){return function(f){prev(f);try{const t=q('.ptarget');if(t){const rc=q('#rollCard');if(rc&&rc.className.includes('show')&&!q('[data-rcdmg]',rc))rc.className='';const r=t.getBoundingClientRect();if(r.top<60||r.bottom>innerHeight-260)t.scrollIntoView({block:'start'})}}catch(e){}}})(render);
+
+// level-up: remind casters that new spells may be available
+luHTML=(function(prev){return function(){let h=prev();try{const lu=SH.lu;const c=lu&&SH.chars[lu.uid];if(!c||!DV(c).spell)return h;const nb={...c.build,level:(c.build.level||1)+1};const D2=DV({...c,build:nb});const CI=casterInfo({...c,build:nb,res:{}},D2);
+  if(CI&&CI.maxLvl)h=h.replace(/(<button[^>]*data-a="luSave")/,`<p class="hintbox">✨ After levelling up you can cast spells up to level ${CI.maxLvl}. Add new ones on the Actions page from your class list.</p>$1`)}catch(e){}return h}})(luHTML);
+
+// ---------- riders (smites, Hex, Hunter's Mark) and spells you can use again on later turns ----------
+const RIDER_KEEP={'Hex':['1d6','necrotic'],"Hunter's Mark":['1d6','weapon'],'Divine Favor':['1d4','radiant']};
+const AGAIN_FREE=['Spiritual Weapon','Flaming Sphere','Witch Bolt','Call Lightning','Moonbeam','Spirit Guardians','Cloud of Daggers','Heat Metal','Flame Blade','Sunbeam',"Bigby's Hand",'Create Bonfire','Aura of Vitality','Wall of Fire','Insect Plague','Cloudkill','Immolation','Vampiric Touch'];
+ACT.spCast=(function(prev){return function(b){const u=b.dataset.u;const c=SH.chars[u];const s=(c.spells||[]).find(x=>x.id===b.dataset.k);const sp=s&&spellFind(s.name);if(!sp)return prev(b);
+  const free=b.dataset.free==='1';
+  if(free){// a free re-use: same level, no slot, keeps concentration
+    const L=(c.persist&&c.persist.name===sp.n?c.persist.L:sp.l)||sp.l;SH.freeCast={u,L};const saved=c.res;
+    SH._noSlot=1;try{prev(b)}finally{SH._noSlot=0;SH.freeCast=null}return}
+  const before=JSON.stringify(c.res||{});prev(b);const c2=SH.chars[u];if(JSON.stringify(c2.res||{})===before&&sp.l)return;// cast did not happen
+  const used=Object.keys(c2.res||{}).find(k=>(c2.res[k]||0)>((JSON.parse(before)[k])||0));const L=used==='pact'?(DV(c2).spell.pact||{}).lvl:used&&used.startsWith('slot')?+used.slice(4)||sp.l:((SH.slotSel||{})[s.id]||sp.l);
+  const patch={};const ini=initOf();
+  if(AGAIN_FREE.includes(sp.n))patch.persist={name:sp.n,L:L||sp.l,fight:ini&&ini.on?ini.id:''};
+  if(/Smite$|Lightning Arrow/.test(sp.n)){patch.rider={name:sp.n,dice:spellDiceAt(sp,L||sp.l,DV(c2).lvl,0),type:sp.t,once:1};addLog({by:SH.me,who:c2.build.name,kind:'note',label:`✨ ${sp.n}: your next weapon hit adds ${patch.rider.dice} ${sp.t}.`,total:''})}
+  if(RIDER_KEEP[sp.n]){patch.rider={name:sp.n,dice:RIDER_KEEP[sp.n][0],type:RIDER_KEEP[sp.n][1],conc:1};addLog({by:SH.me,who:c2.build.name,kind:'note',label:`✨ ${sp.n}: your weapon hits add ${patch.rider.dice} while you concentrate.`,total:''})}
+  if(Object.keys(patch).length)saveChar(u,patch)}})(ACT.spCast);
+// casting without a slot when re-using
+casterInfo=(function(prev){return function(c,D){const r=prev(c,D);if(r&&SH._noSlot&&SH.freeCast){r.levels=[{L:SH.freeCast.L,key:'_free',left:99}]}return r}})(casterInfo);
+saveChar=(function(prev){return function(u,patch){if(SH._noSlot&&patch&&patch.res){const p={...patch};const r={...p.res};delete r._free;p.res=r;if(p.conc)delete p.conc;return prev(u,p)}return prev(u,patch)}})(saveChar);
+// weapon damage picks up the rider
+rollDmg=(function(prev){return function(label,expr,opts){opts=opts||{};const u=opts.uid;const c=u&&SH.chars[u];const nm=String(label).replace(/ damage.*$/,'').replace(/ \(critical\)$/,'');
+  if(c&&c.rider&&/ damage/.test(label)&&!spellFind(nm)&&!opts.healTo){const r=c.rider;expr=expr+'+'+r.dice;label=label.replace(' damage',` + ${r.name} damage`);if(r.once)saveChar(u,{rider:null})}
+  return prev(label,expr,opts)}})(rollDmg);
+// ending concentration ends a concentration rider
+saveChar=(function(prev){return function(u,patch){const c=SH.chars[u];if(c&&patch&&'conc' in patch&&c.rider&&c.rider.conc&&patch.conc!==c.rider.name)patch={...patch,rider:null};return prev(u,patch)}})(saveChar);
+spellRowHTML=(function(prev){return function(uid,s,ed){let h=prev(uid,s,ed);const c=SH.chars[uid];const sp=spellFind(s.name);if(!sp||!ed)return h;const ini=initOf();
+  const again=(sp.conc&&c.conc===sp.n&&sp.k!=='util'&&sp.d)||(c.persist&&c.persist.name===sp.n&&!sp.conc&&(!c.persist.fight||(ini.on&&ini.id===c.persist.fight)));
+  if(again)h=h.replace(`<button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}"`,`<button type="button" class="btn dmg ready" data-a="spCast" data-u="${uid}" data-k="${s.id}" data-free="1" title="Use it again this turn without a new slot">♻ Again</button><button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}"`);
+  return h}})(spellRowHTML);
+pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);if(c.rider)h=`<p class="conc">⚔ Next weapon hit${c.rider.once?'':'s'}: +${esc(c.rider.dice)} ${esc(c.rider.type||'')} (${esc(c.rider.name)})</p>`+h;return h}})(pgActions);
 
 </script></body></html>

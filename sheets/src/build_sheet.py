@@ -6,9 +6,9 @@ bc=L('v3_bookclasses.js').split('// ---------- battle-map actions')[0]+'\nCLASSE
 s2=lines('v3_species2.js',1,14)
 op='\n'.join([L('v3_rules.js'),L('v3_levels.js'),L('v3_powers.js'),L('v3_fruitnames.js'),'const MAX_LEVEL=10;function asiLevels(cls){return cls===\'fighter\'?[4,6,8]:cls===\'rogue\'?[4,8,10]:[4,8]}',c2,s2,bc])
 mine='\n'.join(L('sheet/'+f) for f in ['sh_rules5e.js','sh_core.js','sheet_dummy.js'] if os.path.exists('sheet/'+f))
-mine='\n'.join(L('sheet/'+f) for f in ['sh_rules5e.js','sh_core.js','sh_sheet.js','sh_build.js','sh_dm.js','sh_main.js','sh_prep.js','sh_fruitdb.js','sh_fruits.js','sh_lore.js','sh_monsdb.js','sh_lib.js','sh_offer.js','sh_turns.js'])
+mine='\n'.join(L('sheet/'+f) for f in ['sh_rules5e.js','sh_core.js','sh_sheet.js','sh_build.js','sh_dm.js','sh_main.js','sh_prep.js','sh_fruitdb.js','sh_fruits.js','sh_lore.js','sh_monsdb.js','sh_lib.js','sh_offer.js','sh_turns.js','sh_spelldb.js','sh_cast.js'])
 fimg=sorted(f[6:-5] for f in os.listdir('/home/claude/grand-line-table/art') if f.startswith('fruit_') and f.endswith('.webp'))
-mine='const FRUIT_IMG='+__import__('json').dumps(fimg)+';\n'+mine
+mine='const OP_SPELL_LISTS='+open('oplists.json').read().replace('\n','')+';\n'+'const FRUIT_IMG='+__import__('json').dumps(fimg)+';\n'+mine
 js=op+'\n'+mine
 open('sheet/bundle.js','w').write(js)
 r=subprocess.run(['node','--check','sheet/bundle.js'],capture_output=True,text=True)

@@ -153,3 +153,4 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .chip.downpc{opacity:.75;border-style:dashed}
 .diff{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;border-left:4px solid}.diff small{display:block;color:var(--mute)}
 .d-triv,.d-easy{border-color:#2f7d4f;background:color-mix(in srgb,#2f7d4f 10%,transparent)}.d-med{border-color:#c07a12;background:color-mix(in srgb,#c07a12 12%,transparent)}.d-hard{border-color:#d0541e;background:color-mix(in srgb,#d0541e 13%,transparent)}.d-deadly{border-color:var(--red);background:color-mix(in srgb,var(--red) 15%,transparent)}
+.warn{color:var(--red)}
