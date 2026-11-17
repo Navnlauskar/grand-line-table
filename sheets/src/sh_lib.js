@@ -103,13 +103,13 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
 
 async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;const nm=o.hide?'Enemy':m.name;
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
-    const e=await rollD20(`${a[0]} → ${c.build.name}`,a[1],fmt(a[1]),{name:nm});const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=D.ac);
-    if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name} (${e.total} vs AC ${D.ac}).`,total:''});return}
-    const r=rollExprNow(a[2],crit);hpChange(u,-r.total,`${nm}'s ${a[0]}${crit?', critical':''}: ${r.detail}${a[3]?' '+a[3]:''}`)}
-  else{const r=rollExprNow(a[2]);const ab=a[5]||'DEX';const lines=[];
+    const e=await rollD20(`${a[0]} → ${c.build.name}`,a[1],fmt(a[1]),{name:nm,secret:true});const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=D.ac);
+    if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
+    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit?', a critical hit':''}${a[3]?', '+a[3]:''}`)}
+  else{const r=rollExprNow(a[2]);secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
-      lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb} vs DC ${a[4]} ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
-    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}: ${r.total} ${a[3]||''} damage, DC ${a[4]} ${ABN[ab]||ab} save. ${lines.join(' · ')}`,total:''})}}
+      lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
+    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${ABN[ab]||ab} saves: ${lines.join(' · ')}`,total:''})}}
 
 Object.assign(ACT,{
   cpMonLib(b){const k=b.dataset.k;const m=monFind(val('clib_'+k));if(!m){toast('Pick a creature from the list.');return}const n=Math.max(1,Math.min(12,Math.round(num('clibC_'+k))||1));

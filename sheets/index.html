@@ -131,6 +131,12 @@ body.docked #app{margin-right:340px;margin-left:max(0px,calc((100vw - 340px - 11
 .mtools{margin-left:auto;display:flex;gap:6px}
 @media (max-width:640px){.orow input[id^=oN_]{flex:0 1 72px}}
 @media (max-width:640px){.orow input[id^=oN_]{flex:none;width:68px;min-width:0}}
+/* attack rows: say what the numbers are */
+.atk .rb>b{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}.atk .rb>b::after{content:"to hit";font-size:11px;font-weight:400;opacity:.7}
+.atk .btn.dmg{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}.atk .btn.dmg::after{content:"damage";font-size:11px;font-weight:400;opacity:.75}
+.atk .wait{opacity:.45}
+.again{font-style:normal;font-size:11.5px;background:var(--red);color:#fff;border-radius:6px;padding:0 5px;margin-left:4px;white-space:nowrap}
+.dockfoot{padding:6px 12px;border-top:1px solid var(--line);margin:0}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -1190,10 +1196,11 @@ function who(uid){const c=SH.chars[uid];return c&&c.build?c.build.name:(uid===SH
 async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.adv!==undefined?opts.adv:SH.adv;const a=d(20),b2=d(20);const nat=adv>0?Math.max(a,b2):adv<0?Math.min(a,b2):a;const total=nat+bonus;
   const detail=`d20 ${adv?`${adv>0?'adv':'dis'} (${a}, ${b2}) → `:''}${nat} ${partsTxt?'· '+partsTxt:(bonus?fmt(bonus):'')}`.trim();
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{})};
-  SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
+  {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg'};
-  showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
+  {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
+function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
 let rollT=0;
 function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElement('div');el.id='rollCard';document.body.appendChild(el)}
@@ -1201,7 +1208,7 @@ function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElem
   el.className='show'+(crit?' crit':fum?' fumble':'');
   el.innerHTML=`<div class="rc-l">${esc(e.who)} · ${esc(e.label)}</div><div class="rc-t">${e.total}</div><div class="rc-d">${esc(e.detail)}${crit?' · <b>NAT 20</b>':fum?' · <b>NAT 1</b>':''}</div>
     ${follow?`<div class="rc-f">${follow.map((f,i)=>`<button type="button" class="btn sm" data-rcf="${i}">${esc(f.t)}</button>`).join('')}</div>`:''}<button type="button" class="rc-x" aria-label="Close">✕</button>`;
-  qa('[data-rcf]',el).forEach(b=>b.onclick=()=>{follow[+b.dataset.rcf].run(crit)});q('.rc-x',el).onclick=()=>{el.className=''};
+  qa('[data-rcf]',el).forEach(b=>b.onclick=()=>{if(b.disabled)return;b.disabled=true;follow[+b.dataset.rcf].run(crit)});q('.rc-x',el).onclick=()=>{el.className=''};
   clearTimeout(rollT);rollT=setTimeout(()=>{el.className=''},follow?9000:4500)}
 // other people's rolls pop up as a small line
 function onLog(fresh){const boot=!SH.seenLog;const newest=fresh.reduce((m,e)=>Math.max(m,e.t||0),0);
@@ -1275,7 +1282,7 @@ function pgActions(uid,c,D){const ed=canEdit(uid);const res=c.res||{};const b=c.
   const atks=[...D.attacks.map((a,i)=>({...a,id:'w'+i})),...(c.catk||[]).map(a=>({name:a.name,atk:+a.bonus||0,dmg:a.dmg,note:a.note,id:a.id,custom:true}))];
   const resRows=Object.entries(D.res).filter(([,r])=>!r.hidden).map(([k,r])=>`<div class="resrow"><span>${esc(r.name)} <small>${restTxt(r.rest)}</small></span>${pipsHTML(uid,k,r.max,res[k]||0,r.name)}${r.custom&&ed?`<button type="button" class="btn xs" data-a="cresDel" data-u="${uid}" data-k="${r.custom}" aria-label="Remove ${esc(r.name)}">✕</button>`:''}</div>`).join('');
   const sp=D.spell;const spells=(c.spells||[]).slice().sort((x,y)=>(x.lvl-y.lvl)||x.name.localeCompare(y.name));
-  return`<h2>Attacks <small>${D.nAtk>1?D.nAtk+' per Attack action · ':''}tap to roll to hit</small></h2>
+  return`<h2>Attacks <small>${D.nAtk>1?D.nAtk+' per Attack action · ':''}tap the name to roll to hit, then damage</small></h2>
   <div class="list">${atks.map(a=>`<div class="atk"><button type="button" class="rb" data-a="atk" data-u="${uid}" data-k="${a.id}"><span>${esc(a.name)}<small>${esc(a.note||'')}</small></span><b>${fmt(a.atk)}</b></button><button type="button" class="btn dmg" data-a="dmg" data-u="${uid}" data-k="${a.id}">${esc(a.dmg||'—')}</button>${a.custom&&ed?`<button type="button" class="btn xs" data-a="catkDel" data-u="${uid}" data-k="${a.id}" aria-label="Remove ${esc(a.name)}">✕</button>`:''}</div>`).join('')||'<p class="hint">No attacks yet.</p>'}</div>
   ${D.sneak?`<button type="button" class="btn" data-a="sneak" data-u="${uid}">🗡 Sneak Attack ${D.sneak}d6</button>`:''}
   ${ed?`<details class="add"><summary>+ Add an attack</summary><div class="form"><input id="caN_${uid}" placeholder="Name (e.g. Flaming cutlass)" maxlength="40"><input id="caB_${uid}" type="number" inputmode="numeric" placeholder="To hit (e.g. 5)"><input id="caD_${uid}" placeholder="Damage (e.g. 1d8+3)" maxlength="24"><input id="caT_${uid}" placeholder="Note (optional)" maxlength="60"><button type="button" class="btn pri" data-a="catkAdd" data-u="${uid}">Add</button></div></details>`:''}
@@ -1318,7 +1325,7 @@ function pgBag(uid,c,D){const ed=canEdit(uid);
 function partyHTML(){const showHP=SH.state.showHP!==false||SH.owner;return Object.entries(SH.chars).filter(([,c])=>charOK(c)).map(([u,c])=>{const D=DV(c);const conds=Object.keys(c.cond||{}).filter(k=>c.cond[k]);
   return`<div class="pm ${online(u)?'':'off'} ${c.hp<=0?'down':''}">${avatar(c.build.name,30)}<div><b>${esc(c.build.name)}</b>${u===SH.me?' <small>(you)</small>':''}<small>${esc(D.clsName)} ${D.lvl}${conds.length?' · '+esc(conds.join(', ')):''}${online(u)?'':' · away'}</small>
     <div class="bar"><i style="width:${Math.max(0,Math.min(100,c.hp/D.maxhp*100))}%"></i></div></div><span class="pmhp">${showHP?`${c.hp}/${D.maxhp}`:(c.hp<=0?'down':c.hp<=D.maxhp/2?'hurt':'ok')}</span></div>`}).join('')||'<p class="hint">Nobody has made a character yet.</p>'}
-function logHTML(n){const L=SH.log.slice(0,n||60);return L.map(e=>e.kind==='note'?`<div class="lg note ${e.read?'read':''}">${esc(e.label)}</div>`:`<div class="lg ${e.nat===20?'crit':e.nat===1?'fum':''}"><div><b>${esc(e.who)}</b> ${esc(e.label)}<small>${esc(e.detail||'')}</small></div><span>${e.total}</span></div>`).join('')||'<p class="hint">No rolls yet.</p>'}
+function logHTML(n){const L=SH.log.slice(0,n||60);return L.map(e=>e.kind==='note'?`<div class="lg note ${e.read?'read':''}">${esc(e.label)}</div>`:`<div class="lg ${e.nat===20?'crit':e.nat===1?'fum':''}"><div><b>${esc(e.who)}</b> ${esc(e.label)}${e.again?` <i class="again" title="Rolled the same thing again">↻ ${e.again}${e.again===2?'nd':e.again===3?'rd':'th'} try</i>`:''}<small>${esc(e.detail||'')}</small></div><span>${e.total}</span></div>`).join('')||'<p class="hint">No rolls yet.</p>'}
 function diceTrayHTML(secret){return`<div class="tray">${[4,6,8,10,12,20,100].map(n=>`<button type="button" class="btn sm" data-a="die" data-k="${n}" ${secret?'data-secret="1"':''}>d${n}</button>`).join('')}</div>
   <div class="form inline"><input id="${secret?'sx':'fx'}Expr" placeholder="Any dice, e.g. 2d6+3" maxlength="30"><button type="button" class="btn pri" data-a="expr" ${secret?'data-secret="1"':''}>Roll</button></div>`}
 function pgTable(uid){return`<h2>The party</h2><div class="party">${partyHTML()}</div><h2>Dice</h2>${diceTrayHTML(false)}<h2>Table log <small>everyone sees this</small></h2><div class="log">${logHTML(60)}</div>`}
@@ -1703,7 +1710,7 @@ Object.assign(ACT,{
     const bits=[];if(l.money)bits.push(`${Number(l.money).toLocaleString('en-US')} ${RULES()==='5e'?'gp':'Berries'}${targets.length>1?' (split)':''}`);for(const it of l.items)bits.push(`${it.qty>1?it.qty+' × ':''}${it.name}`);
     addLog({by:SH.me,who:'DM',kind:'note',label:`🎁 ${l.name}: ${targets.length>1?'the party':targets[0][1].build.name} gets ${bits.join(', ')||'nothing'}.${l.items.length&&targets.length>1?' Items go to '+targets[0][1].build.name+'.':''}`,total:''});campEdit(c=>{byId(c.loot,k).given=true})},
   cpExport(){const C=campOf();const blob=new Blob([JSON.stringify({sheetTableCampaign:1,...C},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(C.name||'campaign').replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)},
-  mAtk(b){const m=((SH.dm.enc||{}).mons||{})[b.dataset.k];const o=(initOf().order||[]).find(x=>x.id===b.dataset.k);if(!m||!o)return;const nm=o.hide?'Enemy':m.name;rollD20(nm+' attacks',m.atk,fmt(m.atk),{name:nm,follow:m.dmg?[{t:'Damage '+m.dmg,run:crit=>rollDmg(nm+' damage',m.dmg,{name:nm,crit})}]:null})},
+  mAtk(b){const m=((SH.dm.enc||{}).mons||{})[b.dataset.k];const o=(initOf().order||[]).find(x=>x.id===b.dataset.k);if(!m||!o)return;const nm=o.hide?'Enemy':m.name;rollD20(nm+' attacks',m.atk,fmt(m.atk),{name:nm,secret:true,follow:m.dmg?[{t:'Damage '+m.dmg,run:crit=>rollDmg(nm+' damage',m.dmg,{name:nm,crit,secret:true})}]:null})},
   themeOpen(){SH.pick=true;render(true);window.scrollTo(0,0)},themeClose(){SH.pick=false;render(true)},
   themeSet(b){try{localStorage.setItem('sht-theme',b.dataset.k)}catch(e){}SH.myTheme=b.dataset.k;render(true)},
   themeTable(b){setState({theme:curTheme()});toast('Players who have not picked a look now get this one.')}
@@ -1975,13 +1982,13 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
 
 async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;const nm=o.hide?'Enemy':m.name;
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
-    const e=await rollD20(`${a[0]} → ${c.build.name}`,a[1],fmt(a[1]),{name:nm});const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=D.ac);
-    if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name} (${e.total} vs AC ${D.ac}).`,total:''});return}
-    const r=rollExprNow(a[2],crit);hpChange(u,-r.total,`${nm}'s ${a[0]}${crit?', critical':''}: ${r.detail}${a[3]?' '+a[3]:''}`)}
-  else{const r=rollExprNow(a[2]);const ab=a[5]||'DEX';const lines=[];
+    const e=await rollD20(`${a[0]} → ${c.build.name}`,a[1],fmt(a[1]),{name:nm,secret:true});const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=D.ac);
+    if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
+    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit?', a critical hit':''}${a[3]?', '+a[3]:''}`)}
+  else{const r=rollExprNow(a[2]);secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
-      lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb} vs DC ${a[4]} ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
-    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}: ${r.total} ${a[3]||''} damage, DC ${a[4]} ${ABN[ab]||ab} save. ${lines.join(' · ')}`,total:''})}}
+      lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
+    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${ABN[ab]||ab} saves: ${lines.join(' · ')}`,total:''})}}
 
 Object.assign(ACT,{
   cpMonLib(b){const k=b.dataset.k;const m=monFind(val('clib_'+k));if(!m){toast('Pick a creature from the list.');return}const n=Math.max(1,Math.min(12,Math.round(num('clibC_'+k))||1));
@@ -2104,5 +2111,31 @@ render=(function(prev){return function(force){prev(force);try{if(SH.forceOpen||S
   // never more hit points than the maximum (after a level-up, an edit or an override)
   for(const [u,c] of Object.entries(SH.chars)){if(!charOK(c)||!canEdit(u)||(u!==SH.me&&!SH.owner))continue;const mx=DV(c).maxhp;if(c.hp>mx&&!render._fix){render._fix=1;saveChar(u,{hp:mx});setTimeout(()=>render._fix=0,500)}}}catch(e){console.warn(e)}}})(render);
 dmTable=(function(prev){return function(){return prev()+`<p class="hint" style="margin-top:24px">Credits: One Piece Dungeons & Devil Fruits (Player's Handbook, DM's Guide and Devil Fruit Encyclopedia) by OneWorldHD, a fan homebrew. Plain 5e rules and monsters from the D&D System Reference Document 5.1 by Wizards of the Coast, CC-BY-4.0. One Piece belongs to Eiichiro Oda / Shueisha.</p>`}})(dmTable);
+
+// ================= attacks follow the turn order in a fight; the DM's log shows the hidden rolls =================
+// In a started fight: you attack on your own turn, as many times as your Attack action allows (more only with a second tap,
+// marked "extra" for the DM), and damage can only be rolled once per attack roll. Outside fights you roll freely,
+// and a roll repeated within 3 minutes is marked "2nd try" in the log.
+function fightCtx(u){const ini=initOf();if(!ini.on||!ini.started)return null;const order=ini.order||[];if(!order.some(o=>o.pc===u))return null;const cur=order[ini.turn];return{mine:!!(cur&&cur.pc===u),key:`${ini.id}:${ini.round||1}:${ini.turn}`}}
+function turnSt(u,key){SH.ta=SH.ta||{};let s=SH.ta[u];if(!s||s.key!==key)s=SH.ta[u]={key,n:0,pend:0};return s}
+const dmFor=u=>SH.owner&&u!==SH.me;
+ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)return;const ctx=dmFor(u)?null:fightCtx(u);let tag='';let st=null;
+  if(ctx){if(!ctx.mine){toast('Not your turn yet. You can attack when the fight reaches you.');return}
+    st=turnSt(u,ctx.key);const lim=DV(SH.chars[u]).nAtk||1;
+    if(st.n>=lim){if(!tapTwice(b,`Tap again for an extra attack (bonus action, Action Surge…)`))return;tag=' (extra attack)'}else if(lim>1)tag=` (${st.n+1} of ${lim})`;
+    st.n++;st.pend++}
+  rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{if(st){if(st.pend<=0)return;st.pend--}rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});render(true)};
+ACT.dmg=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a||!a.dmg)return;const ctx=dmFor(u)?null:fightCtx(u);
+  if(ctx){if(!ctx.mine){toast('Not your turn yet.');return}const st=turnSt(u,ctx.key);if(st.pend<=0){toast('Roll to hit first: tap the attack name. Damage comes after a hit.');return}st.pend--}
+  rollDmg(a.name+' damage',a.dmg,{uid:u});render(true)};
+// show the state on the buttons
+pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const ctx=dmFor(uid)?null:fightCtx(uid);if(!ctx)return h;
+  if(!ctx.mine)return h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,'<h2>Attacks <small>wait for your turn</small></h2>').replace(/class="rb" data-a="atk"/g,'class="rb wait" data-a="atk"').replace(/class="btn dmg" data-a="dmg"/g,'class="btn dmg wait" data-a="dmg"');
+  const st=turnSt(uid,ctx.key);const lim=D.nAtk||1;
+  h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small>your turn · ${Math.min(st.n,lim)} of ${lim} attack${lim>1?'s':''} used${st.n>lim?` + ${st.n-lim} extra`:''}${st.pend?` · ${st.pend} damage roll${st.pend>1?'s':''} ready`:''}</small></h2>`);
+  if(!st.pend)h=h.replace(/class="btn dmg" data-a="dmg"/g,'class="btn dmg wait" data-a="dmg"');return h}})(pgActions);
+// the DM's log (dock and Table page) mixes in the hidden rolls, marked 🔒
+function dmLogHTML(n){const sec=((SH.dm.rolls||{}).items||[]).map(e=>({...e,label:'🔒 '+e.label,hid:1}));const all=[...SH.log,...sec].sort((a,b)=>(b.t||0)-(a.t||0));const L=SH.log;SH.log=all;try{return logHTML(n)}finally{SH.log=L}}
+dockHTML=(function(prev){return function(){let h=prev();if(h&&SH.owner)h=h.replace(/<div class="log">[\s\S]*<\/div><\/aside>$/,`<div class="log">${dmLogHTML(80)}</div><p class="mini dockfoot">🔒 = hidden roll, only you see it</p></aside>`);return h}})(dockHTML);
 
 </script></body></html>

@@ -85,10 +85,11 @@ function who(uid){const c=SH.chars[uid];return c&&c.build?c.build.name:(uid===SH
 async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.adv!==undefined?opts.adv:SH.adv;const a=d(20),b2=d(20);const nat=adv>0?Math.max(a,b2):adv<0?Math.min(a,b2):a;const total=nat+bonus;
   const detail=`d20 ${adv?`${adv>0?'adv':'dis'} (${a}, ${b2}) → `:''}${nat} ${partsTxt?'· '+partsTxt:(bonus?fmt(bonus):'')}`.trim();
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{})};
-  SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
+  {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg'};
-  showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
+  {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
+function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
 let rollT=0;
 function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElement('div');el.id='rollCard';document.body.appendChild(el)}
@@ -96,7 +97,7 @@ function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElem
   el.className='show'+(crit?' crit':fum?' fumble':'');
   el.innerHTML=`<div class="rc-l">${esc(e.who)} · ${esc(e.label)}</div><div class="rc-t">${e.total}</div><div class="rc-d">${esc(e.detail)}${crit?' · <b>NAT 20</b>':fum?' · <b>NAT 1</b>':''}</div>
     ${follow?`<div class="rc-f">${follow.map((f,i)=>`<button type="button" class="btn sm" data-rcf="${i}">${esc(f.t)}</button>`).join('')}</div>`:''}<button type="button" class="rc-x" aria-label="Close">✕</button>`;
-  qa('[data-rcf]',el).forEach(b=>b.onclick=()=>{follow[+b.dataset.rcf].run(crit)});q('.rc-x',el).onclick=()=>{el.className=''};
+  qa('[data-rcf]',el).forEach(b=>b.onclick=()=>{if(b.disabled)return;b.disabled=true;follow[+b.dataset.rcf].run(crit)});q('.rc-x',el).onclick=()=>{el.className=''};
   clearTimeout(rollT);rollT=setTimeout(()=>{el.className=''},follow?9000:4500)}
 // other people's rolls pop up as a small line
 function onLog(fresh){const boot=!SH.seenLog;const newest=fresh.reduce((m,e)=>Math.max(m,e.t||0),0);

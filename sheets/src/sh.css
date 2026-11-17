@@ -128,3 +128,9 @@ body.docked #app{margin-right:340px;margin-left:max(0px,calc((100vw - 340px - 11
 .mtools{margin-left:auto;display:flex;gap:6px}
 @media (max-width:640px){.orow input[id^=oN_]{flex:0 1 72px}}
 @media (max-width:640px){.orow input[id^=oN_]{flex:none;width:68px;min-width:0}}
+/* attack rows: say what the numbers are */
+.atk .rb>b{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}.atk .rb>b::after{content:"to hit";font-size:11px;font-weight:400;opacity:.7}
+.atk .btn.dmg{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}.atk .btn.dmg::after{content:"damage";font-size:11px;font-weight:400;opacity:.75}
+.atk .wait{opacity:.45}
+.again{font-style:normal;font-size:11.5px;background:var(--red);color:#fff;border-radius:6px;padding:0 5px;margin-left:4px;white-space:nowrap}
+.dockfoot{padding:6px 12px;border-top:1px solid var(--line);margin:0}
