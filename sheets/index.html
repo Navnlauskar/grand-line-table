@@ -157,6 +157,10 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .diff{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;border-left:4px solid}.diff small{display:block;color:var(--mute)}
 .d-triv,.d-easy{border-color:#2f7d4f;background:color-mix(in srgb,#2f7d4f 10%,transparent)}.d-med{border-color:#c07a12;background:color-mix(in srgb,#c07a12 12%,transparent)}.d-hard{border-color:#d0541e;background:color-mix(in srgb,#d0541e 13%,transparent)}.d-deadly{border-color:var(--red);background:color-mix(in srgb,var(--red) 15%,transparent)}
 .warn{color:var(--red)}
+.spell.srd{display:flex;gap:10px;align-items:flex-start}.spell.srd .spm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.spmeta{font-size:12.5px;color:var(--mute)}.sptag{font-size:13.5px;font-weight:600}.spell.srd details summary{font-size:13px}
+.spbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none;width:86px}.spbtns select{min-height:34px;padding:2px 6px;font-size:13px}.spbtns .btn{min-height:42px}
+.spell.concon{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 25%,transparent)}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -2487,9 +2491,9 @@ function spellRowHTML(uid,s,ed){const c=SH.chars[uid];const sp=spellFind(s.name)
   const D=DV(c);const CI=casterInfo(c,D);if(!CI)return'';const ct=CT[sp.ct]||CT.A;
   const avail=sp.l?CI.levels.filter(x=>x.L>=sp.l):[{L:0}];const sel=(SH.slotSel||{})[s.id];const L=sp.l?(avail.find(x=>x.L===sel)||avail[0]||{L:sp.l}).L:0;
   const dice=spellDiceAt(sp,L,D.lvl,CI.mod);const rays=raysAt(sp,L,D.lvl);const conc=c.conc===sp.n;
-  return`<div class="spell srd ${conc?'concon':''}"><div><b>${esc(sp.n)}</b> <small>${sp.l?'level '+sp.l:'cantrip'} · <mark class="tg tg-${ct[0]||'act'}">${ct[1]}</mark> · ${esc(sp.rg)}${sp.conc?' · <i>concentration</i>':''}</small>
-    ${mechText(sp,CI,dice,rays)?`<p class="sptag">${esc(mechText(sp,CI,dice,rays))}</p>`:''}<details data-dk="spd_${s.id}"><summary>What it does</summary><p>${esc(sp.txt)}</p></details></div>
-    ${ed?`<span class="fbtns">${sp.l&&avail.length>1?`<select data-c="slotSel" data-k="${s.id}" aria-label="Slot level">${avail.map(x=>`<option value="${x.L}" ${x.L===L?'selected':''}>L${x.L}${x.pact?' pact':''}</option>`).join('')}</select>`:''}<button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}" ${sp.l&&!avail.length?'disabled title="No slots left"':''}>${sp.l&&!avail.length?'No slots':'Cast'}</button><button type="button" class="btn xs" data-a="spDel" data-u="${uid}" data-k="${s.id}" aria-label="Remove ${esc(sp.n)}">✕</button></span>`:''}</div>`}
+  return`<div class="spell srd ${conc?'concon':''}"><div class="spm"><b>${esc(sp.n)}</b><small class="spmeta">${sp.l?'Level '+sp.l:'Cantrip'} · <mark class="tg tg-${ct[0]||'act'}">${ct[1]}</mark> · ${esc(sp.rg)}${sp.conc?' · <i>concentration</i>':''}</small>
+    ${mechText(sp,CI,dice,rays)?`<span class="sptag">${esc(mechText(sp,CI,dice,rays))}</span>`:''}<details data-dk="spd_${s.id}"><summary>What it does</summary><p>${esc(sp.txt)}</p>${ed?`<button type="button" class="btn xs" data-a="spDel" data-u="${uid}" data-k="${s.id}">Remove from my list</button>`:''}</details></div>
+    ${ed?`<span class="spbtns">${sp.l&&avail.length>1?`<select data-c="slotSel" data-k="${s.id}" aria-label="Slot level">${avail.map(x=>`<option value="${x.L}" ${x.L===L?'selected':''}>Lv ${x.L}${x.pact?' pact':''}</option>`).join('')}</select>`:''}<button type="button" class="btn dmg cast" data-a="spCast" data-u="${uid}" data-k="${s.id}" ${sp.l&&!avail.length?'disabled title="No slots left"':''}>${sp.l&&!avail.length?'No slots':'Cast'}</button></span>`:''}</div>`}
 function spellLibHTML(uid,c,D){const L=classSpells(c);if(!L.length)return'';const CI=casterInfo(c,D);const max=CI?CI.maxLvl:0;const have=new Set((c.spells||[]).map(s=>spellKey2(s.name)));
   const opts=L.filter(s=>s.l<=Math.max(max,0)&&!have.has(spellKey2(s.n))).sort((a,b)=>a.l-b.l||a.n.localeCompare(b.n));
   const nm=c.build.rules==='5e'?(R5.classes[c.build.cls]||{}).name:(CLASSES[c.build.cls]||{}).name;
@@ -2558,7 +2562,7 @@ pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const p=p
   const ctx=fightCtx(uid);if(ctx&&ctx.mine){const st=turnSt(uid,ctx.key);const sh=st.hits.filter(x=>String(x.k).startsWith('sp:'));if(sh.length)h=`<div class="hitnote">${sh.map(x=>{const a=atkById(uid,x.k);return a?`<button type="button" class="btn dmg ready" data-a="dmg" data-u="${uid}" data-k="${x.k}">🎯 ${esc(a.name)} hit ${esc(x.tname)}: roll ${esc(a.dmg)}</button>`:''}).join(' ')}</div>`+h}
   return h}})(pgActions);
 // when a target picker opens, bring it into view and move the roll card out of the way
-render=(function(prev){return function(f){prev(f);try{const t=q('.ptarget');if(t){const rc=q('#rollCard');if(rc&&rc.className.includes('show')&&!q('[data-rcdmg]',rc))rc.className='';const r=t.getBoundingClientRect();if(r.top<60||r.bottom>innerHeight-260)t.scrollIntoView({block:'start'})}}catch(e){}}})(render);
+render=(function(prev){return function(f){prev(f);try{const t=q('.ptarget');if(t){const rc=q('#rollCard');if(rc&&rc.className.includes('show')&&!q('[data-rcdmg]',rc))rc.className='';const r=t.getBoundingClientRect();if(r.top<150||r.bottom>innerHeight-260)window.scrollTo({top:Math.max(0,r.top+scrollY-160)})}}catch(e){}}})(render);
 
 // level-up: remind casters that new spells may be available
 luHTML=(function(prev){return function(){let h=prev();try{const lu=SH.lu;const c=lu&&SH.chars[lu.uid];if(!c||!DV(c).spell)return h;const nb={...c.build,level:(c.build.level||1)+1};const D2=DV({...c,build:nb});const CI=casterInfo({...c,build:nb,res:{}},D2);

@@ -154,3 +154,7 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .diff{border-radius:10px;padding:8px 10px;margin:6px 0;font-size:14px;border-left:4px solid}.diff small{display:block;color:var(--mute)}
 .d-triv,.d-easy{border-color:#2f7d4f;background:color-mix(in srgb,#2f7d4f 10%,transparent)}.d-med{border-color:#c07a12;background:color-mix(in srgb,#c07a12 12%,transparent)}.d-hard{border-color:#d0541e;background:color-mix(in srgb,#d0541e 13%,transparent)}.d-deadly{border-color:var(--red);background:color-mix(in srgb,var(--red) 15%,transparent)}
 .warn{color:var(--red)}
+.spell.srd{display:flex;gap:10px;align-items:flex-start}.spell.srd .spm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.spmeta{font-size:12.5px;color:var(--mute)}.sptag{font-size:13.5px;font-weight:600}.spell.srd details summary{font-size:13px}
+.spbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none;width:86px}.spbtns select{min-height:34px;padding:2px 6px;font-size:13px}.spbtns .btn{min-height:42px}
+.spell.concon{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 25%,transparent)}
