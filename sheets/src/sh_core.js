@@ -84,10 +84,10 @@ function who(uid){const c=SH.chars[uid];return c&&c.build?c.build.name:(uid===SH
 // a d20 roll with the Adv/Dis switch; opts: {uid, follow, req, secret, kind}
 async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.adv!==undefined?opts.adv:SH.adv;const a=d(20),b2=d(20);const nat=adv>0?Math.max(a,b2):adv<0?Math.min(a,b2):a;const total=nat+bonus;
   const detail=`d20 ${adv?`${adv>0?'adv':'dis'} (${a}, ${b2}) → `:''}${nat} ${partsTxt?'· '+partsTxt:(bonus?fmt(bonus):'')}`.trim();
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{})};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{})};
   {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg'};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{})};
   {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
 function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
@@ -101,15 +101,15 @@ function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElem
   clearTimeout(rollT);rollT=setTimeout(()=>{el.className=''},follow?9000:4500)}
 // other people's rolls pop up as a small line
 function onLog(fresh){const boot=!SH.seenLog;const newest=fresh.reduce((m,e)=>Math.max(m,e.t||0),0);
-  if(!boot)for(const e of fresh){if(e.by===SH.me||(e.t||0)<=SH.seenLog)continue;if(e.quiet)continue;if(e.kind==='note')toast(e.label,e.read?9000:3500);else toast(`${e.who}: ${e.label} → ${e.total}${e.nat===20?' (nat 20!)':e.nat===1?' (nat 1)':''}`,3500)}
+  if(!boot)for(const e of fresh){if(e.by===SH.me||(e.t||0)<=SH.seenLog)continue;if(e.quiet)continue;if(e.kind==='note'&&/^▶ /.test(e.label)){if(SH.me&&SH.chars[SH.me]&&e.label.startsWith('▶ '+who(SH.me)+"'s turn"))toast('▶ Your turn!',3000);continue}if(e.kind==='note')toast(e.label,e.read?9000:3500);else toast(`${e.who}: ${e.label} → ${e.total}${e.nat===20?' (nat 20!)':e.nat===1?' (nat 1)':''}`,3500)}
   SH.seenLog=Math.max(SH.seenLog||1,newest);hostTick()}
 
 // ---------------- sheet actions (uid = whose sheet: your own, or any sheet if you are the DM) ----------------
 const canEdit=uid=>uid===SH.me||SH.owner;
-function hpChange(uid,delta,note){const c=SH.chars[uid];if(!c)return;const D=DV(c);let hp=c.hp,temp=c.temp||0;
+function hpChange(uid,delta,note,crit){const c=SH.chars[uid];if(!c)return;const D=DV(c);let hp=c.hp,temp=c.temp||0;
   const patch={};let extra='';
   if(delta<0){let dmg=-delta;const t=Math.min(temp,dmg);temp-=t;dmg-=t;
-    if(c.hp<=0&&dmg>0&&!c.dead){const dt={...(c.death||{s:0,f:0})};dt.f=Math.min(3,dt.f+1);patch.death=dt;patch.stable=false;if(dt.f>=3)patch.dead=true;extra=dt.f>=3?' · DEAD':' · a failed death save'}
+    if(c.hp<=0&&dmg>0&&!c.dead){const dt={...(c.death||{s:0,f:0})};dt.f=Math.min(3,dt.f+(crit?2:1));patch.death=dt;patch.stable=false;if(dt.f>=3)patch.dead=true;extra=dt.f>=3?' · DEAD':crit?' · two failed death saves (hit while down)':' · a failed death save'}
     else if(dmg-hp>=D.maxhp&&hp>0){patch.dead=true;extra=' · killed outright (massive damage)'}
     hp=Math.max(0,hp-dmg)}else hp=Math.min(D.maxhp,hp+delta);
   Object.assign(patch,{hp,temp});if(hp>0&&c.hp<=0){patch.death={s:0,f:0};patch.stable=false;patch.dead=false}

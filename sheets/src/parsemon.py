@@ -22,8 +22,9 @@ for si,i in enumerate(starts):
     for k,p in [('saves','Saving Throws'),('skills','Skills'),('senses','Senses'),('res','Damage Resistances'),('imm','Damage Immunities'),('cimm','Condition Immunities'),('vul','Damage Vulnerabilities'),('lang','Languages')]:
         mm=re.search(r'^'+p+r' (.*)$',txt,re.M);o[k]=mm.group(1).strip() if mm else ''
     # body after Challenge: join wrapped lines into paragraphs that start with "Name."
-    ci=next((j for j,l in enumerate(blk) if l.startswith('Challenge')),None)
-    body=[l for l in blk[ci+1:] if l.strip() and not l.startswith('CHAPTER ') and not re.match(r'^\d+$',l.strip())] if ci is not None else []
+    ci=next((j for j,l in enumerate(blk) if re.match(r'^\d+ \([+\-−]?\d+\) \d+ \(',l)),None)
+    STAT=re.compile(r'^(Saving Throws|Skills|Senses|Damage Resistances|Damage Immunities|Condition Immunities|Damage Vulnerabilities|Languages|Challenge|Proficiency Bonus) ')
+    body=[l for l in blk[ci+1:] if l.strip() and not STAT.match(l) and not l.startswith('CHAPTER ') and not re.match(r'^\d+$',l.strip())] if ci is not None else []
     secs={'traits':[],'actions':[],'bonus':[],'reactions':[],'legendary':[]};cur='traits';paras=[]
     HEAD={'Actions':'actions','Bonus Actions':'bonus','Reactions':'reactions','Legendary Actions':'legendary','Mythic Actions':'legendary'}
     for l in body:
@@ -37,9 +38,9 @@ for si,i in enumerate(starts):
         else:secs[cur].append(['',t])
     o.update(secs)
     atks=[]
-    for n,t in secs['actions']+secs['bonus']:
-        mm=re.search(r'(Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack: ([+\-]\d+) to hit.*?Hit: (?:\d+ )?\((\d+d\d+[\dd +\-]*)\) (\w+)(?: damage)?((?: plus (?:\d+ )?\(\d+d\d+[\dd +\-]*\) \w+(?: damage)?)*)',t)
-        if mm and not mm.group(3).replace(' ','').split('d')[1].startswith('0'):
+    for n,t in secs['traits']+secs['actions']+secs['bonus']+secs['legendary']:
+        mm=re.search(r'(Melee|Ranged|Melee or Ranged) (?:Weapon|Spell) Attack: ([+\-]\d+) to hit.*?Hit: (?:\d+ )?\((\d+(?:d\d+)?[\dd +\-]*)\) (\w+)(?: damage)?((?: plus (?:\d+ )?\(\d+d\d+[\dd +\-]*\) \w+(?: damage)?)*)',t)
+        if mm and not re.search(r'd0',mm.group(3).replace(' ','')):
             d=mm.group(3).replace(' ','');ty=mm.group(4)
             for x in re.findall(r'plus (?:\d+ )?\((\d+d\d+[\dd +\-]*)\) (\w+)',mm.group(5) or ''):d+='+'+x[0].replace(' ','');ty+=' + '+x[1]
             atks.append({'n':n,'b':int(mm.group(2)),'d':d,'t':ty,'r':'m' if mm.group(1)=='Melee' else 'r'})

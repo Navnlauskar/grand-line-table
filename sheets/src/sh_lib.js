@@ -82,9 +82,9 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
   // attack buttons + target picker on each enemy row
   for(const o of order){const m=mons[o.id];if(!m)continue;const A=monAtks(m);
     const old1=m.atk!==undefined&&m.atk!==null?`<button type="button" class="btn xs" data-a="mAtk" data-k="${o.id}">Atk ${fmt(m.atk)}</button>`:'';
-    const btns=A.length&&m.hp>0?`<div class="matks">${A.map((a,i)=>`<button type="button" class="btn xs ${SH.mt&&SH.mt.id===o.id&&SH.mt.i===i?'pri':''}" data-a="mtPick" data-k="${o.id}" data-i="${i}">⚔ ${esc(a[0].replace(/ \(Recharge[^)]*\)/,' ⟳'))} ${a[1]!==null?fmt(a[1]):'DC '+a[4]}</button>`).join('')}${m.lib?`<button type="button" class="btn xs" data-a="mSb" data-k="${o.id}" aria-label="Stat block">📖</button>`:''}</div>`:'';
+    const btns=!A.length&&m.hp>0?`<div class="matks"><input id="caB_${o.id}" inputmode="numeric" placeholder="To hit, e.g. 4" aria-label="To hit bonus" style="width:110px"><input id="caD_${o.id}" placeholder="Damage, e.g. 1d6+2" aria-label="Damage dice" style="width:150px"><button type="button" class="btn xs" data-a="mtCustom" data-k="${o.id}">⚔ Attack</button></div>`:A.length&&m.hp>0?`<div class="matks">${A.map((a,i)=>`<button type="button" class="btn xs ${SH.mt&&SH.mt.id===o.id&&SH.mt.i===i?'pri':''}" data-a="mtPick" data-k="${o.id}" data-i="${i}">⚔ ${esc(a[0].replace(/ \(Recharge[^)]*\)/,' ⟳'))} ${a[1]!==null?fmt(a[1]):'DC '+a[4]}</button>`).join('')}${m.lib?`<button type="button" class="btn xs" data-a="mSb" data-k="${o.id}" aria-label="Stat block">📖</button>`:''}</div>`:'';
     const mt=SH.mt&&SH.mt.id===o.id?SH.mt:null;const a=mt?A[mt.i]:null;
-    const pick=a?`<div class="mtarget"><span>${esc(a[0])}: ${a[1]!==null?'who does it attack?':'who is caught in it? (pick one or more)'}</span><div class="chipset">${pcs.map(([u,c])=>`<button type="button" class="chip tog ${(mt.t||[]).includes(u)?'on':''}" data-a="mtTo" data-u="${u}">${esc(c.build.name)} <small>AC ${DV(c).ac}</small></button>`).join('')}</div>
+    const pick=a?`<div class="mtarget"><span>${esc(a[0])}: ${a[1]!==null?'who does it attack?':'who is caught in it? (pick one or more)'}</span><div class="chipset">${pcs.map(([u,c])=>`<button type="button" class="chip tog ${(mt.t||[]).includes(u)?'on':''} ${c.hp<=0?'downpc':''}" data-a="mtTo" data-u="${u}">${esc(c.build.name)} <small>${c.hp<=0?'down':'AC '+DV(c).ac}</small></button>`).join('')}</div>
       <div class="row">${a[1]===null?`<button type="button" class="btn pri sm" data-a="mtGo" ${(mt.t||[]).length?'':'disabled'}>Roll the saves</button>`:''}<button type="button" class="btn sm" data-a="mtCancel">Cancel</button></div></div>`:'';
     const sb=SH.msb===o.id&&m.lib&&monFind(m.lib)?statBlockHTML(monFind(m.lib)):'';
     if(btns){const hb=new RegExp(`<button type="button" class="btn xs" data-a="oHide" data-k="${o.id}"[^>]*>[^<]*</button>`).exec(h);const db=new RegExp(`<button type="button" class="btn xs" data-a="oDel" data-k="${o.id}"[^>]*>✕</button>`).exec(h);
@@ -92,7 +92,7 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
     else h=h.replace(new RegExp(`(<button type="button" class="btn xs" data-a="oDel" data-k="${o.id}"[^>]*>✕</button>)</div>`),`$1${pick}${sb}</div>`);if(old1)h=h.replace(old1,'')}
   // players' damage rolls waiting to be applied
   const done=(SH.dm.enc||{}).done||[];const live=order.filter(o=>mons[o.id]&&mons[o.id].hp>0);
-  const pend=SH.log.filter(e=>e.kind==='dmg'&&!/heal|hit die|temporary/i.test(e.label||'')&&SH.chars[e.by]&&(e.t||0)>=(ini.t||0)&&!done.includes(e.id)).slice(0,6);
+  const pend=SH.log.filter(e=>e.kind==='dmg'&&!e.tgt&&!/heal|hit die|temporary/i.test(e.label||'')&&SH.chars[e.by]&&(e.t||0)>=(ini.t||0)&&!done.includes(e.id)).slice(0,6);
   const panel=pend.length&&live.length?`<h2>Players' damage <small>pick who took it</small></h2><div class="list">${pend.map(e=>`<div class="item dmgrow"><span><b>${esc(e.who)}</b> ${esc(e.label)}<small>${esc(e.detail||'')}</small></span><b class="dtot">${e.total}</b>
       <select id="dTo_${e.id}" aria-label="Which enemy">${live.map(o=>`<option value="${o.id}" ${SH.lastTarget===o.id?'selected':''}>${esc(o.name)} (${mons[o.id].hp})</option>`).join('')}</select><button type="button" class="btn xs red" data-a="dApply" data-k="${e.id}" data-m="1">Apply</button><button type="button" class="btn xs" data-a="dApply" data-k="${e.id}" data-m="0.5">½</button><button type="button" class="btn xs" data-a="dSkip" data-k="${e.id}" aria-label="Ignore">✕</button></div>`).join('')}</div>`:'';
   // library add form
@@ -103,9 +103,9 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
 
 async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;const nm=o.hide?'Enemy':m.name;
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
-    const e=await rollD20(`${a[0]} → ${c.build.name}`,a[1],fmt(a[1]),{name:nm,secret:true});const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=D.ac);
+    const down=c.hp<=0&&!c.dead;const e=await rollD20(`${a[0]} → ${c.build.name}${down?' (down: advantage)':''}`,a[1],fmt(a[1]),{name:nm,secret:true,...(down?{adv:1}:{})});const crit=e.nat===20||down;const hit=crit||(e.nat!==1&&e.total>=D.ac);
     if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
-    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit?', a critical hit':''}${a[3]?', '+a[3]:''}`)}
+    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
   else{const r=rollExprNow(a[2]);secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
       lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
@@ -124,6 +124,8 @@ Object.assign(ACT,{
     if(a[1]!==null){SH.mt=null;render(true);monAttack(mt.id,mt.i,[b.dataset.u]);return}
     mt.t=mt.t.includes(b.dataset.u)?mt.t.filter(x=>x!==b.dataset.u):[...mt.t,b.dataset.u];render(true)},
   mtGo(){const mt=SH.mt;if(!mt||!mt.t.length)return;SH.mt=null;render(true);monAttack(mt.id,mt.i,mt.t)},
+  mtCustom(b){const id=b.dataset.k;const bonus=Math.round(num('caB_'+id));const dice=val('caD_'+id).trim()||'1d6';if(!parseDice(dice)){toast('Write damage like 1d6+2.');return}
+    const mons={...monsOf()};mons[id]={...mons[id],atks:[['Attack',bonus||0,dice,'']]};put('dm/enc',{...(SH.dm.enc||{}),mons});SH.mt={id,i:0,t:[]};render(true)},
   mtCancel(){SH.mt=null;render(true)},mSb(b){SH.msb=SH.msb===b.dataset.k?null:b.dataset.k;render(true)},
   dApply(b){const e=SH.log.find(x=>x.id===b.dataset.k);const to=val('dTo_'+b.dataset.k);if(!e||!to)return;const n=Math.floor(e.total*(+b.dataset.m));SH.lastTarget=to;
     put('dm/enc',{...(SH.dm.enc||{}),done:[...((SH.dm.enc||{}).done||[]),e.id].slice(-60)});hurtMon(to,-n,`${e.who}: ${e.label}${b.dataset.m==='0.5'?', halved':''}`)},
@@ -131,3 +133,20 @@ Object.assign(ACT,{
 Object.assign(CHG,{mbq(e){SH.mbq=e.value.trim();SH.mbAll=false;setTimeout(()=>render(true),0)}});
 // put()/dm/enc writes elsewhere drop the "done" list: keep it
 {const _put=put;put=function(path,data){if(path==='dm/enc'&&data&&!data.done&&SH.dm.enc&&SH.dm.enc.done&&data.mons&&Object.keys(data.mons).length)data={...data,done:SH.dm.enc.done};return _put(path,data)}}
+
+// ---------------- encounter difficulty (5e DMG XP budget) ----------------
+const CR_XP={'0':10,'1/8':25,'1/4':50,'1/2':100,'1':200,'2':450,'3':700,'4':1100,'5':1800,'6':2300,'7':2900,'8':3900,'9':5000,'10':5900,'11':7200,'12':8400,'13':10000,'14':11500,'15':13000,'16':15000,'17':18000,'18':20000,'19':22000,'20':25000,'21':33000,'22':41000,'23':50000,'24':62000,'25':75000,'26':90000,'27':105000,'28':120000,'29':135000,'30':155000};
+const XP_TH=[null,[25,50,75,100],[50,100,150,200],[75,150,225,400],[125,250,375,500],[250,500,750,1100],[300,600,900,1400],[350,750,1100,1700],[450,900,1400,2100],[550,1100,1600,2400],[600,1200,1900,2800],[800,1600,2400,3600],[1000,2000,3000,4500],[1100,2200,3400,5100],[1250,2500,3800,5700],[1400,2800,4300,6400],[1600,3200,4800,7200],[2000,3900,5900,8800],[2100,4200,6300,9500],[2400,4900,7300,10900],[2800,5700,8500,12700]];
+const MULT=[0.5,1,1.5,2,2.5,3,4,5];
+function encDiff(list){// list: [{lib,n}]
+  const pcs=Object.values(SH.chars).filter(c=>charOK(c)&&!c.dead);if(!pcs.length)return null;let xp=0,count=0,unknown=0;
+  for(const m of list){const L=m.lib&&monFind(m.lib);const n=m.n||1;count+=n;if(L&&CR_XP[L.cr]!==undefined)xp+=CR_XP[L.cr]*n;else unknown+=n}
+  if(!count)return null;let step=count===1?1:count===2?2:count<=6?3:count<=10?4:count<=14?5:6;if(pcs.length<3)step++;else if(pcs.length>5)step--;const adj=Math.round(xp*MULT[Math.max(0,Math.min(7,step))]);
+  const th=[0,0,0,0];for(const c of pcs){const t=XP_TH[Math.max(1,Math.min(20,c.build.level||1))];t.forEach((v,i)=>th[i]+=v)}
+  const lv=adj>=th[3]?3:adj>=th[2]?2:adj>=th[1]?1:adj>=th[0]?0:-1;const names=['Easy','Medium','Hard','Deadly'];
+  const lvls=[...new Set(pcs.map(c=>c.build.level||1))].join('/');
+  return{xp,adj,th,lv,label:lv<0?'Trivial':names[lv],unknown,txt:`${lv<0?'Trivial':names[lv]} for ${pcs.length} level-${lvls} character${pcs.length>1?'s':''}`}}
+function diffHTML(list){const d=encDiff(list);if(!d)return'';const cls=['triv','easy','med','hard','deadly'][d.lv+1];
+  return`<p class="diff d-${cls}"><b>${esc(d.txt)}</b> <small>${d.adj} XP after the group multiplier · hard ${d.th[2]}, deadly ${d.th[3]}${d.unknown?` · ${d.unknown} made-up enem${d.unknown>1?'ies':'y'} not counted`:''}${d.lv===3?' · could kill the party':''}</small></p>`}
+dmPrep=(function(prev){return function(){let h=prev();for(const e of campOf().encs){if(!e.mons.length)continue;h=h.replace(`<div class="form inline libadd"><input id="clib_${e.id}"`,diffHTML(e.mons)+`<div class="form inline libadd"><input id="clib_${e.id}"`)}return h}})(dmPrep);
+dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!ini.on)return h;const ms=Object.values(monsOf()).filter(m=>m.hp>0).map(m=>({lib:m.lib,n:1}));if(!ms.length)return h;return h.replace('<h2>Add enemies</h2>','<h2>How hard is it?</h2>'+diffHTML(ms)+'<h2>Add enemies</h2>')}})(dmFight);
