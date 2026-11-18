@@ -158,3 +158,13 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .spmeta{font-size:12.5px;color:var(--mute)}.sptag{font-size:13.5px;font-weight:600}.spell.srd details summary{font-size:13px}
 .spbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none;width:86px}.spbtns select{min-height:34px;padding:2px 6px;font-size:13px}.spbtns .btn{min-height:42px}
 .spell.concon{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 25%,transparent)}
+.d20grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}.d20b{min-height:50px;font-size:20px;font-weight:700}.d20b.nat20{border-color:#2f7d4f;color:#2f7d4f}.d20b.nat1{border-color:var(--red);color:var(--red)}
+.realbox input{font-size:22px;text-align:center}.realtag{font-style:normal;font-size:11.5px;background:var(--acc);color:#fff;border-radius:6px;padding:0 5px;margin-left:4px}
+.chipset.isl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.chipset.isl .chip{text-align:left;display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;border-radius:12px}
+.hunt summary small{color:var(--mute)}
+.tog>input[type=checkbox],label>input[type=checkbox]{flex:0 0 22px!important;width:22px!important;min-width:22px}
+.modal.realm{z-index:130;animation:none}body.real-open #rollCard,body.real-open .toast{display:none!important}
+/* top bar must fit a 360 px phone */
+.top{gap:5px;min-width:0}.top .btn.xs{padding:5px 8px;min-height:38px;min-width:38px}.advsw button{padding:6px 9px}
+@media(max-width:440px){.top .net{display:none}.advsw button{padding:6px 7px;font-size:13.5px}.top .btn.xs{padding:4px 6px;min-width:34px;font-size:13px}.top .btn.xs .rl{display:none}}
+html,body{overflow-x:hidden;max-width:100%}

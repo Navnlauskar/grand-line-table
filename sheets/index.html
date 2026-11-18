@@ -161,6 +161,16 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .spmeta{font-size:12.5px;color:var(--mute)}.sptag{font-size:13.5px;font-weight:600}.spell.srd details summary{font-size:13px}
 .spbtns{display:flex;flex-direction:column;gap:6px;align-items:stretch;flex:none;width:86px}.spbtns select{min-height:34px;padding:2px 6px;font-size:13px}.spbtns .btn{min-height:42px}
 .spell.concon{border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 25%,transparent)}
+.d20grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}.d20b{min-height:50px;font-size:20px;font-weight:700}.d20b.nat20{border-color:#2f7d4f;color:#2f7d4f}.d20b.nat1{border-color:var(--red);color:var(--red)}
+.realbox input{font-size:22px;text-align:center}.realtag{font-style:normal;font-size:11.5px;background:var(--acc);color:#fff;border-radius:6px;padding:0 5px;margin-left:4px}
+.chipset.isl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.chipset.isl .chip{text-align:left;display:flex;flex-direction:column;align-items:flex-start;padding:8px 10px;border-radius:12px}
+.hunt summary small{color:var(--mute)}
+.tog>input[type=checkbox],label>input[type=checkbox]{flex:0 0 22px!important;width:22px!important;min-width:22px}
+.modal.realm{z-index:130;animation:none}body.real-open #rollCard,body.real-open .toast{display:none!important}
+/* top bar must fit a 360 px phone */
+.top{gap:5px;min-width:0}.top .btn.xs{padding:5px 8px;min-height:38px;min-width:38px}.advsw button{padding:6px 9px}
+@media(max-width:440px){.top .net{display:none}.advsw button{padding:6px 7px;font-size:13.5px}.top .btn.xs{padding:4px 6px;min-width:34px;font-size:13px}.top .btn.xs .rl{display:none}}
+html,body{overflow-x:hidden;max-width:100%}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -1351,7 +1361,7 @@ function pgBag(uid,c,D){const ed=canEdit(uid);
 function partyHTML(){const showHP=SH.state.showHP!==false||SH.owner;return Object.entries(SH.chars).filter(([,c])=>charOK(c)).map(([u,c])=>{const D=DV(c);const conds=Object.keys(c.cond||{}).filter(k=>c.cond[k]);
   return`<div class="pm ${online(u)?'':'off'} ${c.hp<=0?'down':''}">${avatar(c.build.name,30)}<div><b>${esc(c.build.name)}</b>${u===SH.me?' <small>(you)</small>':''}<small>${esc(D.clsName)} ${D.lvl}${conds.length?' · '+esc(conds.join(', ')):''}${online(u)?'':' · away'}</small>
     <div class="bar"><i style="width:${Math.max(0,Math.min(100,c.hp/D.maxhp*100))}%"></i></div></div><span class="pmhp">${showHP?`${c.hp}/${D.maxhp}`:(c.hp<=0?'down':c.hp<=D.maxhp/2?'hurt':'ok')}</span></div>`}).join('')||'<p class="hint">Nobody has made a character yet.</p>'}
-function logHTML(n){const L=SH.log.slice(0,n||60);return L.map(e=>e.kind==='note'?`<div class="lg note ${e.read?'read':''}">${esc(e.label)}</div>`:`<div class="lg ${e.nat===20?'crit':e.nat===1?'fum':''}"><div><b>${esc(e.who)}</b> ${esc(e.label)}${e.again?` <i class="again" title="Rolled the same thing again">↻ ${e.again}${e.again===2?'nd':e.again===3?'rd':'th'} try</i>`:''}<small>${esc(e.detail||'')}</small></div><span>${e.total}</span></div>`).join('')||'<p class="hint">No rolls yet.</p>'}
+function logHTML(n){const L=SH.log.slice(0,n||60);return L.map(e=>e.kind==='note'?`<div class="lg note ${e.read?'read':''}">${esc(e.label)}</div>`:`<div class="lg ${e.nat===20?'crit':e.nat===1?'fum':''}"><div><b>${esc(e.who)}</b> ${esc(e.label)}${e.real?' <i class="realtag" title="Rolled with real dice">🎲 real</i>':''}${e.again?` <i class="again" title="Rolled the same thing again">↻ ${e.again}${e.again===2?'nd':e.again===3?'rd':'th'} try</i>`:''}<small>${esc(e.detail||'')}</small></div><span>${e.total}</span></div>`).join('')||'<p class="hint">No rolls yet.</p>'}
 function diceTrayHTML(secret){return`<div class="tray">${[4,6,8,10,12,20,100].map(n=>`<button type="button" class="btn sm" data-a="die" data-k="${n}" ${secret?'data-secret="1"':''}>d${n}</button>`).join('')}</div>
   <div class="form inline"><input id="${secret?'sx':'fx'}Expr" placeholder="Any dice, e.g. 2d6+3" maxlength="30"><button type="button" class="btn pri" data-a="expr" ${secret?'data-secret="1"':''}>Roll</button></div>`}
 function pgTable(uid){return`<h2>The party</h2><div class="party">${partyHTML()}</div><h2>Dice</h2>${diceTrayHTML(false)}<h2>Table log <small>everyone sees this</small></h2><div class="log">${logHTML(60)}</div>`}
@@ -1524,7 +1534,7 @@ document.addEventListener('focusout',()=>{setTimeout(()=>{if(dirty&&!typing())re
 function netHTML(){const N=window.GLT_NET;if(SH.solo)return'<span class="net">this device only</span>';if(!N||!N.code)return'<span class="net">live</span>';
   return N.role==='host'?`<span class="net">Room <b>${esc(N.code)}</b> · ${N.conns.size} 👥</span>`:N.lost?`<button type="button" class="net bad" data-a="rejoin">⚠ Reconnect</button>`:`<span class="net">Room <b>${esc(N.code)}</b></span>`}
 function topHTML(){return`<header class="top"><div class="advsw" role="group" aria-label="Advantage for the next roll">${[[-1,'Dis'],[0,'Normal'],[1,'Adv']].map(([v,l])=>`<button type="button" class="${SH.adv===v?'on':''}" data-a="adv" data-k="${v}">${l}</button>`).join('')}</div>${netHTML()}<button type="button" class="btn xs" data-a="themeOpen" aria-label="Change the look">🎨</button>
-  ${SH.owner&&(SH.solo||myChar())?`<button type="button" class="btn xs" data-a="swapDM">${isDM()?'My sheet':'DM screen'}</button>`:''}</header>`}
+  ${SH.owner&&(SH.solo||myChar())?`<button type="button" class="btn xs" data-a="swapDM">${isDM()?'My sheet':'DM'}</button>`:''}</header>`}
 function navHTML(tabs,cur,act){return`<nav class="nav">${tabs.map(([k,i,l])=>`<button type="button" class="${cur===k?'on':''}" data-a="${act}" data-k="${k}"><i>${i}</i><span>${l}</span></button>`).join('')}</nav>`}
 function setupHTML(){return`<div class="builder"><div class="hero"><div class="hn"><h1>Set up your table</h1><div class="sub">You are the DM. Your players only need the invite link.</div></div></div>
   <label class="fl">Table name<input id="suName" maxlength="40" placeholder="e.g. Friday crew"></label>
@@ -2010,8 +2020,8 @@ async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().or
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
     const down=c.hp<=0&&!c.dead;const e=await rollD20(`${a[0]} → ${c.build.name}${down?' (down: advantage)':''}`,a[1],fmt(a[1]),{name:nm,secret:true,...(down?{adv:1}:{})});const crit=e.nat===20||down;const hit=crit||(e.nat!==1&&e.total>=D.ac);
     if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
-    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
-  else{const r=rollExprNow(a[2]);secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
+    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
+  else{const r=await realExpr(a[2],false,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
       lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
     addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${ABN[ab]||ab} saves: ${lines.join(' · ')}`,total:''})}}
@@ -2070,7 +2080,7 @@ function fruitPic(f,sz){const src=fruitImgSrc(f);return src?`<img class="fpic" s
 // ---------------- offers: the DM gives, the player accepts ----------------
 function offer(uid,o){const c=SH.chars[uid];if(!c)return;const id=uidNew();saveChar(uid,{offers:[...(c.offers||[]),{id,t:Date.now(),...o}]});
   addLog({by:SH.me,who:'DM',kind:'note',label:`🎁 The DM offers ${who(uid)} ${offerTxt(c,o)}.`,total:'',quiet:true});toast(`Sent to ${who(uid)}. They choose to accept it.`)}
-function offerTxt(c,o){return o.k==='money'?(is5(c)?(+o.amt).toLocaleString('en-US')+' gp':'฿'+(+o.amt).toLocaleString('en-US')):o.k==='fruit'?'a Devil Fruit ('+(dfeFind(o.fruit)?dfeName(dfeFind(o.fruit)):o.fruit)+')':o.k==='haki'?'the awakening of '+((hakiOpt(o.haki)||{}).name||'Haki'):`${o.qty>1?o.qty+' × ':''}${o.name}`}
+function offerTxt(c,o){return o.k==='msg'?o.title:o.k==='money'?(is5(c)?(+o.amt).toLocaleString('en-US')+' gp':'฿'+(+o.amt).toLocaleString('en-US')):o.k==='fruit'?'a Devil Fruit ('+(dfeFind(o.fruit)?dfeName(dfeFind(o.fruit)):o.fruit)+')':o.k==='haki'?'the awakening of '+((hakiOpt(o.haki)||{}).name||'Haki'):`${o.qty>1?o.qty+' × ':''}${o.name}`}
 function invAdd(inv,it){inv=(inv||[]).map(x=>({...x}));const ex=!it.fruit&&inv.find(x=>!x.fruit&&x.name.toLowerCase()===it.name.toLowerCase());if(ex)ex.qty+=it.qty||1;else inv.push({name:it.name,qty:it.qty||1,...(it.note?{note:it.note}:{}),...(it.fruit?{fruit:it.fruit}:{})});return inv}
 function offerModalHTML(){const c=myChar();if(!c||isDM())return'';const o=(c.offers||[])[0];if(!o)return'';const more=(c.offers||[]).length-1;
   if(o.k==='fruit'){const f=dfeFind(o.fruit);const has=!!c.fruit;
@@ -2081,12 +2091,12 @@ function offerModalHTML(){const c=myChar();if(!c||isDM())return'';const o=(c.off
       <div class="row mbtn"><button type="button" class="btn pri big" data-a="ofEat" ${has?'disabled':''}>🍇 Eat it</button><button type="button" class="btn big" data-a="ofKeep">🎒 Keep it in my bag</button></div>
       <button type="button" class="btn sm" data-a="ofNo">No thanks</button>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
   const icon=o.k==='money'?(is5(c)?'🪙':'฿'):o.k==='haki'?'⚡':'🎁';
-  return`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="mbox"><div class="mico">${icon}</div><h2 id="mdT">${o.k==='haki'?'Your Haki awakens!':'The DM gives you something'}</h2>
+  return`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="mbox"><div class="mico">${icon}</div><h2 id="mdT">${o.k==='haki'?'Your Haki awakens!':o.k==='msg'?'News from the DM':'The DM gives you something'}</h2>
     <p class="mname"><b>${esc(offerTxt(c,o))}</b></p>${o.note?`<p>${esc(o.note)}</p>`:''}${o.k==='haki'&&hakiOpt(o.haki)?`<p>${esc(hakiOpt(o.haki).desc)}</p>`:''}
-    <div class="row mbtn"><button type="button" class="btn pri big" data-a="ofYes">${o.k==='haki'?'Awaken it':'Accept'}</button><button type="button" class="btn big" data-a="ofNo">Decline</button></div>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
+    <div class="row mbtn">${o.k==='msg'?'<button type="button" class="btn pri big" data-a="ofYes">OK</button>':`<button type="button" class="btn pri big" data-a="ofYes">${o.k==='haki'?'Awaken it':'Accept'}</button><button type="button" class="btn big" data-a="ofNo">Decline</button>`}</div>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
 function ofTake(fn){const c=myChar();const o=(c.offers||[])[0];if(!o)return;const patch={offers:(c.offers||[]).slice(1)};const msg=fn(c,o,patch);saveChar(SH.me,patch);if(msg)addLog({by:SH.me,who:c.build.name,kind:'note',label:msg,total:''})}
 Object.assign(ACT,{
-  ofYes(){ofTake((c,o,p)=>{if(o.k==='money'){Object.assign(p,is5(c)?{gp:Math.round((moneyOf(c)+(+o.amt))*100)/100}:{berries:Math.round(moneyOf(c)+(+o.amt))})}
+  ofYes(){ofTake((c,o,p)=>{if(o.k==='msg')return'';if(o.k==='money'){Object.assign(p,is5(c)?{gp:Math.round((moneyOf(c)+(+o.amt))*100)/100}:{berries:Math.round(moneyOf(c)+(+o.amt))})}
     else if(o.k==='haki'){if(!(c.haki||[]).includes(o.haki))p.haki=[...(c.haki||[]),o.haki];return`⚡ ${c.build.name} awakens ${(hakiOpt(o.haki)||{}).name||'Haki'}!`}
     else p.inv=invAdd(c.inv,{name:o.name,qty:o.qty,note:o.note});return`✔ ${c.build.name} accepts ${offerTxt(c,o)}.`})},
   ofNo(){ofTake((c,o)=>`✖ ${c.build.name} declines ${offerTxt(c,o)}.`)},
@@ -2586,10 +2596,7 @@ ACT.spCast=(function(prev){return function(b){const u=b.dataset.u;const c=SH.cha
 // casting without a slot when re-using
 casterInfo=(function(prev){return function(c,D){const r=prev(c,D);if(r&&SH._noSlot&&SH.freeCast){r.levels=[{L:SH.freeCast.L,key:'_free',left:99}]}return r}})(casterInfo);
 saveChar=(function(prev){return function(u,patch){if(SH._noSlot&&patch&&patch.res){const p={...patch};const r={...p.res};delete r._free;p.res=r;if(p.conc)delete p.conc;return prev(u,p)}return prev(u,patch)}})(saveChar);
-// weapon damage picks up the rider
-rollDmg=(function(prev){return function(label,expr,opts){opts=opts||{};const u=opts.uid;const c=u&&SH.chars[u];const nm=String(label).replace(/ damage.*$/,'').replace(/ \(critical\)$/,'');
-  if(c&&c.rider&&/ damage/.test(label)&&!spellFind(nm)&&!opts.healTo){const r=c.rider;expr=expr+'+'+r.dice;label=label.replace(' damage',` + ${r.name} damage`);if(r.once)saveChar(u,{rider:null})}
-  return prev(label,expr,opts)}})(rollDmg);
+// (the rider is added in sh_real.js, before any real-dice prompt)
 // ending concentration ends a concentration rider
 saveChar=(function(prev){return function(u,patch){const c=SH.chars[u];if(c&&patch&&'conc' in patch&&c.rider&&c.rider.conc&&patch.conc!==c.rider.name)patch={...patch,rider:null};return prev(u,patch)}})(saveChar);
 spellRowHTML=(function(prev){return function(uid,s,ed){let h=prev(uid,s,ed);const c=SH.chars[uid];const sp=spellFind(s.name);if(!sp||!ed)return h;const ini=initOf();
@@ -2630,5 +2637,117 @@ ACT.fCast=(function(prev){return function(b){const u=b.dataset.u,i=+b.dataset.k;
   castFlow(u,sp,dice,rays,CI,s[0])}})(ACT.fCast);
 // a fight that ends closes any open target picker
 render=(function(prev){return function(f){const ini=initOf();if(!(ini&&ini.on)){if(SH.pk&&SH.pk.who==='foes')SH.pk=null;if(SH.pt)SH.pt=null}return prev(f)}})(render);
+
+// ================= real dice: type in what your physical dice show =================
+// Per device: "🎲 Real dice" on. Every roll for your character asks for the dice faces (or "let the app roll").
+// The DM can switch it on for enemy rolls too. Rolls made with real dice are marked 🎲 in the log.
+function realOn(kind){try{return localStorage.getItem('sht-real-'+kind)==='1'}catch(e){return false}}
+function realSet(kind,v){try{localStorage.setItem('sht-real-'+kind,v?'1':'0')}catch(e){}}
+// queue of faces fed to the app's own dice (d() uses Math.random)
+{const R0=Math.random;Math.random=function(){if(SH.fq&&SH.fq.length){const [f,n]=SH.fq.shift();return Math.min(.999999,Math.max(0,(f-.5)/n))}return R0()}}
+function realFor(opts){opts=opts||{};const u=opts.uid||SH.me;const mine=!opts.name&&!opts.secret&&SH.chars[u]&&(!SH.owner||u!==SH.me||!isDM()||opts.uid);return mine?realOn('me'):(SH.owner&&realOn('dm'))}
+// spread a typed total over n dice of the given size
+function spreadFaces(total,n,size){total=Math.max(n,Math.min(n*size,Math.round(total)));const f=Array(n).fill(1);let left=total-n;for(let i=0;i<n&&left>0;i++){const add=Math.min(size-1,left);f[i]+=add;left-=add}return f}
+let realResolve=null;
+function realModal(spec){return new Promise(res=>{realResolve=res;SH.realAsk=spec;SH.realPick=[];render(true);setTimeout(()=>{const i=q('.realbox input');if(i)i.focus()},50)})}
+function realBoxHTML(){const s=SH.realAsk;if(!s)return'';
+  if(s.kind==='d20'){const need=s.adv?2:1;const p=SH.realPick||[];
+    return`<div class="modal realm" role="dialog" aria-modal="true" aria-labelledby="rlT"><div class="mbox realbox"><h2 id="rlT">🎲 Roll ${need===2?'two d20s':'a d20'}</h2><p class="mname"><b>${esc(s.label)}</b>${s.bonus?` <small>then ${fmt(s.bonus)}</small>`:''}</p>${need===2?`<p class="hint">${s.adv>0?'Advantage: the higher one counts.':'Disadvantage: the lower one counts.'} Tap both dice.${p.length?` First: <b>${p[0]}</b>`:''}</p>`:'<p class="hint">Tap the number on top of your die.</p>'}
+      <div class="d20grid">${Array.from({length:20},(_,i)=>i+1).map(n=>`<button type="button" class="btn d20b ${n===20?'nat20':n===1?'nat1':''}" data-a="realFace" data-k="${n}">${n}</button>`).join('')}</div>
+      <div class="row mbtn"><button type="button" class="btn" data-a="realApp">Let the app roll</button><button type="button" class="btn" data-a="realCancel">Cancel</button></div></div></div>`}
+  return`<div class="modal realm" role="dialog" aria-modal="true" aria-labelledby="rlT"><div class="mbox realbox"><h2 id="rlT">🎲 Roll ${esc(s.expr)}</h2><p class="mname"><b>${esc(s.label)}</b>${s.crit?' <small>critical: dice doubled</small>':''}</p>
+    ${s.groups.map((g,i)=>`<label class="fl">${g.n}d${g.die}${g.n>1?' (add them up)':''}<input id="rg_${i}" type="number" inputmode="numeric" min="${g.n}" max="${g.n*g.die}" placeholder="${g.n}–${g.n*g.die}"></label>`).join('')}
+    ${s.flat?`<p class="hint">${fmt(s.flat)} is added for you.</p>`:''}
+    <div class="row mbtn"><button type="button" class="btn pri big" data-a="realOk">Done</button><button type="button" class="btn" data-a="realApp">Let the app roll</button></div><button type="button" class="btn sm" data-a="realCancel">Cancel</button></div></div>`}
+function realDone(v){const r=realResolve;realResolve=null;SH.realAsk=null;SH.realPick=[];render(true);if(r)r(v)}
+Object.assign(ACT,{
+  realFace(b){const s=SH.realAsk;if(!s)return;SH.realPick=[...(SH.realPick||[]),+b.dataset.k];if(SH.realPick.length>=(s.adv?2:1))realDone({faces:SH.realPick.map(f=>[f,20])});else render(true)},
+  realOk(){const s=SH.realAsk;if(!s)return;const faces=[];for(let i=0;i<s.groups.length;i++){const g=s.groups[i];const v=+val('rg_'+i);if(!v||v<g.n||v>g.n*g.die){toast(`${g.n}d${g.die} must be between ${g.n} and ${g.n*g.die}.`);return}spreadFaces(v,g.n,g.die).forEach(f=>faces.push([f,g.die]))}realDone({faces})},
+  realApp(){realDone({app:1})},realCancel(){realDone(null)},
+  realTog(b){const k=b.dataset.k;realSet(k,!realOn(k));toast(realOn(k)?(k==='dm'?'Enemy rolls will ask for your real dice.':'Your rolls will ask for your real dice.'):'The app rolls the dice again.');render(true)}});
+document.addEventListener('keydown',e=>{if(SH.realAsk&&e.key==='Enter'&&q('[data-a=realOk]')){e.preventDefault();ACT.realOk()}});
+screenHTML=(function(prev){return function(){return prev()+realBoxHTML()}})(screenHTML);
+render=(function(prev){return function(f){prev(f);try{document.body.classList.toggle('real-open',!!SH.realAsk)}catch(e){}}})(render);
+
+// riders (smites, Hex…) are added before asking, so the prompt shows the real dice to throw
+function applyRider(label,expr,opts){const u=opts.uid;const c=u&&SH.chars[u];const nm=String(label).replace(/ damage.*$/,'').replace(/ \(critical\)$/,'');
+  if(c&&c.rider&&/ damage/.test(label)&&!(typeof spellFind==='function'&&spellFind(nm))&&!opts.healTo){const r=c.rider;expr=expr+'+'+r.dice;label=label.replace(' damage',` + ${r.name} damage`);if(r.once)saveChar(u,{rider:null})}
+  return[label,expr]}
+rollD20=(function(prev){return async function(label,bonus,parts,opts){opts=opts||{};if(!realFor(opts))return prev(label,bonus,parts,opts);
+  const adv=opts.adv!==undefined?opts.adv:SH.adv;const r=await realModal({kind:'d20',label,bonus,adv});if(!r)return null;if(r.app)return prev(label,bonus,parts,opts);
+  // the core rolls two d20s; feed both (the second is ignored without advantage)
+  SH.fq=[r.faces[0],r.faces[1]||r.faces[0]];SH.realFlag=1;try{return await prev(label,bonus,parts,{...opts,adv})}finally{SH.fq=[];SH.realFlag=0}}})(rollD20);
+rollDmg=(function(prev){return async function(label,expr,opts){opts=opts||{};[label,expr]=applyRider(label,expr,opts);if(!realFor(opts))return prev(label,expr,opts);
+  const t=parseDice(expr);if(!t)return prev(label,expr,opts);const groups=t.filter(x=>x.flat===undefined).map(x=>({n:opts.crit?x.n*2:x.n,die:x.die}));if(!groups.length)return prev(label,expr,opts);
+  const flat=t.filter(x=>x.flat!==undefined).reduce((a,x)=>a+x.sign*x.flat,0);const r=await realModal({kind:'dmg',label,expr:opts.crit?groups.map(g=>g.n+'d'+g.die).join('+')+(flat?fmt(flat):''):expr,groups,flat,crit:opts.crit});
+  if(!r)return null;if(r.app)return prev(label,expr,opts);SH.fq=r.faces;SH.realFlag=1;try{return await prev(label,expr,opts)}finally{SH.fq=[];SH.realFlag=0}}})(rollDmg);
+addLog=(function(prev){return function(e){if(SH.realFlag&&e&&(e.kind==='d20'||e.kind==='dmg'))e.real=1;return prev(e)}})(addLog);
+secretLog=(function(prev){return function(e){if(SH.realFlag&&e)e.real=1;return prev(e)}})(secretLog);
+// showRoll: mark the card too
+showRoll=(function(prev){return function(e,f){if(SH.realFlag&&e)e.real=1;return prev(e,f)}})(showRoll);
+
+// switches: top bar for everyone, the DM's Table page for enemies
+topHTML=(function(prev){return function(){const h=prev();if(!SH.ready||!SH.state.rules)return h;const on=realOn('me');
+  return h.replace('<button type="button" class="btn xs" data-a="themeOpen"',`<button type="button" class="btn xs ${on?'on':''}" data-a="realTog" data-k="me" aria-pressed="${on}" title="${on?'You roll real dice and type the result':'Tap to roll your own real dice'}">🎲${on?'<span class="rl"> Real</span>':''}</button><button type="button" class="btn xs" data-a="themeOpen"`)}})(topHTML);
+dmTable=(function(prev){return function(){const on=realOn('dm');return`<h2>Real dice</h2><p class="hint">Each player switches this on their own phone with the 🎲 button at the top. You can also roll your enemies' attacks with real dice.</p>
+  <label class="row tog"><input type="checkbox" data-c="realDm" ${on?'checked':''}> Roll enemy attacks with my real dice (I type the result)</label>`+prev()}})(dmTable);
+Object.assign(CHG,{realDm(e){realSet('dm',e.checked);toast(e.checked?'Enemy attacks will ask for your dice.':'The app rolls enemy attacks.')}});
+// enemy damage on the DM's side (rolled without a log entry of its own)
+async function realExpr(expr,crit,label){if(!(SH.owner&&realOn('dm')))return rollExprNow(expr,crit);const t=parseDice(expr);if(!t)return null;const groups=t.filter(x=>x.flat===undefined).map(x=>({n:crit?x.n*2:x.n,die:x.die}));
+  const flat=t.filter(x=>x.flat!==undefined).reduce((a,x)=>a+x.sign*x.flat,0);const r=await realModal({kind:'dmg',label,expr,groups,flat,crit});if(!r)return null;if(r.app)return rollExprNow(expr,crit);SH.fq=r.faces;try{const x=rollExprNow(expr,crit);x.detail+=' · real dice';return x}finally{SH.fq=[]}}
+// typed damage totals: show the total per dice group, not invented single dice
+function realDetail(e){if(SH.realFlag&&e&&e.kind==='dmg'&&e.detail)e.detail=e.detail.replace(/(\d+d\d+) \(([^)]*)\)/g,(m,g,fs)=>{const a=fs.split(', ').map(Number);return a.length>1?`${g} (${a.reduce((x,y)=>x+y,0)})`:m})}
+addLog=(function(prev){return function(e){realDetail(e);return prev(e)}})(addLog);
+showRoll=(function(prev){return function(e,f){realDetail(e);return prev(e,f)}})(showRoll);
+
+// ================= a Devil Fruit from your home island (One Piece rules, PHB chapter 7 "Finding a Devil Fruit") =================
+// Players only pick their island's size and whether to search it. The DM rolls the island die and the search DC in secret.
+const HOME_ISLANDS=[['diminutive','Diminutive','A rock in the sea: a lighthouse, a few huts'],['tiny','Tiny','A fishing village'],['small','Small','A town with a harbour'],['medium','Medium','A city and the land around it'],['large','Large','A kingdom with several towns'],['colossal','Colossal','A huge country, weeks to cross']];
+const ISLAND_RULE={diminutive:[20,10],tiny:[12,12],small:[10,14],medium:[8,16],large:[6,18],colossal:[4,20]};// die, search DC
+// --- character creation: home island ---
+function islandHTML(b){if(b.rules==='5e')return'';const cur=b.island||'';
+  return`<h2>Home island</h2><p class="hint">Where did you grow up? Bigger islands have more people, smaller ones more secrets.</p>
+  <div class="chipset isl">${HOME_ISLANDS.map(([k,n,t])=>`<button type="button" class="chip tog ${cur===k?'on':''}" data-a="bIsland" data-k="${k}" aria-pressed="${cur===k}"><b>${n}</b> <small>${t}</small></button>`).join('')}</div>
+  ${cur?`<label class="row tog"><input type="checkbox" data-c="bHunt" ${b.hunt?'checked':''}> Before the story starts, search my home island for a Devil Fruit <small>(optional; the DM tells you what you find)</small></label>`:''}`}
+builderHTML=(function(prev){return function(){let h=prev();const b=SH.edit&&SH.edit.b;if(!b||b.rules==='5e')return h;return h.replace('<h2>Ability scores</h2>',islandHTML(b)+'<h2>Ability scores</h2>')}})(builderHTML);
+ACT.bIsland=function(b){const B=SH.edit.b;B.island=B.island===b.dataset.k?null:b.dataset.k;if(!B.island)B.hunt=false;render(true)};
+Object.assign(CHG,{bHunt(e){SH.edit.b.hunt=e.checked}});
+
+// --- the DM's side ---
+const huntsOf=()=>((SH.dm.hunts)||{});
+function huntPut(u,patch){put('dm/hunts',{...huntsOf(),[u]:{...(huntsOf()[u]||{}),...patch}})}
+const SEARCH_SKILLS=['Survival','Investigation','Nature'];
+function bestSearch(c){const D=DV(c);let best=null;for(const s of SEARCH_SKILLS){const x=D.skills[s];if(x&&(!best||x.bonus>best.bonus))best={key:s,bonus:x.bonus}}return best||{key:'Survival',bonus:0}}
+function randomFruits(n){const W={Uncommon:46,Rare:40,'Very Rare':10,Legendary:4};const out=[];const pool=DFE.slice();for(let i=0;i<n&&pool.length;i++){const tot=pool.reduce((a,f)=>a+(W[f.rar]||10),0);let r=Math.random()*tot;let k=0;for(;k<pool.length;k++){r-=W[pool[k].rar]||10;if(r<=0)break}out.push(pool.splice(Math.min(k,pool.length-1),1)[0].k)}return out}
+function huntRowHTML(u,c){const h=huntsOf()[u]||{};const isl=HOME_ISLANDS.find(x=>x[0]===c.build.island);const [die,dc]=ISLAND_RULE[c.build.island]||[10,14];const nm=esc(c.build.name);
+  let body='';
+  if(!h.face)body=`<button type="button" class="btn sm pri" data-a="huntIsland" data-u="${u}">Roll the island die (d${die}, secret)</button><p class="hint">On a 1, 1d4 Devil Fruits grow somewhere on ${nm}'s island.</p>`;
+  else if(!h.n)body=`<p>Island die: <b>${h.face}</b> on d${die}. <b>No Devil Fruit grows there.</b> ${nm} searches and finds nothing.</p><button type="button" class="btn sm" data-a="huntTell" data-u="${u}" data-k="none">Tell ${nm}: nothing found</button>`;
+  else{const req=h.req&&SH.log.find(e=>e.req===h.req&&e.by===u);const left=h.n-(h.found||0);
+    body=`<p>Island die: <b>1</b>! <b>${h.n}</b> Devil Fruit${h.n>1?'s':''} grow${h.n>1?'':'s'} on the island${h.found?` (${h.found} found)`:''}. Search DC <b>${dc}</b>.</p>`;
+    if(h.req&&!req)body+=`<p class="hint">Waiting for ${nm} to roll ${esc(h.skill)}…</p>`;
+    if(req&&!h.done){const ok=req.total>=dc;body+=`<p>${nm} rolled <b>${req.total}</b> for ${esc(h.skill)}: <b>${ok?'found one!':'not found'}</b></p>`;
+      if(ok&&h.taken===undefined)body+=`<button type="button" class="btn sm pri" data-a="huntTaken" data-u="${u}">Check if someone took it first (25%, secret)</button>`;
+      else if(ok&&h.taken)body+=`<p><b>Someone already found it.</b> A story hook: who has it now?</p>`;
+      else if(ok){const sug=h.sug||[];body+=`<p>Pick the fruit (suggestions are random, weighted by rarity):</p><div class="chipset">${sug.map(k=>{const f=DFE.find(x=>x.k===k);return f?`<button type="button" class="chip tog" data-a="huntGive" data-u="${u}" data-k="${k}">${esc(dfeName(f))} <small>${esc(f.rar)}</small></button>`:''}).join('')}<button type="button" class="chip" data-a="huntSug" data-u="${u}">↻ Other suggestions</button></div>
+        <div class="form inline"><input id="hf_${u}" list="fruitList2" placeholder="Or type any fruit"><button type="button" class="btn" data-a="huntGive" data-u="${u}" data-k="">Give</button></div>`}
+      if(!ok&&left>0)body+=`<button type="button" class="btn sm" data-a="huntAsk" data-u="${u}">Let ${nm} search again</button>`}
+    if(!h.req||(req&&h.done&&left>0)){body+=`<label class="row tog"><input type="checkbox" id="hr_${u}" ${h.rumor?'checked':''}> ${nm} followed a rumor (advantage)</label><button type="button" class="btn sm pri" data-a="huntAsk" data-u="${u}">Ask ${nm} to search (${esc(bestSearch(c).key)})</button>`}}
+  if(h.done)body+=`<p class="hint">✔ ${h.fruit?`Offered ${esc((DFE.find(x=>x.k===h.fruit)&&dfeName(DFE.find(x=>x.k===h.fruit)))||h.fruit)}.`:'Done.'}</p>`;
+  return`<details class="hunt" data-dk="hunt_${u}" open><summary>${nm} <small>${isl?isl[1]+' island':'island not set'}</small></summary>${body}<button type="button" class="btn xs" data-a="huntReset" data-u="${u}">Start over</button></details>`}
+dmPrep=(function(prev){return function(){let h=prev();if(SH.state.rules==='5e')return h;const list=Object.entries(SH.chars).filter(([,c])=>charOK(c)&&c.build.rules!=='5e'&&c.build.hunt&&c.build.island);
+  const sec=`<h2>Devil Fruit hunts <small>home islands</small></h2>${list.length?`<p class="hint">Players who chose to search their home island. Everything here is secret until you offer a fruit.</p><div class="feats">${list.map(([u,c])=>huntRowHTML(u,c)).join('')}</div>`:'<p class="hint">Nobody asked to search their home island. Players choose this when they make their character.</p>'}`;
+  return h.replace('<h2>Monster book',sec+'<h2>Monster book')+(h.includes('id="fruitList2"')?'':`<datalist id="fruitList2">${DFE.map(f=>`<option value="${esc(dfeName(f))}">${esc(f.rar)}</option>`).join('')}</datalist>`)}})(dmPrep);
+Object.assign(ACT,{
+  huntIsland(b){const u=b.dataset.u;const c=SH.chars[u];const [die]=ISLAND_RULE[c.build.island]||[10];const face=d(die);const n=face===1?d(4):0;
+    secretLog({by:SH.me,who:c.build.name,label:`Home island die (d${die})`,detail:face===1?`1 → ${n} fruit${n>1?'s':''}`:`${face}`,total:face,kind:'d20'});huntPut(u,{face,n,found:0})},
+  huntAsk(b){const u=b.dataset.u;const c=SH.chars[u];const [,dc]=ISLAND_RULE[c.build.island]||[10,14];const sk=bestSearch(c);const rumor=!!(q('#hr_'+u)&&q('#hr_'+u).checked);const id=uidNew();
+    put('dm/req',{id,dc});setState({req:{id,kind:'skill',key:sk.key,label:`${reqLabelOf('skill',sk.key)}: searching your home island`,adv:rumor?1:0,for:[u],t:Date.now()}});
+    huntPut(u,{req:id,skill:sk.key,rumor,done:false,taken:undefined,sug:null});toast(`${c.build.name} is asked to roll ${sk.key}.`)},
+  huntTaken(b){const u=b.dataset.u;const r=d(4);secretLog({by:SH.me,who:'DM',label:'Already found by someone? (1 on d4 = yes)',detail:String(r),total:r,kind:'d20'});huntPut(u,{taken:r===1,sug:r===1?null:randomFruits(3),found:((huntsOf()[u]||{}).found||0)+1})},
+  huntSug(b){huntPut(b.dataset.u,{sug:randomFruits(3)})},
+  huntGive(b){const u=b.dataset.u;let k=b.dataset.k;if(!k){const f=dfeFind(val('hf_'+u));if(!f){toast('Pick a fruit from the list.');return}k=f.k}offer(u,{k:'fruit',fruit:k,note:'Found on your home island'});huntPut(u,{done:true,fruit:k})},
+  huntTell(b){const u=b.dataset.u;offer(u,{k:'msg',title:'Your search is over',note:'You searched your home island for weeks, but you found no Devil Fruit.'});huntPut(u,{done:true})},
+  huntReset(b){if(!tapTwice(b,'Tap again: forget this hunt'))return;const H={...huntsOf()};delete H[b.dataset.u];put('dm/hunts',H)}});
 
 </script></body></html>

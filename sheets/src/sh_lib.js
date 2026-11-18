@@ -105,8 +105,8 @@ async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().or
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
     const down=c.hp<=0&&!c.dead;const e=await rollD20(`${a[0]} → ${c.build.name}${down?' (down: advantage)':''}`,a[1],fmt(a[1]),{name:nm,secret:true,...(down?{adv:1}:{})});const crit=e.nat===20||down;const hit=crit||(e.nat!==1&&e.total>=D.ac);
     if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
-    const r=rollExprNow(a[2],crit);secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
-  else{const r=rollExprNow(a[2]);secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
+    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
+  else{const r=await realExpr(a[2],false,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
       lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
     addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${ABN[ab]||ab} saves: ${lines.join(' · ')}`,total:''})}}

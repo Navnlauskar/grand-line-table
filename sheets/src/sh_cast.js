@@ -126,10 +126,7 @@ ACT.spCast=(function(prev){return function(b){const u=b.dataset.u;const c=SH.cha
 // casting without a slot when re-using
 casterInfo=(function(prev){return function(c,D){const r=prev(c,D);if(r&&SH._noSlot&&SH.freeCast){r.levels=[{L:SH.freeCast.L,key:'_free',left:99}]}return r}})(casterInfo);
 saveChar=(function(prev){return function(u,patch){if(SH._noSlot&&patch&&patch.res){const p={...patch};const r={...p.res};delete r._free;p.res=r;if(p.conc)delete p.conc;return prev(u,p)}return prev(u,patch)}})(saveChar);
-// weapon damage picks up the rider
-rollDmg=(function(prev){return function(label,expr,opts){opts=opts||{};const u=opts.uid;const c=u&&SH.chars[u];const nm=String(label).replace(/ damage.*$/,'').replace(/ \(critical\)$/,'');
-  if(c&&c.rider&&/ damage/.test(label)&&!spellFind(nm)&&!opts.healTo){const r=c.rider;expr=expr+'+'+r.dice;label=label.replace(' damage',` + ${r.name} damage`);if(r.once)saveChar(u,{rider:null})}
-  return prev(label,expr,opts)}})(rollDmg);
+// (the rider is added in sh_real.js, before any real-dice prompt)
 // ending concentration ends a concentration rider
 saveChar=(function(prev){return function(u,patch){const c=SH.chars[u];if(c&&patch&&'conc' in patch&&c.rider&&c.rider.conc&&patch.conc!==c.rider.name)patch={...patch,rider:null};return prev(u,patch)}})(saveChar);
 spellRowHTML=(function(prev){return function(uid,s,ed){let h=prev(uid,s,ed);const c=SH.chars[uid];const sp=spellFind(s.name);if(!sp||!ed)return h;const ini=initOf();

@@ -12,7 +12,7 @@ function fruitPic(f,sz){const src=fruitImgSrc(f);return src?`<img class="fpic" s
 // ---------------- offers: the DM gives, the player accepts ----------------
 function offer(uid,o){const c=SH.chars[uid];if(!c)return;const id=uidNew();saveChar(uid,{offers:[...(c.offers||[]),{id,t:Date.now(),...o}]});
   addLog({by:SH.me,who:'DM',kind:'note',label:`🎁 The DM offers ${who(uid)} ${offerTxt(c,o)}.`,total:'',quiet:true});toast(`Sent to ${who(uid)}. They choose to accept it.`)}
-function offerTxt(c,o){return o.k==='money'?(is5(c)?(+o.amt).toLocaleString('en-US')+' gp':'฿'+(+o.amt).toLocaleString('en-US')):o.k==='fruit'?'a Devil Fruit ('+(dfeFind(o.fruit)?dfeName(dfeFind(o.fruit)):o.fruit)+')':o.k==='haki'?'the awakening of '+((hakiOpt(o.haki)||{}).name||'Haki'):`${o.qty>1?o.qty+' × ':''}${o.name}`}
+function offerTxt(c,o){return o.k==='msg'?o.title:o.k==='money'?(is5(c)?(+o.amt).toLocaleString('en-US')+' gp':'฿'+(+o.amt).toLocaleString('en-US')):o.k==='fruit'?'a Devil Fruit ('+(dfeFind(o.fruit)?dfeName(dfeFind(o.fruit)):o.fruit)+')':o.k==='haki'?'the awakening of '+((hakiOpt(o.haki)||{}).name||'Haki'):`${o.qty>1?o.qty+' × ':''}${o.name}`}
 function invAdd(inv,it){inv=(inv||[]).map(x=>({...x}));const ex=!it.fruit&&inv.find(x=>!x.fruit&&x.name.toLowerCase()===it.name.toLowerCase());if(ex)ex.qty+=it.qty||1;else inv.push({name:it.name,qty:it.qty||1,...(it.note?{note:it.note}:{}),...(it.fruit?{fruit:it.fruit}:{})});return inv}
 function offerModalHTML(){const c=myChar();if(!c||isDM())return'';const o=(c.offers||[])[0];if(!o)return'';const more=(c.offers||[]).length-1;
   if(o.k==='fruit'){const f=dfeFind(o.fruit);const has=!!c.fruit;
@@ -23,12 +23,12 @@ function offerModalHTML(){const c=myChar();if(!c||isDM())return'';const o=(c.off
       <div class="row mbtn"><button type="button" class="btn pri big" data-a="ofEat" ${has?'disabled':''}>🍇 Eat it</button><button type="button" class="btn big" data-a="ofKeep">🎒 Keep it in my bag</button></div>
       <button type="button" class="btn sm" data-a="ofNo">No thanks</button>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
   const icon=o.k==='money'?(is5(c)?'🪙':'฿'):o.k==='haki'?'⚡':'🎁';
-  return`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="mbox"><div class="mico">${icon}</div><h2 id="mdT">${o.k==='haki'?'Your Haki awakens!':'The DM gives you something'}</h2>
+  return`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mdT"><div class="mbox"><div class="mico">${icon}</div><h2 id="mdT">${o.k==='haki'?'Your Haki awakens!':o.k==='msg'?'News from the DM':'The DM gives you something'}</h2>
     <p class="mname"><b>${esc(offerTxt(c,o))}</b></p>${o.note?`<p>${esc(o.note)}</p>`:''}${o.k==='haki'&&hakiOpt(o.haki)?`<p>${esc(hakiOpt(o.haki).desc)}</p>`:''}
-    <div class="row mbtn"><button type="button" class="btn pri big" data-a="ofYes">${o.k==='haki'?'Awaken it':'Accept'}</button><button type="button" class="btn big" data-a="ofNo">Decline</button></div>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
+    <div class="row mbtn">${o.k==='msg'?'<button type="button" class="btn pri big" data-a="ofYes">OK</button>':`<button type="button" class="btn pri big" data-a="ofYes">${o.k==='haki'?'Awaken it':'Accept'}</button><button type="button" class="btn big" data-a="ofNo">Decline</button>`}</div>${more?`<p class="hint">${more} more gift${more>1?'s':''} waiting.</p>`:''}</div></div>`}
 function ofTake(fn){const c=myChar();const o=(c.offers||[])[0];if(!o)return;const patch={offers:(c.offers||[]).slice(1)};const msg=fn(c,o,patch);saveChar(SH.me,patch);if(msg)addLog({by:SH.me,who:c.build.name,kind:'note',label:msg,total:''})}
 Object.assign(ACT,{
-  ofYes(){ofTake((c,o,p)=>{if(o.k==='money'){Object.assign(p,is5(c)?{gp:Math.round((moneyOf(c)+(+o.amt))*100)/100}:{berries:Math.round(moneyOf(c)+(+o.amt))})}
+  ofYes(){ofTake((c,o,p)=>{if(o.k==='msg')return'';if(o.k==='money'){Object.assign(p,is5(c)?{gp:Math.round((moneyOf(c)+(+o.amt))*100)/100}:{berries:Math.round(moneyOf(c)+(+o.amt))})}
     else if(o.k==='haki'){if(!(c.haki||[]).includes(o.haki))p.haki=[...(c.haki||[]),o.haki];return`⚡ ${c.build.name} awakens ${(hakiOpt(o.haki)||{}).name||'Haki'}!`}
     else p.inv=invAdd(c.inv,{name:o.name,qty:o.qty,note:o.note});return`✔ ${c.build.name} accepts ${offerTxt(c,o)}.`})},
   ofNo(){ofTake((c,o)=>`✖ ${c.build.name} declines ${offerTxt(c,o)}.`)},
