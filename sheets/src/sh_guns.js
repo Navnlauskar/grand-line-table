@@ -27,9 +27,8 @@ rollD20=(function(prev){return async function(label,bonus,parts,opts){opts=opts|
   if(!g){if(cm<20)opts={...opts,cm};return prev(label,bonus,parts,opts)}
   let mis=g.mis;if(S&&S.violent){cm=Math.min(cm,18);mis+=2;S.violent=0;label+=' (Violent Shot)'}
   if(S&&S.deadeye){S.deadeye=0;opts={...opts,adv:1};label+=' (Deadeye Shot: advantage)'}
-  opts={...opts,mis,...(cm<20?{cm}:{})};const e=await prev(label,bonus,parts,opts);if(!e)return e;
+  opts={...opts,mis,...(cm<20?{cm}:{})};if(opts.aid){SH.gunAids=SH.gunAids||{};SH.gunAids[opts.aid]=u}const e=await prev(label,bonus,parts,opts);if(!e)return e;
   const cur=SH.chars[u];const patch={ammo:{...(cur.ammo||{}),[nm]:((cur.ammo||{})[nm]||0)+1}};
-  if(e.aid){SH.gunAids=SH.gunAids||{};SH.gunAids[e.aid]=u}
   if(e.nat<=mis){patch.jam={...(cur.jam||{}),[nm]:true};addLog({by:SH.me,who:cur.build.name,kind:'note',label:`💥 ${cur.build.name}'s ${nm} misfires (rolled ${e.nat}, misfire ${mis}): the shot misses and the gun is jammed until repaired.`,total:''})}
   saveChar(u,patch);return e}})(rollD20);
 // --- firearms box and Gunslinger trick shots on the Actions page ---

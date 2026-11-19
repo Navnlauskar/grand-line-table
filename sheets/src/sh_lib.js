@@ -101,7 +101,7 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
     <details class="add"><summary>Or make one up</summary><div class="form">`).replace('data-a="monAdd">Add and roll initiative</button></div>','data-a="monAdd">Add and roll initiative</button></div></details>');
   return h+monListHTML()}})(dmFight);
 
-async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;const nm=o.hide?'Enemy':m.name;
+async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;if(m.hp<=0){toast(`${m.name} is down and cannot attack.`);return}const nm=o.hide?'Enemy':m.name;
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
     const down=c.hp<=0&&!c.dead;const av=typeof advVsPc==='function'?advVsPc(c):{v:down?1:0,why:down?['down']:[],autoCrit:down};const lbl=av.why.length?` (${av.v>0?'advantage':av.v<0?'disadvantage':'advantage and disadvantage cancel'}: ${av.why.join(', ')})`:'';
     const e=await rollD20(`${a[0]} → ${c.build.name}${lbl}`,a[1],fmt(a[1]),{name:nm,secret:true,...(av.v?{adv:av.v}:{})});const melee=!/bow|crossbow|sling|dart|pistol|rifle|musket|gun|shot|ray|breath|spit|throw|javelin|cannon/i.test(a[0]);
