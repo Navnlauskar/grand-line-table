@@ -103,9 +103,11 @@ dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(
 
 async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().order||[]).find(x=>x.id===id);if(!m||!o)return;const a=monAtks(m)[i];if(!a)return;const nm=o.hide?'Enemy':m.name;
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
-    const down=c.hp<=0&&!c.dead;const e=await rollD20(`${a[0]} → ${c.build.name}${down?' (down: advantage)':''}`,a[1],fmt(a[1]),{name:nm,secret:true,...(down?{adv:1}:{})});const crit=e.nat===20||down;const hit=crit||(e.nat!==1&&e.total>=D.ac);
+    const down=c.hp<=0&&!c.dead;const av=typeof advVsPc==='function'?advVsPc(c):{v:down?1:0,why:down?['down']:[],autoCrit:down};const lbl=av.why.length?` (${av.v>0?'advantage':av.v<0?'disadvantage':'advantage and disadvantage cancel'}: ${av.why.join(', ')})`:'';
+    const e=await rollD20(`${a[0]} → ${c.build.name}${lbl}`,a[1],fmt(a[1]),{name:nm,secret:true,...(av.v?{adv:av.v}:{})});const melee=!/bow|crossbow|sling|dart|pistol|rifle|musket|gun|shot|ray|breath|spit|throw|javelin|cannon/i.test(a[0]);
+    const hit=e.nat===20||(e.nat!==1&&e.total>=D.ac);const crit=hit&&(e.nat===20||(av.autoCrit&&melee));
     if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
-    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down,a[3])}
+    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit?', a critical hit':''}${a[3]?', '+a[3]:''}`,crit,a[3])}
   else{const r=await realExpr(a[2],false,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
     // each target rolls their own save on their phone; the DM can roll for anyone who is slow
     const id=uidNew();put('dm/sreqs',{...Object.fromEntries(Object.entries(SH.dm.sreqs||{}).slice(-20)),[id]:{dc:a[4]}});setState({sreq:{id,from:nm,att:a[0],ab,total:r.total,half:!!a[6],type:a[3]||'',targets:targets.filter(u=>SH.chars[u]),done:{},t:Date.now()}});

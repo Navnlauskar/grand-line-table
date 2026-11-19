@@ -27,7 +27,7 @@ ACT.ptCancel=function(){SH.pt=null;render(true)};
 ACT.dmg=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a||!a.dmg)return;const ctx=dmFor(u)?null:fightCtx(u);
   if(ctx){if(!ctx.mine){toast('Not your turn yet.');return}const st=turnSt(u,ctx.key);const i=st.hits.findIndex(h=>h.k===b.dataset.k);
     if(i<0){toast(st.hits.length?'That hit was with another weapon: use its damage button.':'Roll to hit first: tap the attack name. Damage comes after a hit.');return}
-    const h=st.hits.splice(i,1)[0];rollDmg(`${a.name} damage → ${h.tname}`,a.dmg,{uid:u,crit:h.crit,tgt:h.tgt,of:h.aid});render(true);return}
+    const h=st.hits.splice(i,1)[0];if(h.tgt&&foeList().some(f=>f.id===h.tgt&&f.down)){toast(`${h.tname} is already down, so that hit is spent.`);render(true);return}rollDmg(`${a.name} damage → ${h.tname}`,a.dmg,{uid:u,crit:h.crit,tgt:h.tgt,of:h.aid});render(true);return}
   rollDmg(a.name+' damage',a.dmg,{uid:u});render(true)};
 ACT.econ=function(b){const u=b.dataset.u;const ctx=fightCtx(u);if(!ctx||!ctx.mine)return;const st=turnSt(u,ctx.key);const k=b.dataset.k;st[k]=st[k]?0:1;render(true)};
 
