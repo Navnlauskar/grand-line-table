@@ -25,7 +25,8 @@ rollD20=(function(prev){return async function(label,bonus,parts,opts){opts=opts|
     const k=c.cond||{};if(kind==='save'&&(ab==='STR'||ab==='DEX')&&(k.Paralyzed||k.Stunned||k.Unconscious||k.Petrified)){addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} cannot dodge (${['Paralyzed','Stunned','Unconscious','Petrified'].find(x=>k[x]).toLowerCase()}): the ${ABN[ab]} save fails.`,total:'',...(opts.sreq?{}:{})});
       if(opts.sreq){const e={by:SH.me,who:c.build.name,label:label+' (automatic fail)',detail:'cannot dodge',total:-99,kind:'d20',sreq:opts.sreq};showRoll(e);addLog(e)}return null}
     let {adv,dis,why}=condAdv(c,kind,ab);
-    if(kind==='attack'&&opts.tgt){const fc=foeConds(opts.tgt);const a2=fc.filter(x=>ADV_VS.includes(x));if(a2.length){adv=1;why.push(opts.tname+' is '+a2.join(', ').toLowerCase())}if(fc.includes('Invisible')){dis=1;why.push(opts.tname+' is invisible')}}
+    if(kind==='attack'&&opts.tgt){const fc=foeConds(opts.tgt);const an=String(label).replace(/ (spell )?attack.*$/,'');const aa=(DV(c).attacks||[]).find(x=>x.name===an);const rng=/spell attack/.test(label)?/ray|bolt|missile|blast|spit|shot/i.test(an):!!(aa&&/ranged|range|firearm|ammunition/i.test(aa.note||''));
+    if(rng&&fc.includes('Prone')){dis=1;why.push(opts.tname+' is prone (ranged)')}const a2=fc.filter(x=>ADV_VS.includes(x)&&!(rng&&x==='Prone'));if(a2.length){adv=1;why.push(opts.tname+' is '+a2.join(', ').toLowerCase())}if(fc.includes('Invisible')){dis=1;why.push(opts.tname+' is invisible')}}
     if(adv||dis){const base=SH.adv||0;let v=base+(adv?1:0)-(dis?1:0);v=Math.max(-1,Math.min(1,v));if(base===1&&dis&&!adv)v=0;if(base===-1&&adv&&!dis)v=0;
       return prev(label+` (${v>0?'advantage':v<0?'disadvantage':'advantage and disadvantage cancel'}: ${why.join(', ')})`,bonus,parts,{...opts,adv:v})}}
   return prev(label,bonus,parts,opts)}})(rollD20);
