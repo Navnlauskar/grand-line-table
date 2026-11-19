@@ -36,8 +36,8 @@ onLog=(function(prev){return function(fresh){prev(fresh);SH.hostT=SH.hostT||Date
   for(const e of fresh){const dk=e.kind==='d20'&&e.aid?'a'+e.aid:e.hitOf?'h'+e.hitOf:e.of?'d'+e.of:null;if(!dk||SH.done2.has(dk))continue;
     // host side
     if(SH.owner&&(e.t||0)>=SH.hostT-1000){const mons=monsOf();
-      if(e.kind==='d20'&&e.tgt&&e.aid&&mons[e.tgt]){SH.done2.add(dk);const m=mons[e.tgt];const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=m.ac);SH.hitOK=SH.hitOK||{};SH.hitOK[e.aid]=hit;
-        addLog({by:SH.me,who:'DM',kind:'note',label:hit?`🎯 ${e.who} hits ${e.tname}${crit?': a critical hit!':'.'} Roll damage.`:`${e.who} misses ${e.tname}.`,total:'',hitOf:e.aid,hit,crit,hitBy:e.by,tgt:e.tgt,tname:e.tname,quiet:true})}
+      if(e.kind==='d20'&&e.tgt&&e.aid&&mons[e.tgt]){SH.done2.add(dk);const m=mons[e.tgt];const fc=typeof foeConds==='function'?foeConds(e.tgt):[];const helpless=fc.includes('Paralyzed')||fc.includes('Unconscious');const hit=e.nat===20||(e.nat!==1&&e.total>=m.ac);const crit=e.nat===20||(hit&&helpless&&!/spell attack|bow|crossbow|sling|dart/i.test(e.label));SH.hitOK=SH.hitOK||{};SH.hitOK[e.aid]=hit;
+        addLog({by:SH.me,who:'DM',kind:'note',label:hit?`🎯 ${e.who} hits ${e.tname}${crit?(e.nat!==20&&helpless?` (${fc.includes('Paralyzed')?'paralyzed':'unconscious'}): a critical hit!`:': a critical hit!'):'.'} Roll damage.`:`${e.who} misses ${e.tname}.`,total:'',hitOf:e.aid,hit,crit,hitBy:e.by,tgt:e.tgt,tname:e.tname,quiet:true})}
       if(e.kind==='dmg'&&e.tgt&&e.of&&mons[e.tgt]){SH.done2.add(dk);if(SH.hitOK&&SH.hitOK[e.of]===false)continue;SH.hitOK&&delete SH.hitOK[e.of];
         hurtMon(e.tgt,-e.total,`${e.who}, ${e.label.replace(/ → .*$/,'')}`)}}
     // attacker side: a hit unlocks one damage roll for that weapon
@@ -63,7 +63,7 @@ pgActions=(function(prev){return function(uid,c,D){let h=markEcon(prev(uid,c,D))
   const st=turnSt(uid,ctx.key);const lim=D.nAtk||1;
   h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small><mark class="tg tg-act">Action</mark> ${Math.min(st.n,lim)} of ${lim} attack${lim>1?'s':''} used${st.n>lim?` + ${st.n-lim} extra`:''}</small></h2>`);
   // target picker
-  if(SH.pt&&SH.pt.u===uid){const a=atkById(uid,SH.pt.k);const foes=foeList();h=h.replace(/(<h2>Attacks <small>[\s\S]*?<\/h2>)/,`$1<div class="mtarget ptarget"><span>${esc(a?a.name:'')}: who do you attack?</span><div class="chipset">${foes.map(f=>`<button type="button" class="chip tog" data-a="ptTo" data-k="${f.id}" ${f.down?'disabled':''}>${esc(f.name)}${f.down?' (down)':''}</button>`).join('')}<button type="button" class="chip tog" data-a="ptTo" data-k="none">Something else</button></div><button type="button" class="btn sm" data-a="ptCancel">Cancel</button></div>`)}
+  if(SH.pt&&SH.pt.u===uid){const a=atkById(uid,SH.pt.k);const foes=foeList();h=h.replace(/(<h2>Attacks <small>[\s\S]*?<\/h2>)/,`$1<div class="mtarget ptarget"><span>${esc(a?a.name:'')}: who do you attack?</span><div class="chipset">${foes.map(f=>`<button type="button" class="chip tog" data-a="ptTo" data-k="${f.id}" ${f.down?'disabled':''}>${esc(f.label||f.name)}${f.down?' (down)':''}</button>`).join('')}<button type="button" class="chip tog" data-a="ptTo" data-k="none">Something else</button></div><button type="button" class="btn sm" data-a="ptCancel">Cancel</button></div>`)}
   // damage buttons only light up after a hit
   const ready=new Set(st.hits.map(x=>x.k));h=h.replace(/class="btn dmg" data-a="dmg" data-u="([^"]*)" data-k="([^"]*)"/g,(m,u,k)=>ready.has(k)?`class="btn dmg ready" data-a="dmg" data-u="${u}" data-k="${k}"`:`class="btn dmg wait" data-a="dmg" data-u="${u}" data-k="${k}"`);
   return econHTML(uid,D,st,true)+(st.hits.length?`<p class="hitnote">🎯 Hit! Tap the red damage button${st.hits.length>1?'s':''} to roll damage.</p>`:'')+h}})(pgActions);

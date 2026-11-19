@@ -43,7 +43,7 @@ function spellLibHTML(uid,c,D){const L=classSpells(c);if(!L.length)return'';cons
     ${c.conc?`<p class="conc">🔮 Concentrating on <b>${esc(c.conc)}</b>. Damage forces a CON save. <button type="button" class="btn xs" data-a="concEnd" data-u="${uid}">Stop</button></p>`:''}`}
 
 // ---------- target picker shared by spells ----------
-function pickHTML(uid){const k=SH.pk;if(!k||k.u!==uid)return'';const L=k.who==='foes'?foeList().filter(f=>!f.down).map(f=>({id:f.id,name:f.name})):Object.entries(SH.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u,c])=>({id:u,name:c.build.name+(u===uid?' (you)':''),sub:c.hp+'/'+DV(c).maxhp}));
+function pickHTML(uid){const k=SH.pk;if(!k||k.u!==uid)return'';const L=k.who==='foes'?foeList().filter(f=>!f.down).map(f=>({id:f.id,name:f.label||f.name})):Object.entries(SH.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u,c])=>({id:u,name:c.build.name+(u===uid?' (you)':''),sub:c.hp+'/'+DV(c).maxhp}));
   return`<div class="mtarget ptarget"><span>${esc(k.title)}</span><div class="chipset">${L.map(x=>`<button type="button" class="chip tog ${k.sel.includes(x.id)?'on':''}" data-a="pkTo" data-k="${x.id}">${esc(x.name)}${x.sub?` <small>${x.sub}</small>`:''}</button>`).join('')}</div>
     <div class="row">${k.max>1?`<button type="button" class="btn pri sm" data-a="pkGo" ${k.sel.length?'':'disabled'}>Cast on ${k.sel.length||'…'}</button>`:''}<button type="button" class="btn sm" data-a="pkCancel">Cancel</button></div></div>`}
 ACT.pkTo=function(b){const k=SH.pk;if(!k)return;const id=b.dataset.k;if(k.max<=1){k.sel=[id];SH.pk=null;k.go(k.sel);return}k.sel=k.sel.includes(id)?k.sel.filter(x=>x!==id):k.sel.length<k.max?[...k.sel,id]:k.sel;render(true)};

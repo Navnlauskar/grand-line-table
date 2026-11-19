@@ -171,6 +171,11 @@ mark.tg-act{background:color-mix(in srgb,#2f7d4f 22%,transparent)}mark.tg-bonus{
 .top{gap:5px;min-width:0}.top .btn.xs{padding:5px 8px;min-height:38px;min-width:38px}.advsw button{padding:6px 9px}
 @media(max-width:440px){.top .net{display:none}.advsw button{padding:6px 7px;font-size:13.5px}.top .btn.xs{padding:4px 6px;min-width:34px;font-size:13px}.top .btn.xs .rl{display:none}}
 html,body{overflow-x:hidden;max-width:100%}
+.resline{font-size:13.5px;color:var(--mute);margin:6px 0}.rageon{border-color:var(--red)!important}.row.rage{margin:2px 0 8px}
+.sreqban{display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,#2f6fd6 14%,var(--card));border:2px solid #2f6fd6;border-radius:14px;padding:12px 14px;margin:8px 0}.sreqban b{font-size:18px}
+.sreqdm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:6px 0}
+.chip.dr-immune{border-color:#2f7d4f}.chip.dr-vuln{border-color:var(--red)}
+.fconds{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center}.fconds select{width:auto;min-height:32px;font-size:12.5px;padding:2px 6px}.chip.xs{padding:2px 8px;font-size:12px}.ic{color:var(--red);font-weight:600}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -1230,7 +1235,7 @@ function who(uid){const c=SH.chars[uid];return c&&c.build?c.build.name:(uid===SH
 // a d20 roll with the Adv/Dis switch; opts: {uid, follow, req, secret, kind}
 async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.adv!==undefined?opts.adv:SH.adv;const a=d(20),b2=d(20);const nat=adv>0?Math.max(a,b2):adv<0?Math.min(a,b2):a;const total=nat+bonus;
   const detail=`d20 ${adv?`${adv>0?'adv':'dis'} (${a}, ${b2}) → `:''}${nat} ${partsTxt?'· '+partsTxt:(bonus?fmt(bonus):'')}`.trim();
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{})};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{}),...(opts.sreq?{sreq:opts.sreq}:{})};
   {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{}),...(opts.save?{save:opts.save}:{}),...(opts.healTo?{healTo:opts.healTo}:{}),...(opts.tempTo?{tempTo:opts.tempTo}:{})};
@@ -2020,11 +2025,11 @@ async function monAttack(id,i,targets){const m=monsOf()[id];const o=(initOf().or
   if(a[1]!==null){const u=targets[0];const c=SH.chars[u];const D=DV(c);
     const down=c.hp<=0&&!c.dead;const e=await rollD20(`${a[0]} → ${c.build.name}${down?' (down: advantage)':''}`,a[1],fmt(a[1]),{name:nm,secret:true,...(down?{adv:1}:{})});const crit=e.nat===20||down;const hit=crit||(e.nat!==1&&e.total>=D.ac);
     if(!hit){addLog({by:SH.me,who:nm,kind:'note',label:`${nm}'s ${a[0]} misses ${c.build.name}.`,total:''});return}
-    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down)}
+    const r=await realExpr(a[2],crit,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage → ${c.build.name}${crit?' (critical)':''}`,detail:r.detail,total:r.total,kind:'dmg'});hpChange(u,-r.total,`${nm}'s ${a[0]} hits${crit&&!down?', a critical hit':''}${a[3]?', '+a[3]:''}`,down,a[3])}
   else{const r=await realExpr(a[2],false,`${nm}: ${a[0]} damage`);if(!r)return;secretLog({by:SH.me,who:nm,label:`${a[0]} damage`,detail:r.detail,total:r.total,kind:'dmg'});const ab=a[5]||'DEX';const lines=[];
-    for(const u of targets){const c=SH.chars[u];if(!c)continue;const D=DV(c);const sb=(D.saves[ab]||{bonus:0}).bonus;const n=d(20);const ok=n+sb>=a[4];const dmg=ok?(a[6]?Math.floor(r.total/2):0):r.total;
-      lines.push(`${c.build.name} ${n+sb} (${ok?'saved':'failed'})`);if(dmg)hpChange(u,-dmg,`${nm}'s ${a[0]}, ${ABN[ab]||ab} save ${n+sb}, ${ok?'saved':'failed'}${a[3]?', '+a[3]:''}`)}
-    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${ABN[ab]||ab} saves: ${lines.join(' · ')}`,total:''})}}
+    // each target rolls their own save on their phone; the DM can roll for anyone who is slow
+    const id=uidNew();put('dm/sreqs',{...Object.fromEntries(Object.entries(SH.dm.sreqs||{}).slice(-20)),[id]:{dc:a[4]}});setState({sreq:{id,from:nm,att:a[0],ab,total:r.total,half:!!a[6],type:a[3]||'',targets:targets.filter(u=>SH.chars[u]),done:{},t:Date.now()}});
+    addLog({by:SH.me,who:nm,kind:'note',label:`${nm} uses ${a[0]}! ${targets.map(u=>who(u)).join(', ')}: roll a ${ABN[ab]||ab} save.`,total:''})}}
 
 Object.assign(ACT,{
   cpMonLib(b){const k=b.dataset.k;const m=monFind(val('clib_'+k));if(!m){toast('Pick a creature from the list.');return}const n=Math.max(1,Math.min(12,Math.round(num('clibC_'+k))||1));
@@ -2205,8 +2210,8 @@ onLog=(function(prev){return function(fresh){prev(fresh);SH.hostT=SH.hostT||Date
   for(const e of fresh){const dk=e.kind==='d20'&&e.aid?'a'+e.aid:e.hitOf?'h'+e.hitOf:e.of?'d'+e.of:null;if(!dk||SH.done2.has(dk))continue;
     // host side
     if(SH.owner&&(e.t||0)>=SH.hostT-1000){const mons=monsOf();
-      if(e.kind==='d20'&&e.tgt&&e.aid&&mons[e.tgt]){SH.done2.add(dk);const m=mons[e.tgt];const crit=e.nat===20;const hit=crit||(e.nat!==1&&e.total>=m.ac);SH.hitOK=SH.hitOK||{};SH.hitOK[e.aid]=hit;
-        addLog({by:SH.me,who:'DM',kind:'note',label:hit?`🎯 ${e.who} hits ${e.tname}${crit?': a critical hit!':'.'} Roll damage.`:`${e.who} misses ${e.tname}.`,total:'',hitOf:e.aid,hit,crit,hitBy:e.by,tgt:e.tgt,tname:e.tname,quiet:true})}
+      if(e.kind==='d20'&&e.tgt&&e.aid&&mons[e.tgt]){SH.done2.add(dk);const m=mons[e.tgt];const fc=typeof foeConds==='function'?foeConds(e.tgt):[];const helpless=fc.includes('Paralyzed')||fc.includes('Unconscious');const hit=e.nat===20||(e.nat!==1&&e.total>=m.ac);const crit=e.nat===20||(hit&&helpless&&!/spell attack|bow|crossbow|sling|dart/i.test(e.label));SH.hitOK=SH.hitOK||{};SH.hitOK[e.aid]=hit;
+        addLog({by:SH.me,who:'DM',kind:'note',label:hit?`🎯 ${e.who} hits ${e.tname}${crit?(e.nat!==20&&helpless?` (${fc.includes('Paralyzed')?'paralyzed':'unconscious'}): a critical hit!`:': a critical hit!'):'.'} Roll damage.`:`${e.who} misses ${e.tname}.`,total:'',hitOf:e.aid,hit,crit,hitBy:e.by,tgt:e.tgt,tname:e.tname,quiet:true})}
       if(e.kind==='dmg'&&e.tgt&&e.of&&mons[e.tgt]){SH.done2.add(dk);if(SH.hitOK&&SH.hitOK[e.of]===false)continue;SH.hitOK&&delete SH.hitOK[e.of];
         hurtMon(e.tgt,-e.total,`${e.who}, ${e.label.replace(/ → .*$/,'')}`)}}
     // attacker side: a hit unlocks one damage roll for that weapon
@@ -2232,7 +2237,7 @@ pgActions=(function(prev){return function(uid,c,D){let h=markEcon(prev(uid,c,D))
   const st=turnSt(uid,ctx.key);const lim=D.nAtk||1;
   h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small><mark class="tg tg-act">Action</mark> ${Math.min(st.n,lim)} of ${lim} attack${lim>1?'s':''} used${st.n>lim?` + ${st.n-lim} extra`:''}</small></h2>`);
   // target picker
-  if(SH.pt&&SH.pt.u===uid){const a=atkById(uid,SH.pt.k);const foes=foeList();h=h.replace(/(<h2>Attacks <small>[\s\S]*?<\/h2>)/,`$1<div class="mtarget ptarget"><span>${esc(a?a.name:'')}: who do you attack?</span><div class="chipset">${foes.map(f=>`<button type="button" class="chip tog" data-a="ptTo" data-k="${f.id}" ${f.down?'disabled':''}>${esc(f.name)}${f.down?' (down)':''}</button>`).join('')}<button type="button" class="chip tog" data-a="ptTo" data-k="none">Something else</button></div><button type="button" class="btn sm" data-a="ptCancel">Cancel</button></div>`)}
+  if(SH.pt&&SH.pt.u===uid){const a=atkById(uid,SH.pt.k);const foes=foeList();h=h.replace(/(<h2>Attacks <small>[\s\S]*?<\/h2>)/,`$1<div class="mtarget ptarget"><span>${esc(a?a.name:'')}: who do you attack?</span><div class="chipset">${foes.map(f=>`<button type="button" class="chip tog" data-a="ptTo" data-k="${f.id}" ${f.down?'disabled':''}>${esc(f.label||f.name)}${f.down?' (down)':''}</button>`).join('')}<button type="button" class="chip tog" data-a="ptTo" data-k="none">Something else</button></div><button type="button" class="btn sm" data-a="ptCancel">Cancel</button></div>`)}
   // damage buttons only light up after a hit
   const ready=new Set(st.hits.map(x=>x.k));h=h.replace(/class="btn dmg" data-a="dmg" data-u="([^"]*)" data-k="([^"]*)"/g,(m,u,k)=>ready.has(k)?`class="btn dmg ready" data-a="dmg" data-u="${u}" data-k="${k}"`:`class="btn dmg wait" data-a="dmg" data-u="${u}" data-k="${k}"`);
   return econHTML(uid,D,st,true)+(st.hits.length?`<p class="hitnote">🎯 Hit! Tap the red damage button${st.hits.length>1?'s':''} to roll damage.</p>`:'')+h}})(pgActions);
@@ -2513,7 +2518,7 @@ function spellLibHTML(uid,c,D){const L=classSpells(c);if(!L.length)return'';cons
     ${c.conc?`<p class="conc">🔮 Concentrating on <b>${esc(c.conc)}</b>. Damage forces a CON save. <button type="button" class="btn xs" data-a="concEnd" data-u="${uid}">Stop</button></p>`:''}`}
 
 // ---------- target picker shared by spells ----------
-function pickHTML(uid){const k=SH.pk;if(!k||k.u!==uid)return'';const L=k.who==='foes'?foeList().filter(f=>!f.down).map(f=>({id:f.id,name:f.name})):Object.entries(SH.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u,c])=>({id:u,name:c.build.name+(u===uid?' (you)':''),sub:c.hp+'/'+DV(c).maxhp}));
+function pickHTML(uid){const k=SH.pk;if(!k||k.u!==uid)return'';const L=k.who==='foes'?foeList().filter(f=>!f.down).map(f=>({id:f.id,name:f.label||f.name})):Object.entries(SH.chars).filter(([,c])=>charOK(c)&&!c.dead).map(([u,c])=>({id:u,name:c.build.name+(u===uid?' (you)':''),sub:c.hp+'/'+DV(c).maxhp}));
   return`<div class="mtarget ptarget"><span>${esc(k.title)}</span><div class="chipset">${L.map(x=>`<button type="button" class="chip tog ${k.sel.includes(x.id)?'on':''}" data-a="pkTo" data-k="${x.id}">${esc(x.name)}${x.sub?` <small>${x.sub}</small>`:''}</button>`).join('')}</div>
     <div class="row">${k.max>1?`<button type="button" class="btn pri sm" data-a="pkGo" ${k.sel.length?'':'disabled'}>Cast on ${k.sel.length||'…'}</button>`:''}<button type="button" class="btn sm" data-a="pkCancel">Cancel</button></div></div>`}
 ACT.pkTo=function(b){const k=SH.pk;if(!k)return;const id=b.dataset.k;if(k.max<=1){k.sel=[id];SH.pk=null;k.go(k.sel);return}k.sel=k.sel.includes(id)?k.sel.filter(x=>x!==id):k.sel.length<k.max?[...k.sel,id]:k.sel;render(true)};
@@ -2749,5 +2754,106 @@ Object.assign(ACT,{
   huntGive(b){const u=b.dataset.u;let k=b.dataset.k;if(!k){const f=dfeFind(val('hf_'+u));if(!f){toast('Pick a fruit from the list.');return}k=f.k}offer(u,{k:'fruit',fruit:k,note:'Found on your home island'});huntPut(u,{done:true,fruit:k})},
   huntTell(b){const u=b.dataset.u;offer(u,{k:'msg',title:'Your search is over',note:'You searched your home island for weeks, but you found no Devil Fruit.'});huntPut(u,{done:true})},
   huntReset(b){if(!tapTwice(b,'Tap again: forget this hunt'))return;const H={...huntsOf()};delete H[b.dataset.u];put('dm/hunts',H)}});
+
+// ================= damage resistances, rage, and saves players roll on their own phones =================
+const DTYPES=['acid','bludgeoning','cold','fire','force','lightning','necrotic','piercing','poison','psychic','radiant','slashing','thunder'];
+const SPECIES_RES={dwarf:{resist:['poison']},tiefling:{resist:['fire']}};
+function resistOf(c){const b=c.build||{};const out={resist:new Set(),immune:new Set(),vuln:new Set(),why:{}};const add=(k,t,w)=>{out[k].add(t);out.why[t]=w};
+  if(b.rules==='5e'){const s=SPECIES_RES[b.species];if(s)for(const t of s.resist)add('resist',t,(R5.species[b.species]||{}).name||b.species)}
+  for(const [t,v] of Object.entries(c.dres||{}))if(v)add(v,t,'sheet');
+  if(c.raging)for(const t of ['bludgeoning','piercing','slashing'])add('resist',t,'rage');
+  return out}
+function resistMult(c,dtype){if(!dtype)return[1,''];const R=resistOf(c);const ts=String(dtype).toLowerCase().split(/\s*\+\s*|\s*,\s*|\s+or\s+/).map(t=>t.trim()).filter(t=>DTYPES.includes(t));if(!ts.length)return[1,''];
+  if(ts.every(t=>R.immune.has(t)))return[0,`immune to ${ts.join(' and ')}`];if(ts.every(t=>R.resist.has(t)||R.immune.has(t)))return[.5,`resists ${ts.join(' and ')}${ts.some(t=>R.why[t]==='rage')?' (rage)':''}`];
+  if(ts.some(t=>R.vuln.has(t)))return[2,`vulnerable to ${ts.find(t=>R.vuln.has(t))}`];return[1,'']}
+hpChange=(function(prev){return function(u,delta,note,crit,dtype){const c=SH.chars[u];if(c&&delta<0&&dtype){const [m,why]=resistMult(c,dtype);if(m!==1){delta=-Math.floor(-delta*m);note=(note||'')+` · ${why}: ${m===0?'no':m===.5?'half':'double'} damage`;if(delta===0){addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} takes no damage (${note}).`,total:''});return}}}
+  return prev(u,delta,note,crit)}})(hpChange);
+// --- the sheet: resistances editor (Features page) and a summary line (Main page) ---
+function resLine(c){const R=resistOf(c);const parts=[];if(R.resist.size)parts.push('Resists '+[...R.resist].join(', '));if(R.immune.size)parts.push('Immune to '+[...R.immune].join(', '));if(R.vuln.size)parts.push('Vulnerable to '+[...R.vuln].join(', '));return parts.join(' · ')}
+pgMain=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const l=resLine(c);const rage=c.raging?`<p class="conc rageon">😤 Raging: advantage on STR checks and saves, +${rageBonus(c)} melee damage, resistance to bludgeoning, piercing and slashing. <button type="button" class="btn xs" data-a="rageEnd" data-u="${uid}">End rage</button></p>`:'';
+  if(l||rage)h=h.replace('<h2>Abilities',`${rage}${l?`<p class="resline">🛡 ${esc(l)}</p>`:''}<h2>Abilities`);return h}})(pgMain);
+pgFeats=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);if(!canEdit(uid))return h;const R=resistOf(c);const cur=c.dres||{};
+  const sec=`<details class="add" data-dk="dres_${uid}"><summary>🛡 Damage resistances ${resLine(c)?'<small>'+esc(resLine(c))+'</small>':''}</summary><p class="hint">Tap a damage type to cycle: resist (half) → immune → vulnerable (double) → normal. Species and rage are added on their own. Damage from enemies is adjusted automatically.</p>
+    <div class="chipset">${DTYPES.map(t=>{const v=cur[t]||'';const auto=!v&&(R.resist.has(t)||R.immune.has(t));return`<button type="button" class="chip tog ${v||auto?'on':''} dr-${v||(auto?'resist':'')}" data-a="dresTog" data-u="${uid}" data-k="${t}">${t}${v?` <small>${v==='resist'?'half':v==='immune'?'immune':'double'}</small>`:auto?` <small>${esc(R.why[t])}</small>`:''}</button>`}).join('')}</div></details>`;
+  return sec+h}})(pgFeats);
+ACT.dresTog=function(b){const u=b.dataset.u,t=b.dataset.k;const c=SH.chars[u];const cur={...(c.dres||{})};const order=['','resist','immune','vuln'];cur[t]=order[(order.indexOf(cur[t]||'')+1)%4];if(!cur[t])delete cur[t];saveChar(u,{dres:cur})};
+// --- rage (5e Barbarian) ---
+function rageBonus(c){const l=c.build.level||1;return l>=16?4:l>=9?3:2}
+pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const R=(D.res||{}).rage;if(!R||!canEdit(uid))return h;const left=R.max-((c.res||{}).rage||0);
+  const btn=c.raging?`<button type="button" class="btn sm" data-a="rageEnd" data-u="${uid}">😤 End rage</button>`:`<button type="button" class="btn sm pri" data-a="rageStart" data-u="${uid}" ${left>0?'':'disabled'}>😤 Rage <small>(bonus action, ${left} left)</small></button>`;
+  return`<div class="row rage">${btn}</div>`+h}})(pgActions);
+ACT.rageStart=function(b){const u=b.dataset.u;const c=SH.chars[u];const D=DV(c);const R=(D.res||{}).rage;if(!R)return;const used=(c.res||{}).rage||0;if(used>=R.max){toast('No rages left. A long rest brings them back.');return}
+  const ctx=fightCtx(u);if(ctx&&!ctx.mine){toast('You can rage on your turn (bonus action).');return}if(ctx){const st=turnSt(u,ctx.key);if(st.bonus&&!tapTwice(b,'Your bonus action is used. Tap again to rage anyway'))return;st.bonus=1}
+  saveChar(u,{raging:true,res:{...(c.res||{}),rage:used+1}});addLog({by:SH.me,who:c.build.name,kind:'note',label:`😤 ${c.build.name} flies into a rage!`,total:''})};
+ACT.rageEnd=function(b){const u=b.dataset.u;saveChar(u,{raging:false});addLog({by:SH.me,who:who(u),kind:'note',label:`${who(u)}'s rage ends.`,total:'',quiet:true})};
+// rage damage on STR melee weapon hits
+applyRider=(function(prev){return function(label,expr,opts){[label,expr]=prev(label,expr,opts);const u=opts.uid;const c=u&&SH.chars[u];if(c&&c.raging&&/ damage/.test(label)&&!opts.healTo){const nm=String(label).replace(/ (\+ .*)?damage.*$/,'').trim();const a=(DV(c).attacks||[]).find(x=>x.name===nm);
+  if(a&&!/range|ammunition/i.test(a.note||'')&&(a.atkParts||[])[0]&&a.atkParts[0][0]==='STR'){expr=expr+'+'+rageBonus(c);label=label.replace(' damage',' + rage damage')}}return[label,expr]}})(applyRider);
+ACT.rest=(function(prev){return function(b){const r=prev(b);const u=b.dataset.u;if(b.dataset.k==='long'&&SH.chars[u]&&SH.chars[u].raging)saveChar(u,{raging:false});return r}})(ACT.rest);
+// --- saves the player rolls when an enemy uses an area attack ---
+function sreqOf(){return SH.state.sreq||null}
+screenHTML=(function(prev){return function(){let h=prev();const s=sreqOf();const c=myChar();if(!s||!c||isDM()||!s.targets.includes(SH.me)||s.done[SH.me])return h;const D=DV(c);const sb=(D.saves[s.ab]||{bonus:0}).bonus;
+  const ban=`<div class="sreqban" role="alert"><b>🛡 ${esc(ABN[s.ab]||s.ab)} save!</b><span>${esc(s.from)} uses ${esc(s.att)}. Roll to see if you get out of the way.</span><button type="button" class="btn pri big" data-a="sreqRoll">🎲 Roll ${esc(ABN[s.ab]||s.ab)} save (${fmt(sb)})</button></div>`;
+  return h.replace('<div class="hero">',ban+'<div class="hero">')}})(screenHTML);
+ACT.sreqRoll=function(){const s=sreqOf();const c=myChar();if(!s||!c)return;const D=DV(c);const sb=(D.saves[s.ab]||{bonus:0});rollD20(`${ABN[s.ab]||s.ab} save vs ${s.att}`,sb.bonus,sb.parts?partsText(sb.parts):fmt(sb.bonus),{uid:SH.me,sreq:s.id})};
+function sreqResolve(s,u,total){const dc=((SH.dm.sreqs||{})[s.id]||{}).dc;if(dc===undefined)return;const c=SH.chars[u];if(!c)return;const ok=total>=dc;const dmg=ok?(s.half?Math.floor(s.total/2):0):s.total;
+  SH._sd=SH._sd||{};const done=SH._sd[s.id]={...s.done,...(SH._sd[s.id]||{}),[u]:ok?'saved':'failed'};setState({sreq:{...s,done}});
+  if(dmg)hpChange(u,-dmg,`${s.from}'s ${s.att}, ${ABN[s.ab]||s.ab} save ${total}: ${ok?'saved, half':'failed'}`,false,s.type);else addLog({by:SH.me,who:'DM',kind:'note',label:`${c.build.name} saves against ${s.att} and takes no damage.`,total:''});
+  if(s.targets.every(t=>done[t]))setTimeout(()=>{if(sreqOf()&&sreqOf().id===s.id)setState({sreq:null})},400)}
+onLog=(function(prev){return function(fresh){prev(fresh);if(!SH.owner)return;const s=sreqOf();if(!s)return;for(const e of fresh){if(e.sreq!==s.id||e.kind!=='d20'||s.done[e.by]||((SH._sd||{})[s.id]||{})[e.by])continue;sreqResolve(sreqOf(),e.by,e.total)}}})(onLog);
+// the DM sees who still has to roll, and can roll for them
+dmFight=(function(prev){return function(){let h=prev();const s=sreqOf();if(!s)return h;const wait=s.targets.filter(u=>!s.done[u]);if(!wait.length)return h;
+  return`<div class="sreqdm"><b>${esc(s.att)}: waiting for ${esc(ABN[s.ab]||s.ab)} saves</b> <span>${wait.map(u=>esc(who(u))).join(', ')}</span><button type="button" class="btn sm" data-a="sreqAuto">Roll for them</button></div>`+h}})(dmFight);
+ACT.sreqAuto=function(){const s=sreqOf();if(!s)return;for(const u of s.targets){const cur=sreqOf();if(cur.done[u]||((SH._sd||{})[s.id]||{})[u])continue;const c=SH.chars[u];const sb=(DV(c).saves[s.ab]||{bonus:0}).bonus;const n=d(20);secretLog({by:SH.me,who:c.build.name,label:`${s.ab} save vs ${s.att} (rolled by the DM)`,detail:`d20 ${n} ${fmt(sb)}`,total:n+sb,kind:'d20'});sreqResolve(cur,u,n+sb)}};
+
+// ================= conditions change the dice: yours, and the enemy you attack =================
+// Player conditions (5e rules): Poisoned, Frightened, Blinded, Prone, Restrained → disadvantage on attacks; Poisoned/Frightened also on checks;
+// Restrained → disadvantage on DEX saves; Paralyzed/Stunned/Unconscious/Petrified → STR and DEX saves fail; Invisible → advantage on attacks;
+// exhaustion 1+ → disadvantage on checks, 3+ also on attacks and saves.
+// Enemy conditions (set by failed save spells or by the DM): Paralyzed, Stunned, Unconscious, Restrained, Prone, Blinded, Outlined → you attack with advantage;
+// a melee hit on a Paralyzed or Unconscious enemy is a critical hit. Invisible enemy → disadvantage.
+function rollKind(label){const l=String(label).toLowerCase();if(/ attack\b|spell attack/.test(l))return'attack';if(/ save\b|saving throw|death save/.test(l))return'save';if(/initiative/.test(l))return'init';return'check'}
+function condAdv(c,kind,ab){const k=c.cond||{};const ex=c.exh||(c.ovr||{}).exh||0;let adv=0,dis=0;const why=[];
+  const D=(t,w)=>{dis=1;why.push(w)};const A=(t,w)=>{adv=1;why.push(w)};
+  if(kind==='attack'){for(const n of ['Poisoned','Frightened','Blinded','Prone','Restrained'])if(k[n])D(1,n.toLowerCase());if(k.Invisible)A(1,'invisible');if(ex>=3)D(1,'exhaustion')}
+  if(kind==='check'||kind==='init'){if(k.Poisoned)D(1,'poisoned');if(k.Frightened)D(1,'frightened');if(ex>=1)D(1,'exhaustion')}
+  if(kind==='save'){if(k.Restrained&&ab==='DEX')D(1,'restrained');if(ex>=3)D(1,'exhaustion');if(c.raging&&ab==='STR')A(1,'rage')}
+  if(kind==='check'&&c.raging&&ab==='STR')A(1,'rage');
+  return{adv,dis,why}}
+function abOfLabel(label){const m=/\b(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma)\b/.exec(label);if(m)return ABS[['Strength','Dexterity','Constitution','Intelligence','Wisdom','Charisma'].indexOf(m[1])];
+  const sk=Object.keys(SKILLS).find(s=>new RegExp('\\b'+s+'\\b').test(label));return sk?SKILLS[sk]:null}
+// enemy conditions live on the turn order so every player can see them
+const FOE_CONDS=['Paralyzed','Stunned','Unconscious','Restrained','Prone','Blinded','Outlined','Frightened','Charmed','Poisoned','Invisible','Incapacitated'];
+const ADV_VS=['Paralyzed','Stunned','Unconscious','Restrained','Prone','Blinded','Outlined','Petrified'];
+function foeConds(id){const o=(initOf().order||[]).find(x=>x.id===id);return(o&&o.conds)||[]}
+function setFoeCond(id,cond,on){const ini=initOf();const order=(ini.order||[]).map(o=>o.id!==id?o:{...o,conds:on?[...new Set([...(o.conds||[]),cond])]:(o.conds||[]).filter(x=>x!==cond)});setInit({order})}
+rollD20=(function(prev){return async function(label,bonus,parts,opts){opts=opts||{};const u=opts.uid||(SH.chars[SH.me]&&!opts.name?SH.me:null);const c=u&&SH.chars[u];
+  if(c&&!opts.name&&opts.adv===undefined){const kind=rollKind(label);const ab=kind==='save'||kind==='check'?abOfLabel(label):null;
+    // paralyzed and friends: STR and DEX saves fail outright
+    const k=c.cond||{};if(kind==='save'&&(ab==='STR'||ab==='DEX')&&(k.Paralyzed||k.Stunned||k.Unconscious||k.Petrified)){addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} cannot dodge (${['Paralyzed','Stunned','Unconscious','Petrified'].find(x=>k[x]).toLowerCase()}): the ${ABN[ab]} save fails.`,total:'',...(opts.sreq?{}:{})});
+      if(opts.sreq){const e={by:SH.me,who:c.build.name,label:label+' (automatic fail)',detail:'cannot dodge',total:-99,kind:'d20',sreq:opts.sreq};showRoll(e);addLog(e)}return null}
+    let {adv,dis,why}=condAdv(c,kind,ab);
+    if(kind==='attack'&&opts.tgt){const fc=foeConds(opts.tgt);const a2=fc.filter(x=>ADV_VS.includes(x));if(a2.length){adv=1;why.push(opts.tname+' is '+a2.join(', ').toLowerCase())}if(fc.includes('Invisible')){dis=1;why.push(opts.tname+' is invisible')}}
+    if(adv||dis){const base=SH.adv||0;let v=base+(adv?1:0)-(dis?1:0);v=Math.max(-1,Math.min(1,v));if(base===1&&dis&&!adv)v=0;if(base===-1&&adv&&!dis)v=0;
+      return prev(label+` (${v>0?'advantage':v<0?'disadvantage':'advantage and disadvantage cancel'}: ${why.join(', ')})`,bonus,parts,{...opts,adv:v})}}
+  return prev(label,bonus,parts,opts)}})(rollD20);
+// (melee hits on paralyzed/unconscious enemies become critical where the DM's device decides the hit, in sh_turns.js)
+// failed saves against these spells put a condition on the enemy
+const SPELL_COND={'Hold Person':'Paralyzed','Hold Monster':'Paralyzed','Entangle':'Restrained','Web':'Restrained',"Evard's Black Tentacles":'Restrained','Faerie Fire':'Outlined','Command':'Prone',"Tasha's Hideous Laughter":'Prone','Hypnotic Pattern':'Charmed','Fear':'Frightened','Charm Person':'Charmed','Earth Tremor':'Prone','Thunderwave':'','Tidal Wave':'Prone','Destructive Wave':'Prone','Slow':'','Sleep':'Unconscious','Color Spray':'Blinded','Blindness/Deafness':'Blinded','Stinking Cloud':'Incapacitated','Polymorph':'','Banishment':''};
+addLog=(function(prev){return function(e){if(SH.owner&&e&&e.kind==='note'&&/^[^:]+: .*(fails)/.test(e.label||'')){const spell=e.label.split(':')[0];const cond=SPELL_COND[spell];
+    if(cond){const names=[...e.label.matchAll(/([^·:]+?) fails/g)].map(m=>m[1].trim());const ini=initOf();for(const n of names){const o=(ini.order||[]).find(x=>x.name===n||foeList().some(f=>f.id===x.id&&f.name===n));if(o)setFoeCond(o.id,cond,true)}
+      if(names.length)e={...e,label:e.label+` → ${cond.toLowerCase()}`}}}return prev(e)}})(addLog);
+// show and edit enemy conditions
+dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!ini.on)return h;
+  for(const o of ini.order||[]){if(o.pc)continue;const cs=o.conds||[];const chips=`<span class="fconds">${cs.map(x=>`<button type="button" class="chip on xs" data-a="fcOff" data-k="${o.id}" data-c2="${x}" title="Remove">${esc(x)} ✕</button>`).join('')}<select data-c="fcAdd" data-k="${o.id}" aria-label="Add a condition"><option value="">+ condition</option>${FOE_CONDS.filter(x=>!cs.includes(x)).map(x=>`<option>${x}</option>`).join('')}</select></span>`;
+    h=h.replace(new RegExp(`(<button type="button" class="btn xs" data-a="oDel" data-k="${o.id}"[^>]*>✕</button>)`),`${chips}$1`)}return h}})(dmFight);
+ACT.fcOff=function(b){setFoeCond(b.dataset.k,b.dataset.c2,false)};Object.assign(CHG,{fcAdd(e){if(e.value)setFoeCond(e.dataset.k,e.value,true)}});
+// players see enemy conditions in the target picker and the turn strip
+foeList=(function(prev){return function(){return prev().map(f=>{const cs=foeConds(f.id);return cs.length?{...f,label:f.name+' · '+cs.join(', ').toLowerCase()}:f})}})(foeList);
+initStripHTML=(function(prev){return function(){let h=prev();for(const o of (initOf().order||[])){if(o.pc||!(o.conds||[]).length)continue;h=h.replace(`>${esc(o.name)}<`,`>${esc(o.name)} <small class="ic">${esc(o.conds.join(', ').toLowerCase())}</small><`)}return h}})(initStripHTML);
+// a fight that ends clears enemy conditions with it (the order is replaced); your own conditions stay until removed
+// buzz the phone when it becomes your turn or you are asked to roll a save
+render=(function(prev){return function(f){prev(f);try{if(isDM()||!SH.me)return;const ctx=fightCtx(SH.me);const k=ctx&&ctx.mine?ctx.key:'';const s=SH.state.sreq;const sk=s&&s.targets.includes(SH.me)&&!s.done[SH.me]?s.id:'';
+  if((k&&k!==SH._buzzT)||(sk&&sk!==SH._buzzS)){if(navigator.vibrate)try{navigator.vibrate([120,60,120])}catch(e){}}SH._buzzT=k;SH._buzzS=sk}catch(e){}}})(render);
 
 </script></body></html>

@@ -84,7 +84,7 @@ function who(uid){const c=SH.chars[uid];return c&&c.build?c.build.name:(uid===SH
 // a d20 roll with the Adv/Dis switch; opts: {uid, follow, req, secret, kind}
 async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.adv!==undefined?opts.adv:SH.adv;const a=d(20),b2=d(20);const nat=adv>0?Math.max(a,b2):adv<0?Math.min(a,b2):a;const total=nat+bonus;
   const detail=`d20 ${adv?`${adv>0?'adv':'dis'} (${a}, ${b2}) → `:''}${nat} ${partsTxt?'· '+partsTxt:(bonus?fmt(bonus):'')}`.trim();
-  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{})};
+  const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label,detail,total,nat,kind:opts.kind||'d20',...(adv?{adv}:{}),...(opts.req?{req:opts.req}:{}),...(opts.init?{init:opts.init}:{}),...(opts.tgt?{tgt:opts.tgt,tname:opts.tname}:{}),...(opts.aid?{aid:opts.aid}:{}),...(opts.sreq?{sreq:opts.sreq}:{})};
   {const g=againN(e);if(g)e.again=g}SH.adv=0;showRoll(e,opts.follow);if(opts.secret){await secretLog(e)}else await addLog(e);return e}
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{}),...(opts.save?{save:opts.save}:{}),...(opts.healTo?{healTo:opts.healTo}:{}),...(opts.tempTo?{tempTo:opts.tempTo}:{})};
