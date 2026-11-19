@@ -62,5 +62,5 @@ function dmTable(){const st=SH.state;const N=window.GLT_NET;const link=N&&N.code
 // ---- fight helpers (host only) ----
 function initOf(){return SH.state.init||{on:false}}
 function setInit(patch){return setState({init:{...initOf(),...patch}})}
-function turnStep(dir){const ini=initOf();const order=ini.order||[];if(!order.length)return;const mons=(SH.dm.enc||{}).mons||{};const gone=o=>!o.pc&&mons[o.id]&&mons[o.id].hp<=0;let t=ini.turn,r=ini.round||1;for(let k=0;k<order.length;k++){t+=dir;if(t>=order.length){t=0;r++}if(t<0){t=order.length-1;r=Math.max(1,r-1)}if(!gone(order[t]))break}setInit({turn:t,round:r});
+function turnStep(dir){const ini=initOf();const order=ini.order||[];if(!order.length)return;const mons=(SH.dm.enc||{}).mons||{};const gone=o=>o.pc?!!(SH.chars[o.pc]&&(SH.chars[o.pc].dead||(SH.chars[o.pc].stable&&SH.chars[o.pc].hp<=0))):!!(mons[o.id]&&mons[o.id].hp<=0);let t=ini.turn,r=ini.round||1;for(let k=0;k<order.length;k++){t+=dir;if(t>=order.length){t=0;r++}if(t<0){t=order.length-1;r=Math.max(1,r-1)}if(!gone(order[t]))break}setInit({turn:t,round:r});
   const o=order[t];if(o)addLog({by:SH.me,who:'DM',kind:'note',label:`▶ ${o.pc||!o.hide?o.name:'An enemy'}'s turn (round ${r})`,total:''})}

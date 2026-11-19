@@ -173,3 +173,4 @@ html,body{overflow-x:hidden;max-width:100%}
 .sreqdm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:6px 0}
 .chip.dr-immune{border-color:#2f7d4f}.chip.dr-vuln{border-color:var(--red)}
 .fconds{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center}.fconds select{width:auto;min-height:32px;font-size:12.5px;padding:2px 6px}.chip.xs{padding:2px 8px;font-size:12px}.ic{color:var(--red);font-weight:600}
+.macts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-bottom:8px}.mact{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:1px;padding:7px 10px;min-height:52px}.mact small{font-size:11.5px;color:var(--mute);font-weight:400}.mact.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}

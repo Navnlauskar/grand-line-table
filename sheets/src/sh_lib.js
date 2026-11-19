@@ -74,7 +74,7 @@ monLine=(function(old){return function(m){return old({...m,atk:m.atks&&m.atks.le
 // ---------------- fight page: library enemies, enemy attacks with targets, players' damage ----------------
 const monsOf=()=>((SH.dm.enc||{}).mons||{});
 function monAtks(m){if(m.atks&&m.atks.length)return m.atks;if(m.atk!==undefined&&m.atk!==null)return[['Attack',m.atk,m.dmg||'1d6','']];return[]}
-function hurtMon(id,delta,why){const mons={...monsOf()};const m=mons[id];if(!m)return;const o=(initOf().order||[]).find(x=>x.id===id);const nm=o&&o.hide?'An enemy':m.name;
+function hurtMon(id,delta,why){const mons={...monsOf()};const m=mons[id];if(!m)return;if(m.hp<=0&&delta<0)return;const o=(initOf().order||[]).find(x=>x.id===id);const nm=o&&o.hide?'An enemy':m.name;
   mons[id]={...m,hp:Math.max(0,Math.min(m.max,m.hp+delta))};put('dm/enc',{...(SH.dm.enc||{}),mons});
   addLog({by:SH.me,who:'DM',kind:'note',label:mons[id].hp<=0?`💀 ${nm} goes down${why?' ('+why+')':''}.`:`${nm} ${delta<0?'takes '+(-delta)+' damage':'heals '+delta}${why?' ('+why+')':''}.`,total:'',quiet:mons[id].hp>0})}
 dmFight=(function(old){return function(){let h=old();const ini=SH.state.init;if(!ini||!ini.on)return h;const mons=monsOf();const order=ini.order||[];

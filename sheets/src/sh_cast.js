@@ -96,10 +96,10 @@ onLog=(function(prev){return function(fresh){prev(fresh);if(!SH.owner)return;SH.
     if(e.healTo&&SH.chars[e.healTo]&&e.kind==='dmg'){SH.done3.add(key);hpChange(e.healTo,+e.total,`${e.who}: ${e.label.replace(/ → .*$/,'')}`)}
     if(e.tempTo&&SH.chars[e.tempTo]){SH.done3.add(key);const c=SH.chars[e.tempTo];if((c.temp||0)<e.total)saveChar(e.tempTo,{temp:e.total})}}}})(onLog);
 // spell pseudo-attacks resolve like weapons
-atkById=(function(prev){return function(u,k){if(String(k).startsWith('sp:'))return(SH.pseudo||{})[k]||null;return prev(u,k)}})(atkById);
+atkById=(function(prev){return function(u,k){if(/^(sp|ma):/.test(String(k)))return(SH.pseudo||{})[k]||null;return prev(u,k)}})(atkById);
 pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const p=pickHTML(uid);if(p)h=p+h;
   // pending spell hits get their own damage buttons
-  const ctx=fightCtx(uid);if(ctx&&ctx.mine){const st=turnSt(uid,ctx.key);const sh=st.hits.filter(x=>String(x.k).startsWith('sp:'));if(sh.length)h=`<div class="hitnote">${sh.map(x=>{const a=atkById(uid,x.k);return a?`<button type="button" class="btn dmg ready" data-a="dmg" data-u="${uid}" data-k="${x.k}">🎯 ${esc(a.name)} hit ${esc(x.tname)}: roll ${esc(a.dmg)}</button>`:''}).join(' ')}</div>`+h}
+  const ctx=fightCtx(uid);if(ctx&&ctx.mine){const st=turnSt(uid,ctx.key);const sh=st.hits.filter(x=>/^(sp|ma):/.test(String(x.k)));if(sh.length)h=`<div class="hitnote">${sh.map(x=>{const a=atkById(uid,x.k);return a?`<button type="button" class="btn dmg ready" data-a="dmg" data-u="${uid}" data-k="${x.k}">🎯 ${esc(a.name)} hit ${esc(x.tname)}: roll ${esc(a.dmg)}</button>`:''}).join(' ')}</div>`+h}
   return h}})(pgActions);
 // when a target picker opens, bring it into view and move the roll card out of the way
 render=(function(prev){return function(f){prev(f);try{const t=q('.ptarget');if(t){const rc=q('#rollCard');if(rc&&rc.className.includes('show')&&!q('[data-rcdmg]',rc))rc.className='';const r=t.getBoundingClientRect();if(r.top<150||r.bottom>innerHeight-260)window.scrollTo({top:Math.max(0,r.top+scrollY-160)})}}catch(e){}}})(render);
