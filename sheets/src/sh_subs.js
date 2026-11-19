@@ -36,3 +36,33 @@ ACT.rageEnd=(function(prev){return function(b){const u=b.dataset.u;const c=SH.ch
 ACT.maCunning=(function(prev){return function(b){const r=prev(b);const u=b.dataset.u;const c=SH.chars[u];if(SH.pk&&SH.pk.who==='opts'&&subIs(c.build,'rogue',/thief/i)&&DV(c).lvl>=3){const go=SH.pk.go;
   SH.pk.opts=[...SH.pk.opts,['obj','Use an object (Fast Hands)'],['soh','Sleight of Hand (Fast Hands)']];SH.pk.go=([k])=>{if(k==='obj'){addLog({by:SH.me,who:c.build.name,kind:'note',label:`🖐 ${c.build.name} uses an object with Fast Hands.`,total:''});render(true);return}
     if(k==='soh'){const s=DV(c).skills['Sleight of Hand'];rollD20('Sleight of Hand check (Fast Hands)',s.bonus,s.parts?partsText(s.parts):fmt(s.bonus),{uid:u});render(true);return}go([k])};render(true)}return r}})(ACT.maCunning);
+// ================= Battle Master: superiority dice and manoeuvres =================
+const bmDie=l=>l>=18?12:l>=10?10:8;
+const MANEUVERS={trip:['Trip Attack','STR','Prone','after a hit · +die · STR save or prone'],push:['Pushing Attack','STR','','after a hit · +die · STR save or pushed 15 ft'],disarm:['Disarming Attack','STR','','after a hit · +die · STR save or drops an item'],
+  menace:['Menacing Attack','WIS','Frightened','after a hit · +die · WIS save or frightened'],goad:['Goading Attack','WIS','','after a hit · +die · WIS save or disadvantage vs others'],dmg:['Extra damage','','','after a hit · +die damage']};
+Object.assign(SPELL_COND,{'Trip Attack':'Prone','Menacing Attack':'Frightened'});
+derive5=(function(prev){return function(b){const D=prev(b);const lvl=D.lvl;if(!subIs(b,'fighter',/battle ?master/i)||lvl<3)return D;const die=bmDie(lvl);
+  D.res={...D.res,sup:{name:`Superiority dice (d${die})`,max:lvl>=15?6:lvl>=7?5:4,rest:'short'}};D.supDie=die;D.supDC=8+D.prof+Math.max(Math.floor(D.ab.STR/2)-5,Math.floor(D.ab.DEX/2)-5);
+  D.feats=D.feats.flatMap(f=>{const m=/feature \(level (\d+)\)$/.exec(f[0]);if(!m)return[f];const L=+m[1];return L===3?[['Combat Superiority (Battle Master)',`Superiority dice (d${die}) power manoeuvres and come back on a short rest. Manoeuvre save DC ${D.supDC}. The sheet runs Trip, Pushing, Disarming, Menacing, Goading, Precision and Rally.`]]:L===7?[['Know Your Enemy (Battle Master)','Study a creature for 1 minute to learn how it compares to you.']]:L===10?[['Improved Combat Superiority (Battle Master)','Superiority dice become d10.']]:L===15?[['Relentless (Battle Master)','Regain one superiority die when you roll initiative with none left.']]:L===18?[['Improved Combat Superiority (Battle Master)','Superiority dice become d12.']]:[f]});return D}})(derive5);
+function bmHTML(uid,c,D){if(!canEdit(uid)||!D.res||!D.res.sup)return'';const st=myTurnSt(uid);const S=st&&st!=='no'?st:null;const left=resLeft(c,D,'sup');const lh=S&&S.lastHit;
+  const btn=(a,label,sub,dis,extra)=>`<button type="button" class="btn sm mact ${extra&&extra.includes('on')?'':''}" data-a="${a}" data-u="${uid}" ${dis?'disabled':''} ${extra||''}><b>${label}</b><small>${sub}</small></button>`;
+  const B=[`<span class="gritn">Superiority ${left}/${D.res.sup.max} · d${D.supDie} · DC ${D.supDC}</span>`];
+  if(S&&S.mv)B.push(`<span class="gritn">${esc(MANEUVERS[S.mv.k][0])} ready: tap the damage button</span>`);
+  for(const [k,v] of Object.entries(MANEUVERS))B.push(btn('bmMove',v[0],v[3],left<1||!lh||!!(S&&S.mv),`data-k="${k}"`));
+  B.push(btn('bmMove','Precision Attack',S&&S.prec?'ready: next attack':'+die to your next attack roll',left<1||!!(S&&S.prec),'data-k="prec"'));
+  B.push(btn('bmMove','Rally','bonus · an ally gets die + CHA temp HP',left<1,'data-k="rally"'));
+  return`<h2>Manoeuvres <small>Battle Master</small></h2><div class="macts">${B.join('')}</div>`}
+pgActions=(function(prev){return function(uid,c,D){let h=prev(uid,c,D);const m=bmHTML(uid,c,D);if(!m)return h;const i=h.indexOf('<h2>Attacks');return i<0?m+h:h.slice(0,i)+m+h.slice(i)}})(pgActions);
+ACT.bmMove=function(b){const u=b.dataset.u;const c=SH.chars[u];const D=DV(c);const k=b.dataset.k;if(resLeft(c,D,'sup')<1){toast('No superiority dice left. A short rest brings them back.');return}const st=myTurnSt(u);if(st==='no'){toast('Not your turn yet.');return}
+  if(k==='prec'){if(st)st.prec=1;spendRes(u,'sup');render(true);return}
+  if(k==='rally'){if(!needEcon(b,st,'bonus','bonus action'))return;SH.pk={u,who:'allies',max:1,sel:[],title:'Rally: who gets temporary HP?',go:([id])=>{spendRes(u,'sup');rollDmg('Rally temporary HP',`1d${D.supDie}+${Math.max(0,abMod(D,'CHA'))}`,{uid:u,tempTo:id})}};render(true);return}
+  const t=st&&st.lastHit;if(!t){toast('Hit first, then pick the manoeuvre before rolling damage.');return}
+  if(!(st.hits||[]).some(h=>h.tgt===t.tgt)){toast('Pick the manoeuvre before you roll damage for that hit.');return}
+  spendRes(u,'sup');st.mv={k,tgt:t.tgt,tname:t.tname};st.lastHit=null;render(true)};
+// the manoeuvre die rides on the damage roll, then the save goes to the DM's device
+applyRider=(function(prev){return function(label,expr,opts){[label,expr]=prev(label,expr,opts);const u=opts.uid;const st=u&&SH.chars[u]&&myTurnSt(u);const mv=st&&st!=='no'&&st.mv;if(!mv||!/ damage/.test(label)||opts.healTo||opts.tempTo||opts.tgt!==mv.tgt)return[label,expr];
+  st.mv=null;const c=SH.chars[u];const D=DV(c);const [n,ab]=MANEUVERS[mv.k];
+  if(ab)setTimeout(()=>foeList().some(f=>f.id===mv.tgt&&f.down)||addLog({by:SH.me,who:c.build.name,kind:'note',label:`⚔ ${c.build.name} uses ${n} on ${mv.tname}: ${ab} save DC ${D.supDC}.`,total:'',save:{ab,dc:D.supDC,h:false,tgts:[mv.tgt],tnames:[mv.tname],spell:n}}),500);
+  return[label.replace(' damage',` + ${n==='Extra damage'?'superiority':n} damage`),expr+'+1d'+D.supDie]}})(applyRider);
+rollD20=(function(prev){return function(label,bonus,parts,opts){const u=opts&&opts.uid;const st=u&&!opts.name&&SH.chars[u]&&/ attack\b/.test(label)&&myTurnSt(u);if(st&&st!=='no'&&st.prec){st.prec=0;const D=DV(SH.chars[u]);const n=1+Math.floor(Math.random()*D.supDie);
+  return prev(label+` (Precision Attack +${n})`,bonus+n,`${parts} + Precision ${n}`,opts)}return prev(label,bonus,parts,opts)}})(rollD20);
