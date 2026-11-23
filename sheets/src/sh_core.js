@@ -133,3 +133,8 @@ function hostTick(){if(!SH.owner||!SH.ready)return;const st=SH.state;const ini=s
   if(ini&&ini.on&&ini.req){let ch=false;const order=[...(ini.order||[])];
     for(const e of SH.log){if(e.init!==ini.req)continue;const uid=e.by;if(!SH.chars[uid])continue;const have=order.find(o=>o.pc===uid);if(have){if(have.t>=e.t)continue;have.v=e.total;have.t=e.t;ch=true}else{order.push({id:'pc_'+uid,name:SH.chars[uid].build.name,v:e.total,pc:uid,t:e.t});ch=true}}
     if(ch){const cur=order[ini.turn]&&ini.started?order[ini.turn].id:null;order.sort((a,b)=>b.v-a.v);put('table/state',{...st,init:{...ini,order,turn:cur?Math.max(0,order.findIndex(o=>o.id===cur)):0}})}}}
+
+// enemies roll initiative when they join a fight: d20 + their DEX bonus, written to the DM's hidden log
+function foeInit(name,ib){const r=d(20);(SH._fi=SH._fi||[]).push({by:SH.me,who:name,label:'Initiative',detail:`d20 ${r} ${fmt(ib)}`,total:r+ib,kind:'d20',nat:r});return{v:r+ib,r,ib}}
+function foeInitLog(){const L=SH._fi||[];SH._fi=[];if(!L.length)return;const doc=SH.dm.rolls||{items:[]};put('dm/rolls',{items:[...L.reverse().map(e=>({...e,t:Date.now()})),...(doc.items||[])].slice(0,60)});
+  toast(L.length===1?`${L[0].who} rolls initiative: ${L[0].total}.`:`Enemies roll initiative: ${L.slice().reverse().map(e=>e.who+' '+e.total).join(', ')}.`)}

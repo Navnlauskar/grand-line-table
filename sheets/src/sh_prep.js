@@ -42,7 +42,7 @@ function dmPrep(){const C=campOf();const pcs=Object.entries(SH.chars).filter(([,
 // add planned or typed-in enemies to the running fight (starting one if needed)
 function addMons(list){if(!initOf().on)ACT.fightStart();const ini=initOf();const order=[...(ini.order||[])];const cur=ini.started&&order[ini.turn]?order[ini.turn].id:null;const mons={...((SH.dm.enc||{}).mons||{})};
   for(const m of list){const name=String(m.name||'Enemy');const n=Math.max(1,Math.min(12,+m.n||1));const have=order.filter(o=>!o.pc&&o.name.replace(/ \d+$/,'')===name).length;
-    for(let i=0;i<n;i++){const id='m_'+uidNew()+i;const nm=n>1||have?`${name} ${have+i+1}`:name;mons[id]={name:nm,hp:m.hp,max:m.hp,ac:m.ac||null,...(m.atk!==null&&m.atk!==undefined&&m.atk!==''?{atk:+m.atk,dmg:m.dmg||''}:{}),...(m.atks&&m.atks.length?{atks:m.atks}:{}),...(m.lib?{lib:m.lib}:{})};order.push({id,name:nm,v:d(20)+(+m.init||0),hide:!!m.hide})}}
+    for(let i=0;i<n;i++){const id='m_'+uidNew()+i;const nm=n>1||have?`${name} ${have+i+1}`:name;mons[id]={name:nm,hp:m.hp,max:m.hp,ac:m.ac||null,...(m.atk!==null&&m.atk!==undefined&&m.atk!==''?{atk:+m.atk,dmg:m.dmg||''}:{}),...(m.atks&&m.atks.length?{atks:m.atks}:{}),...(m.lib?{lib:m.lib}:{})};const R=foeInit(nm,+m.init||0);order.push({id,name:nm,...R,hide:!!m.hide})}}foeInitLog()
   order.sort((a,b)=>b.v-a.v);put('dm/enc',{mons});setInit({order,turn:cur?Math.max(0,order.findIndex(o=>o.id===cur)):0})}
 Object.assign(ACT,{
   cpAdd(b){const f=b.dataset.f;const inp={scenes:'cpSN',encs:'cpEN',npcs:'cpNN',loot:'cpLN'}[f];const name=val(inp).trim();if(!name){toast('Give it a name first.');return}
