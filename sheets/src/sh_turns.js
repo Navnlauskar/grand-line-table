@@ -9,8 +9,8 @@ function foeList(){const ini=initOf();let k=0;return(ini.order||[]).filter(o=>!o
 function nAtkOf(u){return DV(SH.chars[u]).nAtk||1}
 
 function doAttack(u,a,tg,ak,o){o=o||{};const ctx=fightCtx(u);let tag='',st=null;
-  if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{if(!st.bonus){st.bonus=1;tag=' (bonus action)'}else tag=' (extra attack)'}}
-  if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:''};
+  let off=false;if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{st.bonus=1;st.offDone=1;off=true;tag=' (off-hand, bonus action)'}}
+  if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:'',off};
     rollD20(`${a.name} ${o.spell&&!o.bonus?'spell ':''}attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
   else rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});
   SH.pt=null;render(true)}
@@ -18,7 +18,11 @@ ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)ret
   const ak=b.dataset.k;if(!ctx){doAttack(u,a,null,ak);return}
   if(!ctx.mine){toast('Not your turn yet. You can attack when the fight reaches you.');return}
   const st=turnSt(u,ctx.key);const lim=nAtkOf(u);
-  if(st.n>=lim&&!(SH.pt&&SH.pt.k===ak)){const msg=st.bonus?'Tap again: one more attack (Action Surge, or the DM allows it)':'Tap again: attack with your bonus action (off-hand weapon, Flurry…)';if(!tapTwice(b,msg))return}
+  if(st.act&&st.n===0){toast('Your action is already used this turn (a spell, Dash or similar), so you cannot take the Attack action.');return}
+  if(st.n>=lim&&!(SH.pt&&SH.pt.k===ak)){const did=lim===1?'your attack':`all ${lim} attacks`;
+    if(st.bonus){toast(`No attacks left: you have made ${did} and used your bonus action this turn.`);return}
+    if(!offhandOK(u,a)){toast(`You have made ${did} this turn. An extra attack with your bonus action needs a light weapon in each hand, or a class button (Flurry of Blows, Frenzy…).`);return}
+    if(!tapTwice(b,'Tap again: off-hand attack with your bonus action (second light weapon, no ability bonus on damage)'))return}
   const foes=foeList().filter(f=>!f.down);if(!foes.length){doAttack(u,a,null,ak);return}
   if(foes.length===1){doAttack(u,a,foes[0],ak);return}
   SH.pt={u,k:ak};render(true)};
@@ -27,7 +31,7 @@ ACT.ptCancel=function(){SH.pt=null;render(true)};
 ACT.dmg=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a||!a.dmg)return;const ctx=dmFor(u)?null:fightCtx(u);
   if(ctx){if(!ctx.mine){toast('Not your turn yet.');return}const st=turnSt(u,ctx.key);const i=st.hits.findIndex(h=>h.k===b.dataset.k);
     if(i<0){toast(st.hits.length?'That hit was with another weapon: use its damage button.':'Roll to hit first: tap the attack name. Damage comes after a hit.');return}
-    const h=st.hits.splice(i,1)[0];if(h.tgt&&foeList().some(f=>f.id===h.tgt&&f.down)){toast(`${h.tname} is already down, so that hit is spent.`);render(true);return}rollDmg(`${a.name} damage → ${h.tname}`,a.dmg,{uid:u,crit:h.crit,tgt:h.tgt,of:h.aid});render(true);return}
+    const h=st.hits.splice(i,1)[0];if(h.tgt&&foeList().some(f=>f.id===h.tgt&&f.down)){toast(`${h.tname} is already down, so that hit is spent.`);render(true);return}rollDmg(`${a.name} ${h.off?'off-hand ':''}damage → ${h.tname}`,h.off?String(a.dmg).replace(/\+\d+$/,''):a.dmg,{uid:u,crit:h.crit,tgt:h.tgt,of:h.aid});render(true);return}
   rollDmg(a.name+' damage',a.dmg,{uid:u});render(true)};
 ACT.econ=function(b){const u=b.dataset.u;const ctx=fightCtx(u);if(!ctx||!ctx.mine)return;const st=turnSt(u,ctx.key);const k=b.dataset.k;st[k]=st[k]?0:1;render(true)};
 
@@ -42,7 +46,7 @@ onLog=(function(prev){return function(fresh){prev(fresh);SH.hostT=SH.hostT||Date
         hurtMon(e.tgt,-e.total,`${e.who}, ${e.label.replace(/ → .*$/,'')}`)}}
     // attacker side: a hit unlocks one damage roll for that weapon
     if(e.kind==='note'&&e.hitOf&&SH.myAtk&&SH.myAtk[e.hitOf]){SH.done2.add(dk);const r=SH.myAtk[e.hitOf];delete SH.myAtk[e.hitOf];
-      if(e.hit){const ctx=fightCtx(r.u);const st=turnSt(r.u,ctx?ctx.key:r.key);st.hits.push({k:r.k,aid:e.hitOf,tgt:e.tgt,tname:e.tname,crit:!!e.crit})}
+      if(e.hit){const ctx=fightCtx(r.u);const st=turnSt(r.u,ctx?ctx.key:r.key);st.hits.push({k:r.k,aid:e.hitOf,tgt:e.tgt,tname:e.tname,crit:!!e.crit,off:!!r.off})}
       atkResultCard(r,e);render(true)}}}})(onLog);
 // the attacker's roll card turns into the result: HIT (with the damage button) or MISS
 function atkResultCard(r,e){const a=atkById(r.u,r.k);let el=q('#rollCard');if(!el){el=document.createElement('div');el.id='rollCard';document.body.appendChild(el)}
@@ -87,3 +91,8 @@ screenHTML=(function(prev){return function(){let h=prev();const c=myChar();if(!c
 // DM: say so when the whole party is down
 dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!ini.on)return h;const pcs=Object.values(SH.chars).filter(c=>charOK(c)&&(ini.order||[]).some(o=>o.pc&&SH.chars[o.pc]===c));
   if(pcs.length&&pcs.every(c=>c.hp<=0||c.dead))h=`<div class="dsban"><b>The whole party is down.</b><span>Enemies can finish them, take them prisoner or leave. You decide: end the fight when the scene is over.</span></div>`+h;return h}})(dmFight);
+
+// off-hand attacks (two-weapon fighting) need a light weapon
+function offhandOK(u,a){const c=SH.chars[u];if(!c||!a)return false;if(/light/i.test(a.note||''))return true;
+  if(c.build.rules==='5e'){const k=Object.entries(R5.weapons).find(([,w])=>w[0]===a.name);return!!(k&&typeof WINFO!=='undefined'&&WINFO[k[0]]&&/\blight\b/.test(WINFO[k[0]][1]))}
+  const w=Object.values(WEAPONS).find(x=>x.name===a.name);return!!(w&&/light/i.test(w.note||''))}

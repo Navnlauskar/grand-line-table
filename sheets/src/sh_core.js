@@ -89,7 +89,7 @@ async function rollD20(label,bonus,partsTxt,opts){opts=opts||{};const adv=opts.a
 async function rollDmg(label,expr,opts){opts=opts||{};const r=rollExprNow(expr,opts.crit);if(!r){toast('Cannot roll "'+expr+'". Write dice like 2d6+3.');return null}
   const e={by:SH.me,who:opts.name||who(opts.uid||SH.me),label:label+(opts.crit?' (critical)':''),detail:r.detail,total:r.total,kind:opts.kind||'dmg',...(opts.tgt?{tgt:opts.tgt,of:opts.of}:{}),...(opts.save?{save:opts.save}:{}),...(opts.healTo?{healTo:opts.healTo}:{}),...(opts.tempTo?{tempTo:opts.tempTo}:{})};
   {const g=againN(e);if(g)e.again=g}showRoll(e);if(opts.secret)await secretLog(e);else await addLog(e);return e}
-function againN(e){SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
+function againN(e){if(e.aid||e.of||e.sreq||e.init||e.tgt)return 0;SH.rec=SH.rec||{};const k=e.by+'|'+e.who+'|'+e.label;const r=SH.rec[k];const now=Date.now();const n=r&&now-r.t<180000?r.n+1:1;SH.rec[k]={n,t:now};return n>1?n:0}
 async function secretLog(e){const doc=SH.dm.rolls||{items:[]};await put('dm/rolls',{items:[{...e,t:Date.now()},...(doc.items||[])].slice(0,60)})}
 let rollT=0;
 function showRoll(e,follow){let el=q('#rollCard');if(!el){el=document.createElement('div');el.id='rollCard';document.body.appendChild(el)}

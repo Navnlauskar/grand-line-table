@@ -188,3 +188,5 @@ dl.gloss dt{font-weight:700;margin-top:6px}dl.gloss dd{margin:0 0 4px 0}
 .bspells{display:flex;flex-direction:column;gap:4px}.bspell{border-bottom:1px solid var(--line,#eee);padding:4px 0}.bspell>details{margin-left:4px;font-size:.92rem}.spmeta{opacity:.85;font-size:.88rem}
 .bform .row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.bform .row .fl{flex:1 1 120px}.bform textarea{width:100%}
 details.atkd{margin:-2px 0 8px 4px;font-size:.9rem}details.atkd>summary{cursor:pointer;opacity:.75;font-size:.85rem}details.atkd p{margin:4px 0;line-height:1.4}
+.econm{font-size:.78rem;padding:2px 8px;border-radius:10px;background:color-mix(in srgb,var(--acc,#2a5d8f) 14%,transparent);align-self:center}
+.econm.used{background:color-mix(in srgb,#b33 18%,transparent)}.econm.idle{opacity:.7;background:transparent;border:1px dashed var(--line,#ccc)}

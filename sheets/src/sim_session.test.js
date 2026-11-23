@@ -53,7 +53,9 @@ let turns=0,pAtk=0,pHit=0,eAtk=0,stuck=0;
 for(let k=0;k<30;k++){const st=await DM.evaluate(()=>{const i=initOf();const o=i.order[i.turn];const m=monsOf();return{pc:o.pc||null,id:o.id,name:o.name,round:i.round,alive:Object.values(m).filter(x=>x.hp>0).length,pcs:Object.values(SH.chars).map(c=>c.build.name+':'+c.hp).join(' ')}});
   if(!st.alive){note(`all enemies down in round ${st.round}`);break}
   if(st.round>8){note('fight still going after 8 rounds: '+st.pcs);break}
-  turns++;
+  turns++;const cntP=nm=>DM.evaluate(nm=>SH.log.filter(e=>e.kind==='d20'&&e.who===nm&&/ attack/.test(e.label)&&!/Flurry|Machine Gun|strike|Frenzied|spell attack/i.test(e.label)).length,nm);
+  const cntM=id=>DM.evaluate(id=>{const m=monsOf()[id];return m?((SH.dm.rolls||{}).items||[]).filter(e=>e.who===m.name&&e.kind==='d20'&&/→/.test(e.label)).length:0},id);
+  const before=st.pc?await cntP(st.name):await cntM(st.id);
   if(st.pc){const p=byUid[st.pc];await p.click('[data-a=tab][data-k=actions]').catch(()=>{});await p.waitForTimeout(250);
     if(!await p.$('[data-a=endTurn]'))note(`${st.name}: no End-turn button on their turn`);
     const hp=await p.evaluate(()=>myChar().hp);
@@ -76,9 +78,15 @@ for(let k=0;k<30;k++){const st=await DM.evaluate(()=>{const i=initOf();const o=i
         for(let r=0;r<3;r++){const t=await p.$('[data-a=pkTo],[data-a=ptTo]:not([disabled])');if(!t)break;await t.click();await p.waitForTimeout(700)}
         const cd=await p.$('#rollCard.show [data-rcdmg]');if(cd){await cd.evaluate(b=>b.click());await p.waitForTimeout(500)}for(const x of await p.$$('.hitnote [data-a=dmg]')){await x.evaluate(b=>b.click());await p.waitForTimeout(400)}}
       const stn=await p.$('[data-a=maStun]:not([disabled])');if(stn&&Math.random()<.5){note2('stunning strike');await stn.click();await p.waitForTimeout(500)}}
+    if(Math.random()<.5){for(let z=0;z<3;z++){const a=await p.$('[data-a=atk]');if(!a)break;await a.click();await p.waitForTimeout(60);await a.click().catch(()=>{});await p.waitForTimeout(200);const t=await p.$('[data-a=ptTo]:not([disabled])');if(t){await t.click();await p.waitForTimeout(250)}}}
+    {const lim=await p.evaluate(()=>{const ctx=fightCtx(SH.me);const st=ctx?turnSt(SH.me,ctx.key):{};return nAtkOf(SH.me)+1});const made=(await cntP(st.name))-before;if(made>lim)note(`INV ${st.name} made ${made} weapon attacks in one turn (limit ${lim})`)}
     if(await p.$('[data-a=endTurn]'))await p.click('[data-a=endTurn]');else await DM.click('[data-a=turnNext]')}
   else{const m=await DM.evaluate(id=>monsOf()[id],st.id);
-    if(m&&m.hp>0){const b=await DM.$(`[data-a=mtPick][data-k="${st.id}"]`);if(b){await b.click();await DM.waitForTimeout(200);const ch=await DM.$$('[data-a=mtTo]');if(ch.length){await ch[Math.floor(Math.random()*ch.length)].click();eAtk++}else{const g=await DM.$('[data-a=mtGo]');note('save attack target picker');}await DM.waitForTimeout(700);if(eAtk===1)await DM.screenshot({path:`sim_${RULES}_dm_enemy.png`})}else note(`${st.name}: no attack button`)}
+    if(m&&m.hp>0){const b=await DM.$(`[data-a=mtPick][data-k="${st.id}"]`);if(b){await b.click();await DM.waitForTimeout(200);const ch=await DM.$$('[data-a=mtTo]');if(ch.length){await ch[Math.floor(Math.random()*ch.length)].click();eAtk++}else{const g=await DM.$('[data-a=mtGo]');note('save attack target picker');}await DM.waitForTimeout(700);if(eAtk===1)await DM.screenshot({path:`sim_${RULES}_dm_enemy.png`})
+      for(let z=0;z<3;z++){const b2=await DM.$(`[data-a=mtPick][data-k="${st.id}"]`);if(!b2)break;await b2.click();await DM.waitForTimeout(200);const ch=await DM.$$('[data-a=mtTo]');if(!ch.length){const c=await DM.$('[data-a=mtCancel]');if(c)await c.click();break}await ch[Math.floor(Math.random()*ch.length)].click();eAtk++;await DM.waitForTimeout(600)}
+      const other=await DM.evaluate(id=>{const o=initOf().order.find(x=>!x.pc&&x.id!==id&&(monsOf()[x.id]||{}).hp>0);return o?o.id:null},st.id);
+      if(other){const ob=await DM.$(`[data-a=mtPick][data-k="${other}"]`);if(ob){const b4=await cntM(other);await ob.click();await DM.waitForTimeout(150);const ch=await DM.$$('[data-a=mtTo]');if(ch.length){await ch[0].click();await DM.waitForTimeout(400)}if((await cntM(other))>b4)note('INV an enemy attacked outside its turn without ⚡ Reaction')}}
+      {const made=(await cntM(st.id))-before;const lim=await DM.evaluate(id=>multiOf(monsOf()[id]).n,st.id);if(made>lim)note(`INV ${st.name} made ${made} attacks in its turn (limit ${lim})`);else note2(`enemy attacks ${made}/${lim}`)}}else note(`${st.name}: no attack button`)}
     for(const x of P){const sb=await x.p.$('[data-a=sreqRoll]');if(sb){note2('player rolled a save prompt');await sb.click();await x.p.waitForTimeout(600)}}
     if(await DM.$('[data-a=sreqAuto]')){note2('DM rolled saves for someone');await DM.click('[data-a=sreqAuto]');await DM.waitForTimeout(400)}
     await DM.click('[data-a=turnNext]')}
