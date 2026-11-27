@@ -17,6 +17,7 @@ let fails=0;const check=(name,ok,info)=>{console.log((ok?'✓ ':'✗ ')+name+(in
  // A: level 1 fighter with a longsword only: one attack, spam does nothing more
  {const p=await setup(b,'5e',{cls:'fighter',level:1,weps:['longsword']},'Orc (CR 1/2)');await p.click('[data-a=swapDM]');await p.waitForTimeout(150);await p.click('[data-a=tab][data-k=actions]');
   await spamPlayer(p,5,true);const L=await myAtkRolls(p);check('L1 fighter, longsword only: 1 attack per turn',L.length===1,L.join(' | '));
+  await p.reload();await p.waitForTimeout(800);const back=await p.evaluate(()=>!!(SH.chars[SH.me]&&initOf().on));if(back){if(await p.$('[data-a=swapDM]')&&!(await p.$('[data-a=tab][data-k=actions]')))await p.click('[data-a=swapDM]');await p.click('[data-a=tab][data-k=actions]').catch(()=>{});await spamPlayer(p,3,true);const L1=await myAtkRolls(p);check('after a reload mid-turn: still no extra attack',L1.length===1,L1.length+' attacks')}else console.log('   (solo test page does not keep the fight over a reload)');
   await setTurn(p,1);await setTurn(p,0,2);await p.waitForTimeout(200);await spamPlayer(p,3,true);const L2=await myAtkRolls(p);check('next round: 1 more attack, no "2nd try"',L2.length===2&&!(await p.evaluate(()=>SH.log.some(e=>e.again&&e.kind==='d20')))
    ,L2.join(' | '));check('no page errors',!p.errs.length,p.errs.join(';'));await p.close()}
  // B: two light weapons: attack + off-hand bonus attack, then nothing
@@ -26,6 +27,11 @@ let fails=0;const check=(name,ok,info)=>{console.log((ok?'✓ ':'✗ ')+name+(in
  // C: level 5 fighter: Extra Attack = 2
  {const p=await setup(b,'5e',{cls:'fighter',level:5,weps:['greatsword']},'Orc (CR 1/2)');await p.click('[data-a=swapDM]');await p.waitForTimeout(150);await p.click('[data-a=tab][data-k=actions]');
   await spamPlayer(p,6,true);const L=await myAtkRolls(p);check('L5 fighter with greatsword: 2 attacks',L.length===2,L.join(' | '));await p.close()}
+ // C3: Loading: a crossbow fires once per turn even with Extra Attack; the second attack can use another weapon
+ {const p=await setup(b,'5e',{cls:'fighter',level:5,weps:['heavycrossbow','longsword']},'Orc (CR 1/2)');await p.click('[data-a=swapDM]');await p.waitForTimeout(150);await p.click('[data-a=tab][data-k=actions]');
+  const atk=async i=>{const bs=await p.$$('[data-a=atk]');await bs[i].click();await p.waitForTimeout(250);const t=await p.$('[data-a=ptTo]:not([disabled])');if(t){await t.click();await p.waitForTimeout(250)}};
+  await atk(0);await atk(0);await atk(0);let L=await myAtkRolls(p);check('heavy crossbow (loading): one shot per turn',L.length===1,L.join(' | '));
+  await atk(1);L=await myAtkRolls(p);check('second Extra Attack with the longsword still works',L.length===2&&/Longsword/.test(L[0]),L.join(' | '));await p.close()}
  // C2: action already used (a spell, Dash)
  {const p=await setup(b,'5e',{cls:'fighter',level:5,weps:['longsword']},'Orc (CR 1/2)');await p.click('[data-a=swapDM]');await p.waitForTimeout(150);await p.click('[data-a=tab][data-k=actions]');
   await p.evaluate(()=>{const ctx=fightCtx(SH.me);turnSt(SH.me,ctx.key).act=1});await spamPlayer(p,3,true);const L=await myAtkRolls(p);check('action already used (spell): no Attack action',L.length===0,L.join(' | '));await p.close()}

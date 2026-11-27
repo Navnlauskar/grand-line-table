@@ -58,7 +58,7 @@ await p0.click('[data-a=atk]');await p0.waitForSelector('.realbox');await p0.cli
 // DM real dice for an enemy attack
 await DM.click('[data-a=dmtab][data-k=table]');await DM.check('[data-c=realDm]');await DM.click('[data-a=dmtab][data-k=fight]');await DM.click('[data-a=fightStart]');await DM.waitForTimeout(300);
 await DM.fill('#flib','Marine Soldier [Recruit] (CR 1/8)');await DM.click('[data-a=fMonLib]');await DM.waitForTimeout(300);
-await DM.click('[data-a=mtPick]');await DM.waitForTimeout(200);await DM.click(`[data-a=mtTo][data-u="${u1}"]`);await DM.waitForSelector('.realbox');await DM.click('[data-a=realFace][data-k="19"]');await DM.waitForTimeout(400);
+await DM.click('[data-a=mtPick]');await DM.waitForTimeout(100);await DM.click('[data-a=mtPick]');await DM.waitForTimeout(200);await DM.click(`[data-a=mtTo][data-u="${u1}"]`);await DM.waitForSelector('.realbox');await DM.click('[data-a=realFace][data-k="19"]');await DM.waitForTimeout(400);
 if(await DM.$('.realbox input')){await DM.fill('.realbox input','5');await DM.click('[data-a=realOk]');await DM.waitForTimeout(500)}
 note('enemy attack (DM real dice): '+await DM.evaluate(()=>((SH.dm.rolls||{}).items||[]).slice(0,2).map(e=>e.label+' '+e.total+(e.real?' [real]':'')).join(' || '))+' | player log: '+await p1.evaluate(()=>SH.log[0].label));
 note('errors: '+JSON.stringify(errs));

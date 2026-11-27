@@ -34,7 +34,7 @@ await DM.click('[data-a=dmtab][data-k=fight]');await DM.click('[data-a=fightStar
 await DM.fill('#flib','Young Red Dragon (CR 10)');await DM.click('[data-a=fMonLib]');await DM.waitForTimeout(400);
 const hp0=await DM.evaluate(()=>Object.values(SH.chars).map(c=>c.build.name+' '+c.hp).join(', '));
 const atks=await DM.$$eval('[data-a=mtPick]',e=>e.map(x=>x.textContent));note('dragon attacks: '+atks.join(' | '));
-const bi=atks.findIndex(t=>/Breath/.test(t));await (await DM.$$('[data-a=mtPick]'))[bi].click();await DM.waitForTimeout(200);
+const bi=atks.findIndex(t=>/Breath/.test(t));await DM.evaluate(ix=>{const b=document.querySelectorAll('[data-a=mtPick]')[ix];if(!b)return;const id=b.dataset.k;const ini=initOf();const i=ini.order.findIndex(o=>o.id===id);setInit({turn:i,started:true});SH.mta={}},bi);await DM.waitForTimeout(250);await (await DM.$$('[data-a=mtPick]'))[bi].click();await DM.waitForTimeout(200);
 await DM.click(`[data-a=mtTo][data-u="${u0}"]`);await DM.click(`[data-a=mtTo][data-u="${u1}"]`);await DM.waitForTimeout(150);await DM.click('[data-a=mtGo]');await DM.waitForTimeout(800);
 const ban=await p0.$('[data-a=sreqRoll]');note('P0 save banner: '+!!ban+' | P1 banner: '+!!(await p1.$('[data-a=sreqRoll]')));
 await p0.screenshot({path:'sreq_p0.png'});
@@ -46,7 +46,7 @@ note('log: '+await p1.evaluate(()=>SH.log.slice(0,6).reverse().map(e=>e.label+(e
 note('sreq cleared: '+await DM.evaluate(()=>!SH.state.sreq));
 // bite (piercing + fire) on the raging tiefling
 const bt=atks.findIndex(t=>/Bite/.test(t));await DM.evaluate(()=>{Math.random=(R=>{let k=0;return()=>{k++;return k<=2?0.97:R()}})(Math.random)});
-await (await DM.$$('[data-a=mtPick]'))[bt].click();await DM.waitForTimeout(200);await DM.click(`[data-a=mtTo][data-u="${u0}"]`);await DM.waitForTimeout(700);
+await DM.evaluate(ix=>{const b=document.querySelectorAll('[data-a=mtPick]')[ix];if(!b)return;const id=b.dataset.k;const ini=initOf();const i=ini.order.findIndex(o=>o.id===id);setInit({turn:i,started:true});SH.mta={}},bt);await DM.waitForTimeout(250);await (await DM.$$('[data-a=mtPick]'))[bt].click();await DM.waitForTimeout(200);await DM.click(`[data-a=mtTo][data-u="${u0}"]`);await DM.waitForTimeout(700);
 note('bite: '+await p0.evaluate(()=>SH.log[0].label));
 // rage damage on a greataxe hit
 await p0.evaluate(()=>{const a=DV(myChar()).attacks[0];rollDmg(a.name+' damage',a.dmg,{uid:SH.me})});await p0.waitForTimeout(400);note('raging damage roll: '+await p0.evaluate(()=>SH.log[0].label+' '+SH.log[0].detail));

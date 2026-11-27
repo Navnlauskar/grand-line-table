@@ -33,7 +33,7 @@ await DM.fill('#cpSN','The pier at dawn');await DM.click('[data-a=cpAdd][data-f=
 const sid=await DM.evaluate(()=>campOf().scenes[0].id);await DM.fill(`textarea[data-k="${sid}"][data-f=read]`,'Fog rolls over the pier. Two figures wait by the boats.');await DM.press(`textarea[data-k="${sid}"][data-f=read]`,'Tab');
 await DM.fill('#cpEN','Pier ambush');await DM.click('[data-a=cpAdd][data-f=encs]');await DM.waitForTimeout(250);
 const eid=await DM.evaluate(()=>campOf().encs[0].id);
-const foes=RULES==='op'?[['Marine Soldier [Recruit] (CR 1/8)',3],['Flying Fish (CR 1/2)',1]]:(LV>=5?[['Orc (CR 1/2)',3],['Ogre (CR 2)',1]]:[['Goblin (CR 1/4)',3],['Wolf (CR 1/4)',1]]);
+const foes=process.env.FOES?process.env.FOES.split(';').map(x=>{const [n,c]=x.split('|');return[n,+c||1]}):RULES==='op'?[['Marine Soldier [Recruit] (CR 1/8)',3],['Flying Fish (CR 1/2)',1]]:(LV>=5?[['Orc (CR 1/2)',3],['Ogre (CR 2)',1]]:[['Goblin (CR 1/4)',3],['Wolf (CR 1/4)',1]]);
 for(const [n,c] of foes){await DM.fill('#clib_'+eid,n);await DM.fill('#clibC_'+eid,String(c));await DM.click(`[data-a=cpMonLib][data-k="${eid}"]`);await DM.waitForTimeout(250)}
 await DM.selectOption(`select[data-k="${sid}"][data-f=enc]`,eid);await DM.waitForTimeout(200);
 await DM.evaluate(()=>document.querySelector('details[data-dk=npcgal]').open=true);await DM.click('[data-a=npcPreset][data-k="0"]');await DM.waitForTimeout(250);
@@ -86,7 +86,7 @@ for(let k=0;k<30;k++){const st=await DM.evaluate(()=>{const i=initOf();const o=i
       for(let z=0;z<3;z++){const b2=await DM.$(`[data-a=mtPick][data-k="${st.id}"]`);if(!b2)break;await b2.click();await DM.waitForTimeout(200);const ch=await DM.$$('[data-a=mtTo]');if(!ch.length){const c=await DM.$('[data-a=mtCancel]');if(c)await c.click();break}await ch[Math.floor(Math.random()*ch.length)].click();eAtk++;await DM.waitForTimeout(600)}
       const other=await DM.evaluate(id=>{const o=initOf().order.find(x=>!x.pc&&x.id!==id&&(monsOf()[x.id]||{}).hp>0);return o?o.id:null},st.id);
       if(other){const ob=await DM.$(`[data-a=mtPick][data-k="${other}"]`);if(ob){const b4=await cntM(other);await ob.click();await DM.waitForTimeout(150);const ch=await DM.$$('[data-a=mtTo]');if(ch.length){await ch[0].click();await DM.waitForTimeout(400)}if((await cntM(other))>b4)note('INV an enemy attacked outside its turn without ⚡ Reaction')}}
-      {const made=(await cntM(st.id))-before;const lim=await DM.evaluate(id=>multiOf(monsOf()[id]).n,st.id);if(made>lim)note(`INV ${st.name} made ${made} attacks in its turn (limit ${lim})`);else note2(`enemy attacks ${made}/${lim}`)}}else note(`${st.name}: no attack button`)}
+      {const made=(await cntM(st.id))-before;const lim=await DM.evaluate(id=>multiOf(monsOf()[id]).n,st.id);if(made>lim)note(`INV ${st.name} made ${made} attacks in its turn (limit ${lim})`);else{note2(`enemy attacks ${made}/${lim}`);if(!made)note(`${st.name} made no attack: `+st.pcs+` · picker targets: `+(await DM.evaluate(()=>document.querySelectorAll("[data-a=mtTo]").length)))}}}else note(`${st.name}: no attack button`)}
     for(const x of P){const sb=await x.p.$('[data-a=sreqRoll]');if(sb){note2('player rolled a save prompt');await sb.click();await x.p.waitForTimeout(600)}}
     if(await DM.$('[data-a=sreqAuto]')){note2('DM rolled saves for someone');await DM.click('[data-a=sreqAuto]');await DM.waitForTimeout(400)}
     await DM.click('[data-a=turnNext]')}

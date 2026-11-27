@@ -9,7 +9,7 @@ function foeList(){const ini=initOf();let k=0;return(ini.order||[]).filter(o=>!o
 function nAtkOf(u){return DV(SH.chars[u]).nAtk||1}
 
 function doAttack(u,a,tg,ak,o){o=o||{};const ctx=fightCtx(u);let tag='',st=null;
-  let off=false;if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{st.bonus=1;st.offDone=1;off=true;tag=' (off-hand, bonus action)'}}
+  let off=false;if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);if(isLoading(u,a))st.loaded=[...(st.loaded||[]),a.name];const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{st.bonus=1;st.offDone=1;off=true;tag=' (off-hand, bonus action)'}}
   if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:'',off};
     rollD20(`${a.name} ${o.spell&&!o.bonus?'spell ':''}attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
   else rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});
@@ -18,6 +18,7 @@ ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)ret
   const ak=b.dataset.k;if(!ctx){doAttack(u,a,null,ak);return}
   if(!ctx.mine){toast('Not your turn yet. You can attack when the fight reaches you.');return}
   const st=turnSt(u,ctx.key);const lim=nAtkOf(u);
+  if(isLoading(u,a)&&st.loaded&&st.loaded.includes(a.name)&&!(SH.pt&&SH.pt.k===ak)){toast(`The ${a.name} has the Loading property: it fires only once per action, so you cannot use it for your other attacks this turn.`);return}
   if(st.act&&st.n===0){toast('Your action is already used this turn (a spell, Dash or similar), so you cannot take the Attack action.');return}
   if(st.n>=lim&&!(SH.pt&&SH.pt.k===ak)){const did=lim===1?'your attack':`all ${lim} attacks`;
     if(st.bonus){toast(`No attacks left: you have made ${did} and used your bonus action this turn.`);return}
@@ -96,3 +97,6 @@ dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!in
 function offhandOK(u,a){const c=SH.chars[u];if(!c||!a)return false;if(/light/i.test(a.note||''))return true;
   if(c.build.rules==='5e'){const k=Object.entries(R5.weapons).find(([,w])=>w[0]===a.name);return!!(k&&typeof WINFO!=='undefined'&&WINFO[k[0]]&&/\blight\b/.test(WINFO[k[0]][1]))}
   const w=Object.values(WEAPONS).find(x=>x.name===a.name);return!!(w&&/light/i.test(w.note||''))}
+
+// Loading (crossbows, muskets): one shot per action, bonus action or reaction
+function isLoading(u,a){const c=SH.chars[u];if(!c||!a||c.build.rules!=='5e')return false;if(/crossbow expert/i.test(JSON.stringify((c.build.featLv||{}))+JSON.stringify(c.cfeat||[])))return false;const k=Object.entries(R5.weapons).find(([,w])=>w[0]===a.name);return!!(k&&typeof WINFO!=='undefined'&&WINFO[k[0]]&&/\bloading\b/.test(WINFO[k[0]][1]))}

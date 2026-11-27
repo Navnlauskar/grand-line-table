@@ -25,3 +25,6 @@ restFor=(function(prev){return function(uid,kind){const c=SH.chars[uid];if(!c)re
   const end={};if(c.raging)end.raging=false;if(c.frenzy)end.frenzy=false;if(c.frenzied){end.frenzied=false}if(c.dodge)end.dodge=null;if(kind==='long'&&c.conc)end.conc=null;
   if(kind==='long'&&c.hp<=0){prev(uid,kind);saveChar(uid,{...end,hp:1,stable:false,death:{s:0,f:0}});addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} was at 0 HP, so the long rest only brings them back to 1 HP (hit points need a rest started with at least 1 HP).`,total:''});return}
   prev(uid,kind);if(Object.keys(end).length)saveChar(uid,end)}})(restFor);
+// ================= turn state survives a reload (attacks used, bonus action, hits waiting for damage; enemies' attacks on the DM's device) =================
+try{const t=JSON.parse(localStorage.getItem('sht-ta')||'null');if(t&&typeof t==='object')SH.ta=t;const m=JSON.parse(localStorage.getItem('sht-mta')||'null');if(m&&typeof m==='object')SH.mta=m}catch(e){}
+render=(function(prev){return function(f){prev(f);try{const a=JSON.stringify(SH.ta||{}),b=JSON.stringify(SH.mta||{});if(a!==SH._taS){localStorage.setItem('sht-ta',a);SH._taS=a}if(b!==SH._mtaS){localStorage.setItem('sht-mta',b);SH._mtaS=b}}catch(e){}}})(render);
