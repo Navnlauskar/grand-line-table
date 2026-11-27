@@ -193,6 +193,8 @@ dl.gloss dt{font-weight:700;margin-top:6px}dl.gloss dd{margin:0 0 4px 0}
 details.atkd{margin:-2px 0 8px 4px;font-size:.9rem}details.atkd>summary{cursor:pointer;opacity:.75;font-size:.85rem}details.atkd p{margin:4px 0;line-height:1.4}
 .econm{font-size:.78rem;padding:2px 8px;border-radius:10px;background:color-mix(in srgb,var(--acc,#2a5d8f) 14%,transparent);align-self:center}
 .econm.used{background:color-mix(in srgb,#b33 18%,transparent)}.econm.idle{opacity:.7;background:transparent;border:1px dashed var(--line,#ccc)}
+.lubetter{margin:4px 0 8px 18px;padding:0}.lubetter li{margin:2px 0}
+.tagbtn{white-space:nowrap;display:inline-block}
 
 /* ---------- shared hooks the skins use ---------- */
 @font-face{font-family:'Pirata One';src:url(fonts/pirata-one-latin-400-normal.woff2) format('woff2');font-display:swap}
@@ -1468,13 +1470,13 @@ function luHTML(){const U=SH.lu;const c=SH.chars[U.uid];const b=c.build;const I=
   ${I.asi?`<h2>Ability Score Improvement</h2><select data-c="luText" data-f="mode"><option value="two" ${U.mode==='two'?'selected':''}>+2 to one ability</option><option value="split" ${U.mode==='split'?'selected':''}>+1 to two abilities</option><option value="feat" ${U.mode==='feat'?'selected':''}>Take a feat instead</option></select>
     ${U.mode==='feat'?(r5?`<input data-c="luText" data-f="feat" value="${esc(U.feat||'')}" maxlength="40" placeholder="Feat name (add what it does under Custom features)">`:`<select data-c="luText" data-f="feat"><option value="">Choose…</option>${featOpts.map(([k,f])=>`<option value="${k}" ${U.feat===k?'selected':''}>${esc(f.name)}: ${esc(f.desc)}</option>`).join('')}</select>`)
       :`<div class="row"><select data-c="luText" data-f="a1" aria-label="First ability"><option value="">Choose…</option>${ABS.map(a=>`<option ${U.a1===a?'selected':''}>${a}</option>`).join('')}</select>${U.mode==='split'?`<select data-c="luText" data-f="a2" aria-label="Second ability"><option value="">Choose…</option>${ABS.filter(a=>a!==U.a1).map(a=>`<option ${U.a2===a?'selected':''}>${a}</option>`).join('')}</select>`:''}</div>`}`:''}
-  ${I.exp?`<h2>Expertise</h2><p class="hint">Choose ${I.exp} more skills you are proficient in.</p><div class="chipset">${Object.keys(D.skills).filter(s=>D.skills[s].prof&&!D.skills[s].exp).map(s=>`<button type="button" class="chip tog ${(U.exp||[]).includes(s)?'on':''}" data-a="luExp" data-v="${esc(s)}" data-max="${I.exp}">${esc(s)}</button>`).join('')}</div>`:''}
+  ${I.exp?`<h2>Expertise</h2><p class="hint">Choose ${I.exp} more skills you are proficient in: you add your proficiency bonus twice to them.${Object.keys(D.skills).filter(s=>D.skills[s].prof&&!D.skills[s].exp).length<I.exp?' (You have fewer proficient skills left than that, so pick what is there; Thieves\' Tools expertise can be added under Custom features.)':''}</p><div class="chipset">${Object.keys(D.skills).filter(s=>D.skills[s].prof&&!D.skills[s].exp).map(s=>`<button type="button" class="chip tog ${(U.exp||[]).includes(s)?'on':''}" data-a="luExp" data-v="${esc(s)}" data-max="${I.exp}">${esc(s)}</button>`).join('')}</div>`:''}
   ${U.errs&&U.errs.length?`<div class="errs">${U.errs.map(e=>`<p>${esc(e)}</p>`).join('')}</div>`:''}
   <button type="button" class="btn pri big" data-a="luSave">Reach level ${I.L}</button></div>`}
 function luSave(){const U=SH.lu;const c=SH.chars[U.uid];const b=clone(c.build);const I=luInfo(c);const errs=[];
   if(!U.hp)errs.push('Roll or take the average for your hit points.');if(I.needSub&&!String(U.sub||'').trim())errs.push('Choose your '+I.subName.toLowerCase()+'.');
   if(I.asi){if(U.mode==='feat'){if(!String(U.feat||'').trim())errs.push('Choose a feat.')}else if(!U.a1||(U.mode==='split'&&!U.a2))errs.push('Choose which abilities go up.')}
-  if(I.exp&&(U.exp||[]).length!==I.exp)errs.push(`Choose ${I.exp} Expertise skills.`);
+  const expAvail=I.exp?Object.keys(DV(c).skills).filter(k=>DV(c).skills[k].prof&&!DV(c).skills[k].exp).length:0;const expNeed=Math.min(I.exp||0,expAvail);if(I.exp&&(U.exp||[]).length!==expNeed)errs.push(`Choose ${expNeed} Expertise skill${expNeed===1?'':'s'}.`);
   if(errs.length){U.errs=errs;render();return}
   const oldMax=DV(c).maxhp;b.level=I.L;b.hpRolls={...(b.hpRolls||{}),[I.L]:U.hp};if(I.needSub)b.subclass=String(U.sub).trim();
   if(I.asi){if(U.mode==='feat')b.featLv={...(b.featLv||{}),[I.L]:String(U.feat).trim()};else b.asiLv={...(b.asiLv||{}),[I.L]:U.mode==='two'?{[U.a1]:2}:{[U.a1]:1,[U.a2]:1}}}
@@ -1689,7 +1691,7 @@ const CHG={
   bPool(e){const b=SH.edit.b;const a=e.dataset.k;const j=+e.value;const other=ABS.find(x=>b.poolIdx[x]===j);if(other)b.poolIdx[other]=b.poolIdx[a];b.poolIdx[a]=j;applyPool(b)},
   bScore(e){SH.edit.b.scores[e.dataset.k]=Math.max(1,Math.min(30,Math.round(+e.value)||10))},
   bLevel(e){const b=SH.edit.b;b.level=Math.max(1,Math.min(b.rules==='5e'?20:10,Math.round(+e.value)||1))},
-  luText(e){SH.lu[e.dataset.f]=e.value},
+  luText(e){const f=e.dataset.f;const was=SH.lu[f];SH.lu[f]=e.value;if(was!==e.value&&['sub','mode','a1'].includes(f))render(true)},
   rqKind(e){SH.rqKind=e.value;const w=q('#rqWhat');if(w)w.innerHTML=rqWhatHTML(e.value);return'norender'},
   stName(e){setState({name:e.value.trim()})},stRules(e){setState({rules:e.value})},stStart(e){setState({startLevel:Math.max(1,Math.min(20,Math.round(+e.value)||1))})},
   stFlag(e){setState({[e.dataset.k]:e.checked})},
@@ -3238,7 +3240,7 @@ function catkNums(D,a){if(!a.ab)return{atk:+a.bonus||0,dmg:a.dmg,parts:null};con
   const dm=(a.dmod&&a.ab!=='none'?m:0)+(+a.xd||0);return{atk:parts.reduce((s,p)=>s+p[1],0),dmg:a.dice?a.dice+(dm?fmt(dm):''):(dm?String(dm):''),parts}}
 atkById=(function(prev){return function(u,id){const c=SH.chars[u];const a=c&&(c.catk||[]).find(x=>x.id===id);if(a&&a.ab){const N=catkNums(DV(c),a);return{name:a.name,atk:N.atk,dmg:N.dmg,atkParts:N.parts,note:a.note}}return prev(u,id)}})(atkById);
 // ---- the builder section ----
-const BTN_FEATS=/^(Second Wind|Action Surge|Flurry of Blows|Patient Defense|Step of the Wind|Stunning Strike|Sneak Attack|Cunning Action|Uncanny Dodge|Rage|Frenzy|Ki|Martial Arts|Machine Gun Blows|Brace for Impact|Brute Force|Blood for Brawn|Thrill of the Fight|Rampage|Adept Marksman|Combat Superiority|Open Hand Technique|Wholeness of Body|Fast Hands)/;
+const BTN_FEATS=/^(Second Wind|Action Surge|Flurry of Blows|Patient Defense|Step of the Wind|Stunning Strike|Sneak Attack|Cunning Action|Uncanny Dodge|Rage$|Rage \(|Frenzy|Ki$|Martial Arts|Machine Gun Blows|Brace for Impact|Brute Force|Blood for Brawn|Thrill of the Fight|Rampage|Adept Marksman|Combat Superiority|Open Hand Technique|Wholeness of Body|Fast Hands)/;
 function bExtra(){const E=SH.edit;if(!E.extra){const c=SH.chars[E.uid]||{};E.extra={catk:clone(c.catk||[]),cfeat:clone(c.cfeat||[]),cres:clone(c.cres||[]),spells:clone(c.spells||[])}}return E.extra}
 function bDV(){const E=SH.edit;const b=clone(E.b);try{applyPool(b)}catch(e){}const X=bExtra();const c={...newCharDoc(b),catk:X.catk,cres:X.cres,spells:X.spells};try{return[c,DV(c)]}catch(e){return[c,null]}}
 function spellExplain(sp){const bits=[];const ct=(CT[sp.ct]||CT.A)[1];bits.push(`${sp.l?'Level '+sp.l:'Cantrip (free, as often as you like)'} · ${ct} · ${esc(sp.rg)}${sp.conc?' · concentration (ends if you cast another concentration spell, or fail a CON save when hurt)':''}`);
@@ -3316,5 +3318,33 @@ dmFight=(function(prev){return function(){let h=prev();const ini=initOf();if(!in
       :st.react?`<span class="econm used">reaction used</span>`:`<button type="button" class="btn xs ${SH.reactArm===o.id?'pri':''}" data-a="mtReact" data-k="${o.id}" title="Opportunity attack outside its turn">⚡ Reaction</button>`;
     h=h.replace(new RegExp(`<div class="matks">(?=<(?:button[^>]*data-k="${o.id}"|input id="caB_${o.id}"))`),`<div class="matks">${tag}`)}
   return h}})(dmFight);
+
+// ================= level-up screen: show everything the new level brings, including subclass features the sheet runs =================
+function luPreview(){const U=SH.lu;const c=SH.chars[U.uid];const I=luInfo(c);const nb=clone(c.build);nb.level=I.L;nb.hpRolls={...(nb.hpRolls||{}),[I.L]:I.hd/2+1};if(I.needSub&&U.sub)nb.subclass=String(U.sub).trim();
+  const D0=DV(c);let D1;try{D1=DV({...c,build:nb})}catch(e){return null}const old=new Set(D0.feats.map(f=>f[0]));
+  const feats=D1.feats.filter(f=>!old.has(f[0])&&!/^Ability Score Improvement/.test(f[0]));const better=[];
+  for(const [k,r] of Object.entries(D1.res||{})){const o=(D0.res||{})[k];if(!o)continue;if(r.max>o.max)better.push(`${r.name}: ${o.max} → ${r.max}`)}
+  if((D1.nAtk||1)>(D0.nAtk||1))better.push(`Attacks per Attack action: ${D0.nAtk||1} → ${D1.nAtk}`);
+  if(D1.sneak&&D1.sneak>(D0.sneak||0))better.push(`Sneak Attack: ${D0.sneak}d6 → ${D1.sneak}d6`);
+  if(D1.prof>D0.prof)better.push(`Proficiency bonus: +${D0.prof} → +${D1.prof} (attacks, proficient skills and saves)`);
+  const a0=(D0.attacks||[])[0],a1=(D1.attacks||[]).find(a=>a0&&a.name===a0.name);if(a0&&a1&&a1.dmg!==a0.dmg)better.push(`${a1.name} damage: ${a0.dmg} → ${a1.dmg}`);
+  return{feats,better,I,needSubPick:I.needSub&&!U.sub}}
+luHTML=(function(prev){return function(){let h=prev();const P=luPreview();if(!P)return h;const U=SH.lu;const c=SH.chars[U.uid];
+  const list=P.feats.map(f=>`<details open><summary>${esc(f[0])}${typeof BTN_FEATS!=='undefined'&&BTN_FEATS.test(f[0])?' <small class="tagbtn">button on your sheet</small>':''}</summary><p>${esc(f[1])}</p></details>`).join('');
+  const sub=P.needSubPick?`<p class="hint">Pick your ${esc(P.I.subName.toLowerCase())} below to see its features here.</p>`:'';
+  const bet=P.better.length?`<p class="hint"><b>Also better:</b></p><ul class="lubetter">${P.better.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+  const asi=P.I.asi?'<p class="hint">Plus an Ability Score Improvement (choose below).</p>':'';
+  h=h.replace(/<h2>What you get<\/h2><div class="feats">[\s\S]*?<\/div>\s*<h2>Hit points<\/h2>/,`<h2>What you get</h2><div class="feats">${list||(sub||asi?'':'<p class="hint">More hit points.</p>')}${sub}${asi}${bet}</div>\n  <h2>Hit points</h2>`);
+  // 5e subclass names the sheet knows
+  if(c.build.rules==='5e'&&typeof SUB_SUGGEST!=='undefined'&&SUB_SUGGEST[c.build.cls])h=h.replace(/(<input data-c="luText" data-f="sub"[^>]*?)>/,`$1 list="lusubs"><datalist id="lusubs">${SUB_SUGGEST[c.build.cls].map(x=>`<option value="${esc(x)}">`).join('')}</datalist><small class="hint">The sheet runs ${esc(SUB_SUGGEST[c.build.cls].join(', '))} for you.</small>`);
+  if(U.hp){try{const nb=clone(c.build);nb.level=P.I.L;nb.hpRolls={...(nb.hpRolls||{}),[P.I.L]:U.hp};if(P.I.needSub&&U.sub)nb.subclass=String(U.sub).trim();const D0=DV(c);const gain=DV({...c,build:nb}).maxhp-D0.maxhp;const con=mod(D0.ab.CON);const other=gain-U.hp-con;
+    h=h.replace(/<b>\+\d+ HP<\/b> \(([^)]*)\)/,`<b>+${gain} HP</b> ($1${other?`, ${fmt(other)} from ${esc(D0.feats.some(f=>/^Tough/.test(f[0]))?'Tough':'features')}`:''})`)}catch(e){}}
+  return h}})(luHTML);
+// ================= rests: the dead do not get up; a character at 0 HP only wakes with 1 HP; any rest ends rage and frenzy =================
+restFor=(function(prev){return function(uid,kind){const c=SH.chars[uid];if(!c)return;
+  if(c.dead){toast(`${c.build.name} is dead: a rest does not bring them back (the DM can revive them).`);return}
+  const end={};if(c.raging)end.raging=false;if(c.frenzy)end.frenzy=false;if(c.frenzied){end.frenzied=false}if(c.dodge)end.dodge=null;if(kind==='long'&&c.conc)end.conc=null;
+  if(kind==='long'&&c.hp<=0){prev(uid,kind);saveChar(uid,{...end,hp:1,stable:false,death:{s:0,f:0}});addLog({by:SH.me,who:c.build.name,kind:'note',label:`${c.build.name} was at 0 HP, so the long rest only brings them back to 1 HP (hit points need a rest started with at least 1 HP).`,total:''});return}
+  prev(uid,kind);if(Object.keys(end).length)saveChar(uid,end)}})(restFor);
 
 </script></body></html>

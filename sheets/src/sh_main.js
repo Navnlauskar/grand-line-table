@@ -138,7 +138,7 @@ const CHG={
   bPool(e){const b=SH.edit.b;const a=e.dataset.k;const j=+e.value;const other=ABS.find(x=>b.poolIdx[x]===j);if(other)b.poolIdx[other]=b.poolIdx[a];b.poolIdx[a]=j;applyPool(b)},
   bScore(e){SH.edit.b.scores[e.dataset.k]=Math.max(1,Math.min(30,Math.round(+e.value)||10))},
   bLevel(e){const b=SH.edit.b;b.level=Math.max(1,Math.min(b.rules==='5e'?20:10,Math.round(+e.value)||1))},
-  luText(e){SH.lu[e.dataset.f]=e.value},
+  luText(e){const f=e.dataset.f;const was=SH.lu[f];SH.lu[f]=e.value;if(was!==e.value&&['sub','mode','a1'].includes(f))render(true)},
   rqKind(e){SH.rqKind=e.value;const w=q('#rqWhat');if(w)w.innerHTML=rqWhatHTML(e.value);return'norender'},
   stName(e){setState({name:e.value.trim()})},stRules(e){setState({rules:e.value})},stStart(e){setState({startLevel:Math.max(1,Math.min(20,Math.round(+e.value)||1))})},
   stFlag(e){setState({[e.dataset.k]:e.checked})},

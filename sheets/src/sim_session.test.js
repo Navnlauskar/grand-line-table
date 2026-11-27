@@ -78,7 +78,7 @@ for(let k=0;k<30;k++){const st=await DM.evaluate(()=>{const i=initOf();const o=i
         for(let r=0;r<3;r++){const t=await p.$('[data-a=pkTo],[data-a=ptTo]:not([disabled])');if(!t)break;await t.click();await p.waitForTimeout(700)}
         const cd=await p.$('#rollCard.show [data-rcdmg]');if(cd){await cd.evaluate(b=>b.click());await p.waitForTimeout(500)}for(const x of await p.$$('.hitnote [data-a=dmg]')){await x.evaluate(b=>b.click());await p.waitForTimeout(400)}}
       const stn=await p.$('[data-a=maStun]:not([disabled])');if(stn&&Math.random()<.5){note2('stunning strike');await stn.click();await p.waitForTimeout(500)}}
-    if(Math.random()<.5){for(let z=0;z<3;z++){const a=await p.$('[data-a=atk]');if(!a)break;await a.click();await p.waitForTimeout(60);await a.click().catch(()=>{});await p.waitForTimeout(200);const t=await p.$('[data-a=ptTo]:not([disabled])');if(t){await t.click();await p.waitForTimeout(250)}}}
+    if(Math.random()<.5){for(let z=0;z<3;z++){const a=await p.$('[data-a=atk]');if(!a)break;await a.evaluate(x=>x.click()).catch(()=>{});await p.waitForTimeout(60);const a2=await p.$('[data-a=atk]');if(a2)await a2.evaluate(x=>x.click()).catch(()=>{});await p.waitForTimeout(200);const t=await p.$('[data-a=ptTo]:not([disabled])');if(t){await t.evaluate(x=>x.click()).catch(()=>{});await p.waitForTimeout(250)}}}
     {const lim=await p.evaluate(()=>{const ctx=fightCtx(SH.me);const st=ctx?turnSt(SH.me,ctx.key):{};return nAtkOf(SH.me)+1});const made=(await cntP(st.name))-before;if(made>lim)note(`INV ${st.name} made ${made} weapon attacks in one turn (limit ${lim})`)}
     if(await p.$('[data-a=endTurn]'))await p.click('[data-a=endTurn]');else await DM.click('[data-a=turnNext]')}
   else{const m=await DM.evaluate(id=>monsOf()[id],st.id);

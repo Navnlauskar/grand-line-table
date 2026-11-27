@@ -35,7 +35,7 @@ let fails=0;const check=(name,ok,info)=>{console.log((ok?'✓ ':'✗ ')+name+(in
  // E/F: enemies. Orc (one attack), Three-length Bird (Multiattack: two)
  for(const [rules,mon,want] of [['5e','Orc (CR 1/2)',1],['op','Three-length Bird',2]]){const p=await setup(b,rules,{cls:'fighter',level:1},mon,2);
   const ids=await p.evaluate(()=>initOf().order.filter(o=>!o.pc).map(o=>o.id));const uid=await p.evaluate(()=>SH.me);
-  const dmAtk=async(id,dbl)=>{const bt=await p.$(`[data-a=mtPick][data-k="${id}"][data-i="0"]`);if(!bt)return;await bt.click();if(dbl){await p.waitForTimeout(80);const b2=await p.$(`[data-a=mtPick][data-k="${id}"][data-i="0"]`);if(b2)await b2.click()}await p.waitForTimeout(150);const t=await p.$(`[data-a=mtTo][data-u="${uid}"]`);if(t){await t.click();await p.waitForTimeout(350)}};
+  const dmAtk=async(id,dbl)=>{await p.evaluate(()=>{for(const [u,c] of Object.entries(SH.chars))saveChar(u,{hp:DV(c).maxhp,dead:false,death:{s:0,f:0}})});const bt=await p.$(`[data-a=mtPick][data-k="${id}"][data-i="0"]`);if(!bt)return;await bt.click();if(dbl){await p.waitForTimeout(80);const b2=await p.$(`[data-a=mtPick][data-k="${id}"][data-i="0"]`);if(b2)await b2.click()}await p.waitForTimeout(150);const t=await p.$(`[data-a=mtTo][data-u="${uid}"]`);if(t){await t.click();await p.waitForTimeout(350)}};
   const cnt=id=>p.evaluate(id=>{const nm=monsOf()[id].name;return((SH.dm.rolls||{}).items||[]).filter(e=>e.who===nm&&e.kind==='d20'&&/→/.test(e.label)).length},id);
   await setTurn(p,1);await p.waitForTimeout(150);for(let i=0;i<5;i++)await dmAtk(ids[0],false);const n1=await cnt(ids[0]);check(`${mon} on its turn: ${want} attack(s) with single taps`,n1===want,'made '+n1);
   console.log('   row tag:',await p.$$eval('.econm',e=>e.map(x=>x.textContent).join(' | ')));
