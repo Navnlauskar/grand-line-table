@@ -10,13 +10,15 @@ function nAtkOf(u){return DV(SH.chars[u]).nAtk||1}
 
 function doAttack(u,a,tg,ak,o){o=o||{};const ctx=fightCtx(u);let tag='',st=null;
   let off=false;if(ctx&&ctx.mine&&!o.spell){st=turnSt(u,ctx.key);if(isLoading(u,a))st.loaded=[...(st.loaded||[]),a.name];const lim=nAtkOf(u);st.n++;if(st.n<=lim){st.act=1;if(lim>1)tag=` (${st.n} of ${lim})`}else{st.bonus=1;st.offDone=1;off=true;tag=' (off-hand, bonus action)'}}
+  if(o.react&&ctx&&!ctx.mine){rxUse(u);tag=' (opportunity attack, reaction)'}
   if(tg){const aid=uidNew();SH.myAtk=SH.myAtk||{};SH.myAtk[aid]={u,k:ak,key:ctx?ctx.key:'',off};
     rollD20(`${a.name} ${o.spell&&!o.bonus?'spell ':''}attack${tag} → ${tg.name}`,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,tgt:tg.id,tname:tg.name,aid});SH.checking=Date.now()}
   else rollD20(a.name+' attack'+tag,a.atk,a.atkParts?partsText(a.atkParts):fmt(a.atk),{uid:u,follow:a.dmg?[{t:'Damage '+a.dmg,run:crit=>{rollDmg(a.name+' damage',a.dmg,{uid:u,crit});render(true)}}]:null});
   SH.pt=null;render(true)}
 ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)return;const ctx=dmFor(u)?null:fightCtx(u);
   const ak=b.dataset.k;if(!ctx){doAttack(u,a,null,ak);return}
-  if(!ctx.mine){toast('Not your turn yet. You can attack when the fight reaches you.');return}
+  if(!ctx.mine){const c=SH.chars[u];if(c&&c.hp<=0){toast('You are down and cannot react.');return}if(!rxFree(u)){toast('Not your turn, and your reaction is already used this round.');return}
+    if(!tapTwice(b,'Not your turn. Tap again for an opportunity attack: it uses your reaction'))return;const fs=foeList().filter(f=>!f.down);if(fs.length===1){doAttack(u,a,fs[0],ak,{react:1});return}if(!fs.length)return;SH.pt={u,k:ak,react:1};render(true);return}
   const st=turnSt(u,ctx.key);const lim=nAtkOf(u);
   if(isLoading(u,a)&&st.loaded&&st.loaded.includes(a.name)&&!(SH.pt&&SH.pt.k===ak)){toast(`The ${a.name} has the Loading property: it fires only once per action, so you cannot use it for your other attacks this turn.`);return}
   if(st.act&&st.n===0){toast('Your action is already used this turn (a spell, Dash or similar), so you cannot take the Attack action.');return}
@@ -27,10 +29,10 @@ ACT.atk=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a)ret
   const foes=foeList().filter(f=>!f.down);if(!foes.length){doAttack(u,a,null,ak);return}
   if(foes.length===1){doAttack(u,a,foes[0],ak);return}
   SH.pt={u,k:ak};render(true)};
-ACT.ptTo=function(b){const pt=SH.pt;if(!pt)return;const a=atkById(pt.u,pt.k);if(!a)return;const tg=b.dataset.k==='none'?null:foeList().find(f=>f.id===b.dataset.k);doAttack(pt.u,a,tg||null,pt.k)};
+ACT.ptTo=function(b){const pt=SH.pt;if(!pt)return;const a=atkById(pt.u,pt.k);if(!a)return;const tg=b.dataset.k==='none'?null:foeList().find(f=>f.id===b.dataset.k);doAttack(pt.u,a,tg||null,pt.k,pt.react?{react:1}:undefined)};
 ACT.ptCancel=function(){SH.pt=null;render(true)};
 ACT.dmg=function(b){const u=b.dataset.u;const a=atkById(u,b.dataset.k);if(!a||!a.dmg)return;const ctx=dmFor(u)?null:fightCtx(u);
-  if(ctx){if(!ctx.mine){toast('Not your turn yet.');return}const st=turnSt(u,ctx.key);const i=st.hits.findIndex(h=>h.k===b.dataset.k);
+  if(ctx){const st=turnSt(u,ctx.key);const i=st.hits.findIndex(h=>h.k===b.dataset.k);
     if(i<0){toast(st.hits.length?'That hit was with another weapon: use its damage button.':'Roll to hit first: tap the attack name. Damage comes after a hit.');return}
     const h=st.hits.splice(i,1)[0];if(h.tgt&&foeList().some(f=>f.id===h.tgt&&f.down)){toast(`${h.tname} is already down, so that hit is spent.`);render(true);return}rollDmg(`${a.name} ${h.off?'off-hand ':''}damage → ${h.tname}`,h.off?String(a.dmg).replace(/\+\d+$/,''):a.dmg,{uid:u,crit:h.crit,tgt:h.tgt,of:h.aid});render(true);return}
   rollDmg(a.name+' damage',a.dmg,{uid:u});render(true)};
@@ -64,14 +66,15 @@ function markEcon(h){return h.split(/(<textarea[\s\S]*?<\/textarea>|<select[\s\S
 function markEcon1(h){return h.replace(/>([^<]+)</g,(m,t)=>'>'+t.replace(/\b(bonus action)s?\b/gi,'<mark class="tg tg-bonus">$&</mark>').replace(/\b(reaction)s?\b/gi,'<mark class="tg tg-react">$&</mark>').replace(/\b(as an action|use your action|an action|the Attack action|your action)\b/gi,'<mark class="tg tg-act">$&</mark>')+'<')}
 pgActions=(function(prev){return function(uid,c,D){let h=markEcon(prev(uid,c,D));const ctx=dmFor(uid)?null:fightCtx(uid);
   if(!ctx)return econHTML(uid,D,null,false)+h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small><mark class="tg tg-act">Action</mark> ${D.nAtk>1?D.nAtk+' attacks per Attack action · ':''}tap the name to roll to hit</small></h2>`);
-  if(!ctx.mine)return econHTML(uid,D,null,false)+h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,'<h2>Attacks <small>wait for your turn</small></h2>').replace(/class="rb" data-a="atk"/g,'class="rb wait" data-a="atk"').replace(/class="btn dmg" data-a="dmg"/g,'class="btn dmg wait" data-a="dmg"');
+  const off=!ctx.mine;if(off){const rx=rxFree(uid)&&SH.chars[uid]&&SH.chars[uid].hp>0;h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small>not your turn · ${rx?'<mark class="tg tg-react">Reaction</mark> ready: tap an attack twice for an opportunity attack':'reaction used'}</small></h2>`).replace(/class="rb" data-a="atk"/g,'class="rb wait" data-a="atk"');
+    const st0=turnSt(uid,ctx.key);if(!(SH.pt&&SH.pt.u===uid)&&!st0.hits.length)return econHTML(uid,D,null,false)+h.replace(/class="btn dmg" data-a="dmg"/g,'class="btn dmg wait" data-a="dmg"')}
   const st=turnSt(uid,ctx.key);const lim=D.nAtk||1;
-  h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small><mark class="tg tg-act">Action</mark> ${Math.min(st.n,lim)} of ${lim} attack${lim>1?'s':''} used${st.n>lim?` + ${st.n-lim} extra`:''}</small></h2>`);
+  if(!off)h=h.replace(/<h2>Attacks <small>[^<]*<\/small><\/h2>/,`<h2>Attacks <small><mark class="tg tg-act">Action</mark> ${Math.min(st.n,lim)} of ${lim} attack${lim>1?'s':''} used${st.n>lim?` + ${st.n-lim} extra`:''}</small></h2>`);
   // target picker
   if(SH.pt&&SH.pt.u===uid){const a=atkById(uid,SH.pt.k);const foes=foeList();h=h.replace(/(<h2>Attacks <small>[\s\S]*?<\/h2>)/,`$1<div class="mtarget ptarget"><span>${esc(a?a.name:'')}: who do you attack?</span><div class="chipset">${foes.map(f=>`<button type="button" class="chip tog" data-a="ptTo" data-k="${f.id}" ${f.down?'disabled':''}>${esc(f.label||f.name)}${f.down?' (down)':''}</button>`).join('')}<button type="button" class="chip tog" data-a="ptTo" data-k="none">Something else</button></div><button type="button" class="btn sm" data-a="ptCancel">Cancel</button></div>`)}
   // damage buttons only light up after a hit
   const ready=new Set(st.hits.map(x=>x.k));h=h.replace(/class="btn dmg" data-a="dmg" data-u="([^"]*)" data-k="([^"]*)"/g,(m,u,k)=>ready.has(k)?`class="btn dmg ready" data-a="dmg" data-u="${u}" data-k="${k}"`:`class="btn dmg wait" data-a="dmg" data-u="${u}" data-k="${k}"`);
-  return econHTML(uid,D,st,true)+(st.hits.length?`<p class="hitnote">🎯 Hit! Tap the red damage button${st.hits.length>1?'s':''} to roll damage.</p>`:'')+h}})(pgActions);
+  return econHTML(uid,D,off?null:st,!off)+(st.hits.length?`<p class="hitnote">🎯 Hit! Tap the red damage button${st.hits.length>1?'s':''} to roll damage.</p>`:'')+h}})(pgActions);
 pgFeats=(function(prev){return function(uid,c,D){return markEcon(prev(uid,c,D))}})(pgFeats);
 // the DM's log (dock) mixes in the hidden rolls, marked 🔒
 function dmLogHTML(n){const sec=((SH.dm.rolls||{}).items||[]).map(e=>({...e,label:'🔒 '+e.label,hid:1}));const all=[...SH.log,...sec].sort((a,b)=>(b.t||0)-(a.t||0));const L=SH.log;SH.log=all;try{return logHTML(n)}finally{SH.log=L}}
@@ -100,3 +103,8 @@ function offhandOK(u,a){const c=SH.chars[u];if(!c||!a)return false;if(/light/i.t
 
 // Loading (crossbows, muskets): one shot per action, bonus action or reaction
 function isLoading(u,a){const c=SH.chars[u];if(!c||!a||c.build.rules!=='5e')return false;if(/crossbow expert/i.test(JSON.stringify((c.build.featLv||{}))+JSON.stringify(c.cfeat||[])))return false;const k=Object.entries(R5.weapons).find(([,w])=>w[0]===a.name);return!!(k&&typeof WINFO!=='undefined'&&WINFO[k[0]]&&/\bloading\b/.test(WINFO[k[0]][1]))}
+
+// a player's reaction: one opportunity attack between their own turns
+function rxFree(u){const r=SH.ta&&SH.ta['rx:'+u];const ini=initOf();if(!r||!ini.on||r.id!==ini.id)return true;const O=ini.order||[];const N=O.length||1;const own=O.findIndex(o=>o.pc===u);if(own<0)return true;
+  const now=(ini.round||1)*N+(ini.turn||0),used=r.round*N+r.turn;const nxt=used+1+((own-((used+1)%N))%N+N)%N;return now>=nxt}
+function rxUse(u){const ini=initOf();SH.ta=SH.ta||{};SH.ta['rx:'+u]={id:ini.id,round:ini.round||1,turn:ini.turn||0}}

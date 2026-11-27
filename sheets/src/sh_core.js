@@ -16,8 +16,9 @@ const moneyOf=c=>is5(c)?(+c.gp||0):(+c.berries||0);
 const moneyTxt=c=>is5(c)?(Math.round(moneyOf(c)*100)/100).toLocaleString('en-US')+' gp':'฿'+moneyOf(c).toLocaleString('en-US');
 function toast(t,ms){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),ms||2800)}
 // "tap twice" instead of a confirm box (those are blocked inside Claude)
-function tapTwice(b,ask){const now=Date.now();if(b.dataset.armed&&now-(+b.dataset.armed)<4000){delete b.dataset.armed;b.classList.remove('armed');if(b.dataset.orig)b.innerHTML=b.dataset.orig;return true}
-  b.dataset.armed=String(now);if(!b.dataset.orig)b.dataset.orig=b.innerHTML;b.innerHTML=ask||'Tap again to confirm';b.classList.add('armed');
+function tapKey(b){const d=b.dataset;return[d.a,d.c,d.k,d.u,d.i,d.v].join('|')}
+function tapTwice(b,ask){const now=Date.now();const K=tapKey(b);const A=SH._armed;if((b.dataset.armed&&now-(+b.dataset.armed)<4000)||(A&&A.k===K&&now-A.t<4000)){SH._armed=null;delete b.dataset.armed;b.classList.remove('armed');if(b.dataset.orig)b.innerHTML=b.dataset.orig;return true}
+  b.dataset.armed=String(now);SH._armed={k:K,t:now,ask:ask||'Tap again to confirm'};if(!b.dataset.orig)b.dataset.orig=b.innerHTML;b.innerHTML=ask||'Tap again to confirm';b.classList.add('armed');
   setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.classList.remove('armed');b.innerHTML=b.dataset.orig}},4000);return false}
 
 // ---------------- sync ----------------

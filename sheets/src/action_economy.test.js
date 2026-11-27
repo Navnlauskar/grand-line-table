@@ -9,7 +9,7 @@ async function setup(b,rules,build,mon,n){const p=await b.newPage({viewport:{wid
   await p.evaluate(()=>{for(const m of Object.values(monsOf()))m.hp=m.max=999});return p}
 const setTurn=(p,i,round)=>p.evaluate(([i,round])=>{const ini=initOf();put('table/state',{...SH.state,init:{...ini,turn:i,round:round||ini.round}})},[i,round]);
 const myAtkRolls=p=>p.evaluate(()=>SH.log.filter(e=>e.kind==='d20'&&e.by===SH.me&&/ attack/.test(e.label)&&e.who==='P').map(e=>e.label));
-async function spamPlayer(p,times,dbl){for(let i=0;i<times;i++){const a=await p.$('[data-a=atk]');if(!a)break;await a.click();if(dbl){await p.waitForTimeout(80);const a2=await p.$('[data-a=atk]');if(a2)await a2.click()}await p.waitForTimeout(250);
+async function spamPlayer(p,times,dbl){for(let i=0;i<times;i++){if(!dbl&&i)await p.waitForTimeout(4300);const a=await p.$('[data-a=atk]');if(!a)break;await a.click();if(dbl){await p.waitForTimeout(80);const a2=await p.$('[data-a=atk]');if(a2)await a2.click()}await p.waitForTimeout(250);
   for(let k=0;k<2;k++){const t=await p.$('[data-a=ptTo]:not([disabled])');if(!t)break;await t.click();await p.waitForTimeout(250)}
   for(const x of await p.$$('.hitnote [data-a=dmg], #rollCard.show [data-rcdmg]')){await x.evaluate(b=>b.click()).catch(()=>{});await p.waitForTimeout(200)}}}
 let fails=0;const check=(name,ok,info)=>{console.log((ok?'✓ ':'✗ ')+name+(info?'  · '+info:''));if(!ok)fails++};
@@ -37,7 +37,11 @@ let fails=0;const check=(name,ok,info)=>{console.log((ok?'✓ ':'✗ ')+name+(in
   await p.evaluate(()=>{const ctx=fightCtx(SH.me);turnSt(SH.me,ctx.key).act=1});await spamPlayer(p,3,true);const L=await myAtkRolls(p);check('action already used (spell): no Attack action',L.length===0,L.join(' | '));await p.close()}
  // D: not your turn
  {const p=await setup(b,'5e',{cls:'fighter',level:1,weps:['longsword']},'Orc (CR 1/2)');await setTurn(p,1);await p.click('[data-a=swapDM]');await p.waitForTimeout(150);await p.click('[data-a=tab][data-k=actions]');
-  await spamPlayer(p,3,true);const L=await myAtkRolls(p);check('no attacks on the enemy\'s turn',L.length===0,L.join(' | '));await p.close()}
+  await spamPlayer(p,3,false);let L=await myAtkRolls(p);check('single taps on the enemy\'s turn: no attack',L.length===0,L.join(' | '));
+  await spamPlayer(p,4,true);L=await myAtkRolls(p);check('double tap on the enemy\'s turn: one opportunity attack (reaction), then no more',L.length===1&&/reaction/.test(L[0]),L.join(' | '));
+  const dmg=await p.evaluate(()=>SH.log.filter(e=>e.kind==='dmg'&&e.who==='P').length);const hit=await p.evaluate(()=>SH.log.some(e=>e.hitBy===SH.me&&e.hit));check('a reaction hit can roll damage',!hit||dmg===1,'hit '+hit+' dmg '+dmg);
+  await setTurn(p,0,2);await p.waitForTimeout(200);await spamPlayer(p,3,true);L=await myAtkRolls(p);check('own turn after that: the normal attack',L.length===2,L.join(' | '));
+  await setTurn(p,1,2);await p.waitForTimeout(200);await spamPlayer(p,3,true);L=await myAtkRolls(p);check('next enemy turn: reaction is back (one more)',L.length===3,L.join(' | '));await p.close()}
  // E/F: enemies. Orc (one attack), Three-length Bird (Multiattack: two)
  for(const [rules,mon,want] of [['5e','Orc (CR 1/2)',1],['op','Three-length Bird',2]]){const p=await setup(b,rules,{cls:'fighter',level:1},mon,2);
   const ids=await p.evaluate(()=>initOf().order.filter(o=>!o.pc).map(o=>o.id));const uid=await p.evaluate(()=>SH.me);
